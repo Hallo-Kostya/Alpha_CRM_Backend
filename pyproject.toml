@@ -3,15 +3,19 @@ name = "alpha-back"
 version = "0.1.0"
 description = ""
 authors = [
-    {name = "Александр",email = "av.sanya@yandex.ru"}
+    {name = "Александр",email = "av.sanya@yandex.ru"},
+    {name = "Алексей", email = "alexkomov2005@gmail.com"}
 ]
+package-mode = false
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "uvicorn (>=0.38.0,<0.39.0)",
     "sqlalchemy (>=2.0.44,<3.0.0)",
     "fastapi (>=0.120.0,<0.121.0)",
-    "pydantic (>=2.12.3,<3.0.0)"
+    "pydantic (>=2.12.3,<3.0.0)",
+    "pydantic-settings (>=2.11.0,<3.0.0)",
+    "alembic (>=1.17.1,<2.0.0)"
 ]
 
 
