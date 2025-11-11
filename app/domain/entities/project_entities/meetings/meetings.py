@@ -2,8 +2,8 @@ from __future__ import annotations
 from typing import Optional
 from uuid import UUID
 from datetime import datetime
-from app.domain.entities.base_entity import BaseEntity
-from app.domain.enums.meeting_status import MeetingStatus
+from app.domain.entities import BaseEntity
+from app.domain.enums import MeetingStatus
 
 
 class Meeting(BaseEntity):
