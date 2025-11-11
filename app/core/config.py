@@ -52,4 +52,4 @@ class Settings(BaseSettings):
     db: DatabaseConfig
     hash: HashConfig
 
-settings = Settings()
+# settings = Settings()

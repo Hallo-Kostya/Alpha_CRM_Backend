@@ -3,7 +3,7 @@ from app.domain.enums.semester import Semester
 from app.domain.entities.baseEntity import BaseEntity
 
 class project(BaseEntity):
-    def __init__(self, name: str, desription: str, goal : bool, requirements: str, eval_criteria: str, year: int, semester: Semester, status: ProjectStatus, id: str | None = None):
+    def __init__(self, name: str, desription: str, goal : str, requirements: str, eval_criteria: str, year: int, semester: Semester, status: ProjectStatus, id: str | None = None):
         super().__init__(id)
         self.name = name
         self.description = desription
