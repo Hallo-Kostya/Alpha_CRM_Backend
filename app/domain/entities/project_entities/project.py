@@ -1,9 +1,13 @@
-from app.domain.enums.projectStatus import ProjectStatus
+from typing import Optional
+from app.domain.enums.project_status import ProjectStatus
 from app.domain.enums.semester import Semester
-from app.domain.entities.baseEntity import BaseEntity
+from app.domain.entities import BaseEntity
+from uuid import UUID
 
-class project(BaseEntity):
-    def __init__(self, name: str, desription: str, goal : str, requirements: str, eval_criteria: str, year: int, semester: Semester, status: ProjectStatus, id: str | None = None):
+class Project(BaseEntity):
+    def __init__(self, name: str, desription: str, goal : str, requirements: str, 
+                 eval_criteria: str, year: int, semester: Semester,
+                   status: ProjectStatus, id: Optional[UUID]):
         super().__init__(id)
         self.name = name
         self.description = desription

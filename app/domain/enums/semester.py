@@ -1,5 +1,6 @@
-from enum import Enum, auto
+from enum import auto
+from app.domain.enums import StrAutoEnum
 
-class Semester(Enum):
-    autumn = auto()
-    spring = auto()
+class Semester(StrAutoEnum):
+    AUTUMN = auto()
+    SPRING = auto()
