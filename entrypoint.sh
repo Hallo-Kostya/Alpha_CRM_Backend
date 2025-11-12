@@ -1,6 +1,5 @@
 #!/bin/sh
 
-cd /backend/app
 echo "Выполняются миграции..."
 alembic upgrade head
 

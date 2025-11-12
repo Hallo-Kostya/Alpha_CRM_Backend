@@ -21,12 +21,18 @@ class ApiPrefix(BaseModel):
 
 
 class HashConfig(BaseModel):
-    secret: str
-    algorithm: str
+    secret: str = ""
+    algorithm: str = ""
 
 
 class DatabaseConfig(BaseModel):
-    url: PostgresDsn
+    scheme: str = "postgresql+asyncpg"
+    name: str = "Alpha_dev"
+    user: str = ""
+    password: str = ""
+    host: str = "pg_db"
+    port: int = 5432
+
     echo: bool = False
     echo_pool: bool = False
     pool_size: int = 50
@@ -39,6 +45,17 @@ class DatabaseConfig(BaseModel):
         "pk": "pk_%(table_name)s",
     }
 
+    @property
+    def url(self) -> PostgresDsn:
+        return PostgresDsn.build(
+            scheme=self.scheme,
+            username=self.user,
+            password=self.password,
+            host=self.host,
+            port=self.port,
+            path=self.name,
+        )
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
@@ -49,8 +66,8 @@ class Settings(BaseSettings):
     )
     run: RunConfig = RunConfig()
     api: ApiPrefix = ApiPrefix()
-    db: DatabaseConfig
-    hash: HashConfig
+    db: DatabaseConfig = DatabaseConfig()
+    hash: HashConfig = HashConfig()
 
 
 settings = Settings()  # type: ignore

@@ -13,20 +13,18 @@ ENV POETRY_VERSION=1.8.3 \
     POETRY_HOME='/usr/local' \
     PYTHONPATH='/backend/app'
 
-WORKDIR /backend
-
 COPY ./pyproject.toml ./poetry.lock /backend/
 
+WORKDIR /backend
 
 RUN /usr/local/bin/poetry install --no-root 
 
 COPY ./app ./app
 COPY ./entrypoint.sh ./entrypoint.sh
+COPY ./alembic.ini .
 
-RUN chmod +x /backend/entrypoint.sh
-
-WORKDIR /backend
+RUN chmod +x ./entrypoint.sh
 
 EXPOSE 8000
 
-ENTRYPOINT ["/backend/entrypoint.sh"]
+ENTRYPOINT ["./entrypoint.sh"]
