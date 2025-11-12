@@ -1,10 +1,9 @@
-from typing import Optional
 from uuid import UUID
 from app.domain.entities import BaseEntity
 from app.domain.enums import ArtifactType
 
 class Artifact(BaseEntity):
-    def __init__(self, name: str, desription: str, type : ArtifactType, url: str, id: Optional[UUID]):
+    def __init__(self, name: str, desription: str | None, type : ArtifactType, url: str, id: UUID | None):
         super().__init__(id)
         self.name = name
         self.desription = desription
