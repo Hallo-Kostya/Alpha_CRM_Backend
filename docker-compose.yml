@@ -24,11 +24,25 @@ services:
       - app-network
     restart: always
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB_NAME}
+      POSTGRES_USER: ${DB__USER}
+      POSTGRES_PASSWORD: ${DB__PASSWORD}
+      POSTGRES_DB: ${DB__NAME}
     ports:
-    - "5433:5432"
+    - ${DB__PORT}:5432
+
+  pgadmin4:
+    image: elestio/pgadmin:REL-9_8
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASS}
+      PGADMIN_LISTEN_PORT: 8080
+    networks:
+      - app-network
+    ports:
+    - "8082:8080"
+    depends_on:
+      - pg_db
 
 volumes:
   main_pg_data:
