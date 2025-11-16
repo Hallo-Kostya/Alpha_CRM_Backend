@@ -1,5 +1,5 @@
 from enum import auto
-from app.domain.enums import StrAutoEnum
+from .str_auto_enum import StrAutoEnum
 
 
 class AttendanceEntityType(StrAutoEnum):
