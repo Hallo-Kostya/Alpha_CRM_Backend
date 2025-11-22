@@ -19,7 +19,7 @@ class CRUDRepository(CRUDRepositoryInterface[T]):
         await self.session.refresh(obj)
         return obj
     
-    async def read(self, obj_id: UUID) -> T | None:
+    async def get(self, obj_id: UUID) -> T | None:
         result = await self.session.execute(
             select(self.model).where(self.model.id == obj_id)
         )
