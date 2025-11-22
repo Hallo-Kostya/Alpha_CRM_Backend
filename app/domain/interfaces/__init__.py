@@ -1,0 +1,1 @@
+from repositories.crud_repository_interface import CRUDRepositoryInterface
