@@ -4,7 +4,6 @@ from pathlib import Path
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-
 class RunConfig(BaseModel):
     host: str = "0.0.0.0"
     port: int = 8000

@@ -1,8 +1,8 @@
-"""init
+"""Add all tables
 
-Revision ID: 2a92c677c68b
+Revision ID: bb313ef92043
 Revises: 
-Create Date: 2025-11-15 22:39:06.187993
+Create Date: 2025-11-22 14:35:38.438043
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '2a92c677c68b'
+revision: str = 'bb313ef92043'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -36,7 +36,19 @@ def upgrade() -> None:
     op.create_index(op.f('ix_artifacts_created_by'), 'artifacts', ['created_by'], unique=False)
     op.create_index(op.f('ix_artifacts_updated_by'), 'artifacts', ['updated_by'], unique=False)
     op.create_table('curators',
-    sa.Column('outlook', sa.String(length=255), nullable=False),
+    sa.Column('refresh_token', sa.String(length=512), nullable=False),
+    sa.Column('expires_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('is_revoked', sa.Boolean(), nullable=False),
+    sa.Column('outlook_email', sa.String(length=255), nullable=True),
+    sa.Column('outlook_access_token', sa.String(length=512), nullable=True),
+    sa.Column('outlook_refresh_token', sa.String(length=512), nullable=True),
+    sa.Column('outlook_token_expiry', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('google_id', sa.String(length=255), nullable=True),
+    sa.Column('google_email', sa.String(length=255), nullable=True),
+    sa.Column('google_name', sa.String(length=255), nullable=True),
+    sa.Column('google_access_token', sa.String(length=512), nullable=True),
+    sa.Column('google_refresh_token', sa.String(length=512), nullable=True),
+    sa.Column('google_token_expiry', sa.DateTime(timezone=True), nullable=True),
     sa.Column('first_name', sa.String(length=255), nullable=False),
     sa.Column('last_name', sa.String(length=255), nullable=False),
     sa.Column('patronymic', sa.String(length=255), nullable=True),
@@ -48,9 +60,13 @@ def upgrade() -> None:
     sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False),
     sa.Column('updated_by', sa.UUID(), nullable=True),
     sa.PrimaryKeyConstraint('id', name=op.f('pk_curators')),
-    sa.UniqueConstraint('outlook', name=op.f('uq_curators_outlook'))
+    sa.UniqueConstraint('google_id', name=op.f('uq_curators_google_id')),
+    sa.UniqueConstraint('outlook_email', name=op.f('uq_curators_outlook_email'))
     )
     op.create_index(op.f('ix_curators_created_by'), 'curators', ['created_by'], unique=False)
+    op.create_index(op.f('ix_curators_expires_at'), 'curators', ['expires_at'], unique=False)
+    op.create_index(op.f('ix_curators_is_revoked'), 'curators', ['is_revoked'], unique=False)
+    op.create_index(op.f('ix_curators_refresh_token'), 'curators', ['refresh_token'], unique=True)
     op.create_index(op.f('ix_curators_updated_by'), 'curators', ['updated_by'], unique=False)
     op.create_table('projects',
     sa.Column('name', sa.String(length=255), nullable=False),
@@ -97,25 +113,6 @@ def upgrade() -> None:
     )
     op.create_index(op.f('ix_tasks_created_by'), 'tasks', ['created_by'], unique=False)
     op.create_index(op.f('ix_tasks_updated_by'), 'tasks', ['updated_by'], unique=False)
-    op.create_table('curator_refresh_tokens',
-    sa.Column('curator_id', sa.UUID(), nullable=False),
-    sa.Column('refresh_token', sa.String(length=512), nullable=False),
-    sa.Column('expires_at', sa.DateTime(timezone=True), nullable=False),
-    sa.Column('is_revoked', sa.Boolean(), nullable=False),
-    sa.Column('id', sa.UUID(), nullable=False),
-    sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
-    sa.Column('created_by', sa.UUID(), nullable=True),
-    sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False),
-    sa.Column('updated_by', sa.UUID(), nullable=True),
-    sa.ForeignKeyConstraint(['curator_id'], ['curators.id'], name=op.f('fk_curator_refresh_tokens_curator_id_curators'), ondelete='CASCADE'),
-    sa.PrimaryKeyConstraint('id', name=op.f('pk_curator_refresh_tokens'))
-    )
-    op.create_index(op.f('ix_curator_refresh_tokens_created_by'), 'curator_refresh_tokens', ['created_by'], unique=False)
-    op.create_index(op.f('ix_curator_refresh_tokens_curator_id'), 'curator_refresh_tokens', ['curator_id'], unique=False)
-    op.create_index(op.f('ix_curator_refresh_tokens_expires_at'), 'curator_refresh_tokens', ['expires_at'], unique=False)
-    op.create_index(op.f('ix_curator_refresh_tokens_is_revoked'), 'curator_refresh_tokens', ['is_revoked'], unique=False)
-    op.create_index(op.f('ix_curator_refresh_tokens_refresh_token'), 'curator_refresh_tokens', ['refresh_token'], unique=True)
-    op.create_index(op.f('ix_curator_refresh_tokens_updated_by'), 'curator_refresh_tokens', ['updated_by'], unique=False)
     op.create_table('evaluations',
     sa.Column('project_id', sa.UUID(), nullable=False),
     sa.Column('curator_id', sa.UUID(), nullable=False),
@@ -305,13 +302,6 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_evaluations_updated_by'), table_name='evaluations')
     op.drop_index(op.f('ix_evaluations_created_by'), table_name='evaluations')
     op.drop_table('evaluations')
-    op.drop_index(op.f('ix_curator_refresh_tokens_updated_by'), table_name='curator_refresh_tokens')
-    op.drop_index(op.f('ix_curator_refresh_tokens_refresh_token'), table_name='curator_refresh_tokens')
-    op.drop_index(op.f('ix_curator_refresh_tokens_is_revoked'), table_name='curator_refresh_tokens')
-    op.drop_index(op.f('ix_curator_refresh_tokens_expires_at'), table_name='curator_refresh_tokens')
-    op.drop_index(op.f('ix_curator_refresh_tokens_curator_id'), table_name='curator_refresh_tokens')
-    op.drop_index(op.f('ix_curator_refresh_tokens_created_by'), table_name='curator_refresh_tokens')
-    op.drop_table('curator_refresh_tokens')
     op.drop_index(op.f('ix_tasks_updated_by'), table_name='tasks')
     op.drop_index(op.f('ix_tasks_created_by'), table_name='tasks')
     op.drop_table('tasks')
@@ -322,6 +312,9 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_projects_created_by'), table_name='projects')
     op.drop_table('projects')
     op.drop_index(op.f('ix_curators_updated_by'), table_name='curators')
+    op.drop_index(op.f('ix_curators_refresh_token'), table_name='curators')
+    op.drop_index(op.f('ix_curators_is_revoked'), table_name='curators')
+    op.drop_index(op.f('ix_curators_expires_at'), table_name='curators')
     op.drop_index(op.f('ix_curators_created_by'), table_name='curators')
     op.drop_table('curators')
     op.drop_index(op.f('ix_artifacts_updated_by'), table_name='artifacts')

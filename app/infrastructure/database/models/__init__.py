@@ -3,7 +3,6 @@ from app.infrastructure.database.models.persons import (
     PersonModel,
     StudentModel,
     CuratorModel,
-    CuratorRefreshTokenModel,
 )
 from app.infrastructure.database.models.teams import (
     TeamModel,
@@ -32,7 +31,6 @@ __all__ = [
     "PersonModel",
     "StudentModel",
     "CuratorModel",
-    "CuratorRefreshTokenModel",
     # Teams
     "TeamModel",
     "TeamMemberModel",
