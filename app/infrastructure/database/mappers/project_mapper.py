@@ -4,6 +4,9 @@ from app.infrastructure.database.models.projects.project import ProjectModel
 
 
 class ProjectMapper(Mapper):
+    def __init__(self, team_mapper : Mapper):
+        self.team_mapper = team_mapper
+
     def to_domain(self, model: ProjectModel) -> Project:
         return Project(
             id=model.id,
@@ -14,7 +17,9 @@ class ProjectMapper(Mapper):
             eval_criteria=model.eval_criteria,
             year=model.year,
             semester=model.semester,
-            status=model.status
+            status=model.status,
+            teams=[self.team_mapper.to_domain(t) for t in model.teams] 
+                                    if model.project_teams else []
         )
 
     def to_model(self, entity: Project) -> ProjectModel:

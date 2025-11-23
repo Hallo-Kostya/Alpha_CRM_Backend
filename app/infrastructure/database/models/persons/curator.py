@@ -15,23 +15,8 @@ class CuratorModel(PersonModel):
     """Модель куратора"""
     __tablename__ = "curators"
     
-    #Токены
-    refresh_token :Mapped[str] = mapped_column(String(512),nullable=False,unique=True,index=True)
-    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True),nullable=False,index=True)
-    is_revoked: Mapped[bool] = mapped_column(nullable=False,default=False,index=True)
-
-    # Outlook-аккаунт куратора (уникальный) 
-    outlook_email: Mapped[str | None] = mapped_column(String(255), nullable=True, unique=True)
-    outlook_access_token: Mapped[str | None] = mapped_column(String(512), nullable=True)
-    outlook_refresh_token: Mapped[str | None] = mapped_column(String(512), nullable=True)
-    outlook_token_expiry: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    # Google
-    google_id: Mapped[str | None] = mapped_column(String(255), nullable=True, unique=True)
-    google_email: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    google_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    google_access_token: Mapped[str | None] = mapped_column(String(512), nullable=True)
-    google_refresh_token: Mapped[str | None] = mapped_column(String(512), nullable=True)
-    google_token_expiry: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    password_hash = mapped_column(String(255), nullable=False)
+    last_login_at = mapped_column(DateTime(timezone=True))
 
     # Основные команды (через curator_id в TeamModel, один основной куратор)
     teams: Mapped[list["TeamModel"]] = relationship(
