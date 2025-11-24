@@ -34,7 +34,6 @@ class TeamMemberModel(Base):
     __table_args__ = (
         UniqueConstraint("team_id", "student_id", name="uq_team_members_team_student"),
     )
-    
     # Отношение к команде
     team: Mapped["TeamModel"] = relationship(
         "TeamModel",

@@ -26,11 +26,6 @@ class CuratorTeamModel(BaseAssociation):
         ForeignKey("teams.id", ondelete="CASCADE"),
         primary_key=True,
     )
-
-    __table_args__ = (
-        UniqueConstraint("curator_id", "team_id", name="uq_curator_teams_curator_team"),
-    )
-
     # Отношение к куратору
     curator: Mapped["CuratorModel"] = relationship(
         "CuratorModel",

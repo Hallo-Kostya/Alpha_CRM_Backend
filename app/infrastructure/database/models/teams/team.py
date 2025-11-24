@@ -24,19 +24,6 @@ class TeamModel(Base):
     # Ссылка на группу (например, чат команды)
     group_link: Mapped[str | None] = mapped_column(String(512), nullable=True)
     
-    # FK на куратора команды (один куратор, опционально)
-    curator_id: Mapped[UUID | None] = mapped_column(
-        UUID(as_uuid=True),
-        ForeignKey("curators.id", ondelete="SET NULL"),
-        nullable=True,
-    )
-    
-    # Отношение к куратору (один куратор)
-    curator: Mapped["CuratorModel | None"] = relationship(
-        "CuratorModel",
-        back_populates="teams",
-    )
-    
     # Участники команды (связующая таблица team_members)
     members: Mapped[list["TeamMemberModel"]] = relationship(
         "TeamMemberModel",
@@ -74,10 +61,10 @@ class TeamModel(Base):
     )
     
     # Кураторы команды по M2M, только просмотр (через curator_teams)
-    curators_m2m: Mapped[list["CuratorModel"]] = relationship(
+    curators: Mapped[list["CuratorModel"]] = relationship(
         "CuratorModel",
         secondary="curator_teams",
-        back_populates="teams_m2m",
+        back_populates="teams",
         viewonly=True,
     )
 

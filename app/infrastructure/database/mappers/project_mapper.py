@@ -19,7 +19,7 @@ class ProjectMapper(Mapper):
             semester=model.semester,
             status=model.status,
             teams=[self.team_mapper.to_domain(t) for t in model.teams] 
-                                    if model.project_teams else []
+                                    if model.project_teams else None
         )
 
     def to_model(self, entity: Project) -> ProjectModel:

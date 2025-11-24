@@ -17,8 +17,8 @@ class CuratorModel(PersonModel):
     """Модель куратора"""
     __tablename__ = "curators"
     
+    outlook = mapped_column(String(255), nullable=True)
     password_hash = mapped_column(String(255), nullable=False)
-    last_login_at = mapped_column(DateTime(timezone=True))
     
     auth_tokens: Mapped[list["AuthRefreshTokenModel"]] = relationship(
         "AuthRefreshTokenModel",
@@ -32,24 +32,18 @@ class CuratorModel(PersonModel):
         cascade="all, delete-orphan",
     )
 
-    # Основные команды (через curator_id в TeamModel, один основной куратор)
-    teams: Mapped[list["TeamModel"]] = relationship(
+    # Команды, для которых является куратором (M2M)
+    teams: Mapped[list["TeamModel"]] = relationship(  
         "TeamModel",
-        foreign_keys="TeamModel.curator_id",
-        back_populates="curator",
+        secondary="curator_teams",
+        back_populates="curators",
+        viewonly=True,
     )
     # Many-to-many связь через curator_teams
     curator_team_links: Mapped[list["CuratorTeamModel"]] = relationship(  
         "CuratorTeamModel",
         back_populates="curator",
         cascade="all, delete-orphan",
-    )
-    # Команды, для которых является куратором (M2M)
-    teams_m2m: Mapped[list["TeamModel"]] = relationship(  
-        "TeamModel",
-        secondary="curator_teams",
-        back_populates="curators_m2m",
-        viewonly=True,
     )
     # Оценки от куратора
     evaluations: Mapped[list["EvaluationModel"]] = relationship(  
