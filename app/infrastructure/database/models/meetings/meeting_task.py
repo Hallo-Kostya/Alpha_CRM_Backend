@@ -20,21 +20,20 @@ class MeetingTaskModel(BaseAssociation):
         ForeignKey("meetings.id", ondelete="CASCADE"),
         primary_key=True,
     )
+
     # Идентификатор задачи
     task_id: Mapped[UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("tasks.id", ondelete="CASCADE"),
         primary_key=True,
     )
-    # Уникальный индекс для связи встречи и задачи
-    __table_args__ = (
-        UniqueConstraint("meeting_id", "task_id", name="uq_meeting_tasks_meeting_task"),
-    )
+
     # Связь с встречей
     meeting: Mapped["MeetingModel"] = relationship(
         "MeetingModel",
         back_populates="meeting_tasks",
     )
+    
     # Связь с задачей
     task: Mapped["TaskModel"] = relationship(
         "TaskModel",
