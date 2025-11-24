@@ -1,9 +1,11 @@
 from fastapi import APIRouter
 
-router = APIRouter(prefix='/auth')
+router = APIRouter(prefix="/auth")
 
 
-@router.post('/register', description="""
+@router.post(
+    "/register",
+    description="""
             Метод для регистрации пользователя.
             После успешной регистрации создается запись о пользователе в PG.
             Пароль сохраняется в хешированном виде.
@@ -18,6 +20,12 @@ router = APIRouter(prefix='/auth')
             returns:
                 - access_token - токен доступа jwt
                 - refresh_token - токен для рефреша пары jwt токенов
-        """)
+        """,
+)
 async def register_user():
     pass
+
+
+@router.get("/test-deploy")
+async def test_endpoint():
+    return "Deployed on new commit"
