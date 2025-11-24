@@ -24,8 +24,3 @@ router = APIRouter(prefix="/auth")
 )
 async def register_user():
     pass
-
-
-@router.get("/test-deploy")
-async def test_endpoint():
-    return "Deployed on new commit"
