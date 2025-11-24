@@ -2,7 +2,7 @@ services:
   backend:
     build:
       context: .
-      dockerfile: dockerfile
+      dockerfile: Dockerfile
     depends_on:
       - pg_db
     ports:
