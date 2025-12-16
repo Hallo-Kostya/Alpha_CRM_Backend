@@ -11,11 +11,11 @@ class Project(BaseEntity):
     """Доменная модель проекта"""
     
     name: str = Field(..., min_length=1, max_length=255)
-    description: Optional[str] = Field(None, max_length=2000, alias='desription')
+    description: Optional[str] = Field(None, max_length=2000, alias='desсription')
     goal: Optional[str] = Field(None, max_length=1000)
     requirements: Optional[str] = Field(None, max_length=2000)
     eval_criteria: Optional[str] = Field(None, max_length=2000)
-    year: int = Field(..., ge=2000, le=2100)
+    year: int = Field(..., ge=2000)
     semester: Semester
     status: ProjectStatus = ProjectStatus.PLANNED
     teams: list['Team'] = Field(default_factory=list)
