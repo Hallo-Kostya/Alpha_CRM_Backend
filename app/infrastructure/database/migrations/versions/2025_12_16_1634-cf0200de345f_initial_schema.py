@@ -1,8 +1,8 @@
 """initial schema
 
-Revision ID: b0192e9713ab
+Revision ID: cf0200de345f
 Revises: 
-Create Date: 2025-12-16 16:10:30.153323
+Create Date: 2025-12-16 16:34:34.480422
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'b0192e9713ab'
+revision: str = 'cf0200de345f'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -27,9 +27,9 @@ def upgrade() -> None:
     sa.Column('type', sa.Enum('FILE', 'VIDEO', 'LINK', name='artifacttype', native_enum=False), nullable=False),
     sa.Column('url', sa.String(length=512), nullable=False),
     sa.Column('id', sa.UUID(), nullable=False),
-    sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('created_by', sa.UUID(), nullable=True),
-    sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_by', sa.UUID(), nullable=True),
     sa.PrimaryKeyConstraint('id', name=op.f('pk_artifacts'))
     )
@@ -42,9 +42,9 @@ def upgrade() -> None:
     sa.Column('email', sa.String(length=255), nullable=True),
     sa.Column('tg_link', sa.String(length=255), nullable=True),
     sa.Column('id', sa.UUID(), nullable=False),
-    sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('created_by', sa.UUID(), nullable=True),
-    sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_by', sa.UUID(), nullable=True),
     sa.PrimaryKeyConstraint('id', name=op.f('pk_curators'))
     )
@@ -60,9 +60,9 @@ def upgrade() -> None:
     sa.Column('semester', sa.Enum('AUTUMN', 'SPRING', name='semester', native_enum=False), nullable=False),
     sa.Column('status', sa.Enum('PLANNED', 'IN_PROGRESS', 'COMPLETED', 'ARCHIVED', name='projectstatus', native_enum=False), nullable=False),
     sa.Column('id', sa.UUID(), nullable=False),
-    sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('created_by', sa.UUID(), nullable=True),
-    sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_by', sa.UUID(), nullable=True),
     sa.PrimaryKeyConstraint('id', name=op.f('pk_projects'))
     )
@@ -75,9 +75,9 @@ def upgrade() -> None:
     sa.Column('email', sa.String(length=255), nullable=True),
     sa.Column('tg_link', sa.String(length=255), nullable=True),
     sa.Column('id', sa.UUID(), nullable=False),
-    sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('created_by', sa.UUID(), nullable=True),
-    sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_by', sa.UUID(), nullable=True),
     sa.PrimaryKeyConstraint('id', name=op.f('pk_students'))
     )
@@ -87,9 +87,9 @@ def upgrade() -> None:
     sa.Column('description', sa.String(length=1000), nullable=False),
     sa.Column('is_completed', sa.Boolean(), nullable=False),
     sa.Column('id', sa.UUID(), nullable=False),
-    sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('created_by', sa.UUID(), nullable=True),
-    sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_by', sa.UUID(), nullable=True),
     sa.PrimaryKeyConstraint('id', name=op.f('pk_tasks'))
     )
@@ -99,9 +99,9 @@ def upgrade() -> None:
     sa.Column('name', sa.String(length=255), nullable=False),
     sa.Column('group_link', sa.String(length=512), nullable=True),
     sa.Column('id', sa.UUID(), nullable=False),
-    sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('created_by', sa.UUID(), nullable=True),
-    sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_by', sa.UUID(), nullable=True),
     sa.PrimaryKeyConstraint('id', name=op.f('pk_teams'))
     )
@@ -120,9 +120,9 @@ def upgrade() -> None:
     sa.Column('type', sa.Enum('LIKE', 'DISLIKE', name='evaluationtype', native_enum=False), nullable=False),
     sa.Column('comment', sa.String(length=2000), nullable=True),
     sa.Column('id', sa.UUID(), nullable=False),
-    sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('created_by', sa.UUID(), nullable=True),
-    sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_by', sa.UUID(), nullable=True),
     sa.ForeignKeyConstraint(['curator_id'], ['curators.id'], name=op.f('fk_evaluations_curator_id_curators'), ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['project_id'], ['projects.id'], name=op.f('fk_evaluations_project_id_projects'), ondelete='CASCADE'),
@@ -140,9 +140,9 @@ def upgrade() -> None:
     sa.Column('next_meeting_id', sa.UUID(), nullable=True),
     sa.Column('team_id', sa.UUID(), nullable=False),
     sa.Column('id', sa.UUID(), nullable=False),
-    sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('created_by', sa.UUID(), nullable=True),
-    sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_by', sa.UUID(), nullable=True),
     sa.ForeignKeyConstraint(['next_meeting_id'], ['meetings.id'], name=op.f('fk_meetings_next_meeting_id_meetings'), ondelete='SET NULL'),
     sa.ForeignKeyConstraint(['previous_meeting_id'], ['meetings.id'], name=op.f('fk_meetings_previous_meeting_id_meetings'), ondelete='SET NULL'),
@@ -158,9 +158,9 @@ def upgrade() -> None:
     sa.Column('type', sa.Enum('CONTROL_POINT', 'PROTECTION', name='milestonetype', native_enum=False), nullable=False),
     sa.Column('description', sa.String(length=2000), nullable=True),
     sa.Column('id', sa.UUID(), nullable=False),
-    sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('created_by', sa.UUID(), nullable=True),
-    sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_by', sa.UUID(), nullable=True),
     sa.ForeignKeyConstraint(['project_id'], ['projects.id'], name=op.f('fk_milestones_project_id_projects'), ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id', name=op.f('pk_milestones'))
@@ -181,9 +181,9 @@ def upgrade() -> None:
     sa.Column('role', sa.String(length=100), nullable=True),
     sa.Column('study_group', sa.String(length=100), nullable=True),
     sa.Column('id', sa.UUID(), nullable=False),
-    sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('created_by', sa.UUID(), nullable=True),
-    sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_by', sa.UUID(), nullable=True),
     sa.ForeignKeyConstraint(['student_id'], ['students.id'], name=op.f('fk_team_members_student_id_students'), ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['team_id'], ['teams.id'], name=op.f('fk_team_members_team_id_teams'), ondelete='CASCADE'),
@@ -197,9 +197,9 @@ def upgrade() -> None:
     sa.Column('project_id', sa.UUID(), nullable=True),
     sa.Column('meeting_id', sa.UUID(), nullable=True),
     sa.Column('id', sa.UUID(), nullable=False),
-    sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('created_by', sa.UUID(), nullable=True),
-    sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_by', sa.UUID(), nullable=True),
     sa.CheckConstraint('(project_id IS NOT NULL AND meeting_id IS NULL) OR (project_id IS NULL AND meeting_id IS NOT NULL)', name=op.f('ck_artifact_links_ck_artifact_links_one_fk')),
     sa.ForeignKeyConstraint(['artifact_id'], ['artifacts.id'], name=op.f('fk_artifact_links_artifact_id_artifacts'), ondelete='CASCADE'),
@@ -220,9 +220,9 @@ def upgrade() -> None:
     sa.Column('curator_id', sa.UUID(), nullable=True),
     sa.Column('is_present', sa.Boolean(), nullable=False),
     sa.Column('id', sa.UUID(), nullable=False),
-    sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('created_by', sa.UUID(), nullable=True),
-    sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_by', sa.UUID(), nullable=True),
     sa.CheckConstraint('(student_id IS NOT NULL AND curator_id IS NULL) OR (student_id IS NULL AND curator_id IS NOT NULL)', name=op.f('ck_attendances_ck_attendances_one_fk')),
     sa.ForeignKeyConstraint(['curator_id'], ['curators.id'], name=op.f('fk_attendances_curator_id_curators'), ondelete='CASCADE'),

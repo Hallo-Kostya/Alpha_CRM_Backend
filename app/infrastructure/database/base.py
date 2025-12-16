@@ -1,53 +1,7 @@
-import uuid
-
-from sqlalchemy import ForeignKey, MetaData, DateTime, func
-from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy import MetaData
 from app.core.config import settings
-from sqlalchemy.dialects.postgresql import UUID
 
 class Base(DeclarativeBase):
-    """Базовый класс для основных таблиц"""
-    __abstract__ = True
+    """Общий базовый класс для всех моделей — один registry на всё приложение"""
     metadata = MetaData(naming_convention=settings.db.naming_convention)
-
-    #Уникальный идентификатор
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
-        primary_key=True,
-        default=uuid.uuid4
-        )
-
-    #Дата создания
-    created_at: Mapped[DateTime] = mapped_column(
-        DateTime(timezone=True), 
-        default=func.now()
-    )
-
-    #Кто создал (UUID куратора или студента, без FK для поддержки полиморфизма)
-    created_by: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True),
-        nullable=True,
-        index=True,
-    )
-
-    #Дата обновления
-    updated_at: Mapped[DateTime] = mapped_column(
-        DateTime(timezone=True),
-         default=func.now(), 
-         onupdate=func.now()
-    )
-
-    #Кто последний обновил (UUID куратора или студента, без FK для поддержки полиморфизма)
-    updated_by: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True),
-        nullable=True,
-        index=True,
-    )
-
-    """
-    В будущем можно добавить 
-    deleted_at — soft delete.
-    version — для optimistic locking.
-    source — откуда прилетела запись
-    """

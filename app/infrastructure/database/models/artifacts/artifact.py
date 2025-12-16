@@ -2,14 +2,14 @@ from typing import TYPE_CHECKING
 from sqlalchemy import String, Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.infrastructure.database.base import Base
+from app.infrastructure.database.entity_base import BaseEntity
 from app.domain.enums.artifact_type import ArtifactType
 
 if TYPE_CHECKING:
     from app.infrastructure.database.models.artifacts.artifact_link import ArtifactLinkModel
 
 
-class ArtifactModel(Base):
+class ArtifactModel(BaseEntity):
     """Модель артефакта"""
     __tablename__ = "artifacts"
     

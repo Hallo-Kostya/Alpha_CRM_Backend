@@ -3,14 +3,14 @@ from sqlalchemy import String, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID
 
-from app.infrastructure.database.base import Base
+from app.infrastructure.database.entity_base import BaseEntity
 
 if TYPE_CHECKING:
     from app.infrastructure.database.models.persons import StudentModel
     from app.infrastructure.database.models.teams.team import TeamModel
 
 
-class TeamMemberModel(Base):
+class TeamMemberModel(BaseEntity):
     """Модель связи студента с командой"""
     __tablename__ = "team_members"
     
