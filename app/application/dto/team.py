@@ -1,9 +1,7 @@
-# app/application/schemas/team.py
+from typing import Optional, List
+from uuid import UUID
 
-from typing import Optional
-
-from pydantic import BaseModel
-from app.domain.entities.teams.team import Team
+from pydantic import BaseModel, ConfigDict, ConfigDict
 
 
 class TeamCreate(BaseModel):
@@ -16,4 +14,9 @@ class TeamUpdate(BaseModel):
     group_link: Optional[str] = None
 
 
-TeamRead = Team
+class TeamRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    name: str
+    group_link: Optional[str] = None

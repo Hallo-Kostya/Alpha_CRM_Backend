@@ -1,10 +1,7 @@
-# app/application/schemas/student.py
-
 from typing import Optional
 from uuid import UUID
 
-from pydantic import BaseModel
-from app.domain.entities.persons.student import Student
+from pydantic import BaseModel, ConfigDict
 
 
 class StudentCreate(BaseModel):
@@ -23,5 +20,12 @@ class StudentUpdate(BaseModel):
     tg_link: Optional[str] = None
 
 
-# Чтение — прямо доменная модель
-StudentRead = Student
+class StudentRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    first_name: str
+    last_name: str
+    patronymic: Optional[str] = None
+    email: Optional[str] = None
+    tg_link: Optional[str] = None

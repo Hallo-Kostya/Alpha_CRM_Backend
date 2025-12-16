@@ -28,6 +28,7 @@ class MeetingModel(Base):
     status: Mapped[MeetingStatus] = mapped_column(
         SQLEnum(MeetingStatus, native_enum=False, values_callable=lambda x: [e.value for e in MeetingStatus]),
         nullable=False,
+        default=MeetingStatus.SCHEDULED.value
     )
     # Предыдущая встреча
     previous_meeting_id: Mapped[UUID | None] = mapped_column(

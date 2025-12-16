@@ -5,10 +5,7 @@ from uuid import UUID
 from pydantic import BaseModel
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
-
-from app.domain.interfaces.repositories.crud_repository_interface import (
-    CRUDRepositoryInterface,
-)
+from app.domain.interfaces.repositories.crud_repository_interface import CRUDRepositoryInterface
 from app.infrastructure.database.base import Base
 
 TDomain = TypeVar("TDomain", bound=BaseModel)

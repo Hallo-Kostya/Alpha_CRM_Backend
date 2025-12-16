@@ -1,8 +1,8 @@
-"""Add all tables
+"""initial schema
 
-Revision ID: bb313ef92043
+Revision ID: b0192e9713ab
 Revises: 
-Create Date: 2025-11-22 14:35:38.438043
+Create Date: 2025-12-16 16:10:30.153323
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'bb313ef92043'
+revision: str = 'b0192e9713ab'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -36,19 +36,6 @@ def upgrade() -> None:
     op.create_index(op.f('ix_artifacts_created_by'), 'artifacts', ['created_by'], unique=False)
     op.create_index(op.f('ix_artifacts_updated_by'), 'artifacts', ['updated_by'], unique=False)
     op.create_table('curators',
-    sa.Column('refresh_token', sa.String(length=512), nullable=False),
-    sa.Column('expires_at', sa.DateTime(timezone=True), nullable=False),
-    sa.Column('is_revoked', sa.Boolean(), nullable=False),
-    sa.Column('outlook_email', sa.String(length=255), nullable=True),
-    sa.Column('outlook_access_token', sa.String(length=512), nullable=True),
-    sa.Column('outlook_refresh_token', sa.String(length=512), nullable=True),
-    sa.Column('outlook_token_expiry', sa.DateTime(timezone=True), nullable=True),
-    sa.Column('google_id', sa.String(length=255), nullable=True),
-    sa.Column('google_email', sa.String(length=255), nullable=True),
-    sa.Column('google_name', sa.String(length=255), nullable=True),
-    sa.Column('google_access_token', sa.String(length=512), nullable=True),
-    sa.Column('google_refresh_token', sa.String(length=512), nullable=True),
-    sa.Column('google_token_expiry', sa.DateTime(timezone=True), nullable=True),
     sa.Column('first_name', sa.String(length=255), nullable=False),
     sa.Column('last_name', sa.String(length=255), nullable=False),
     sa.Column('patronymic', sa.String(length=255), nullable=True),
@@ -59,14 +46,9 @@ def upgrade() -> None:
     sa.Column('created_by', sa.UUID(), nullable=True),
     sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False),
     sa.Column('updated_by', sa.UUID(), nullable=True),
-    sa.PrimaryKeyConstraint('id', name=op.f('pk_curators')),
-    sa.UniqueConstraint('google_id', name=op.f('uq_curators_google_id')),
-    sa.UniqueConstraint('outlook_email', name=op.f('uq_curators_outlook_email'))
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_curators'))
     )
     op.create_index(op.f('ix_curators_created_by'), 'curators', ['created_by'], unique=False)
-    op.create_index(op.f('ix_curators_expires_at'), 'curators', ['expires_at'], unique=False)
-    op.create_index(op.f('ix_curators_is_revoked'), 'curators', ['is_revoked'], unique=False)
-    op.create_index(op.f('ix_curators_refresh_token'), 'curators', ['refresh_token'], unique=True)
     op.create_index(op.f('ix_curators_updated_by'), 'curators', ['updated_by'], unique=False)
     op.create_table('projects',
     sa.Column('name', sa.String(length=255), nullable=False),
@@ -113,6 +95,25 @@ def upgrade() -> None:
     )
     op.create_index(op.f('ix_tasks_created_by'), 'tasks', ['created_by'], unique=False)
     op.create_index(op.f('ix_tasks_updated_by'), 'tasks', ['updated_by'], unique=False)
+    op.create_table('teams',
+    sa.Column('name', sa.String(length=255), nullable=False),
+    sa.Column('group_link', sa.String(length=512), nullable=True),
+    sa.Column('id', sa.UUID(), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('created_by', sa.UUID(), nullable=True),
+    sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('updated_by', sa.UUID(), nullable=True),
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_teams'))
+    )
+    op.create_index(op.f('ix_teams_created_by'), 'teams', ['created_by'], unique=False)
+    op.create_index(op.f('ix_teams_updated_by'), 'teams', ['updated_by'], unique=False)
+    op.create_table('curator_teams',
+    sa.Column('curator_id', sa.UUID(), nullable=False),
+    sa.Column('team_id', sa.UUID(), nullable=False),
+    sa.ForeignKeyConstraint(['curator_id'], ['curators.id'], name=op.f('fk_curator_teams_curator_id_curators'), ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['team_id'], ['teams.id'], name=op.f('fk_curator_teams_team_id_teams'), ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('curator_id', 'team_id', name=op.f('pk_curator_teams'))
+    )
     op.create_table('evaluations',
     sa.Column('project_id', sa.UUID(), nullable=False),
     sa.Column('curator_id', sa.UUID(), nullable=False),
@@ -130,44 +131,6 @@ def upgrade() -> None:
     )
     op.create_index(op.f('ix_evaluations_created_by'), 'evaluations', ['created_by'], unique=False)
     op.create_index(op.f('ix_evaluations_updated_by'), 'evaluations', ['updated_by'], unique=False)
-    op.create_table('milestones',
-    sa.Column('project_id', sa.UUID(), nullable=False),
-    sa.Column('date', sa.DateTime(timezone=True), nullable=False),
-    sa.Column('title', sa.String(length=255), nullable=False),
-    sa.Column('type', sa.Enum('CONTROL_POINT', 'PROTECTION', name='milestonetype', native_enum=False), nullable=False),
-    sa.Column('description', sa.String(length=2000), nullable=True),
-    sa.Column('id', sa.UUID(), nullable=False),
-    sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
-    sa.Column('created_by', sa.UUID(), nullable=True),
-    sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False),
-    sa.Column('updated_by', sa.UUID(), nullable=True),
-    sa.ForeignKeyConstraint(['project_id'], ['projects.id'], name=op.f('fk_milestones_project_id_projects'), ondelete='CASCADE'),
-    sa.PrimaryKeyConstraint('id', name=op.f('pk_milestones'))
-    )
-    op.create_index(op.f('ix_milestones_created_by'), 'milestones', ['created_by'], unique=False)
-    op.create_index(op.f('ix_milestones_updated_by'), 'milestones', ['updated_by'], unique=False)
-    op.create_table('teams',
-    sa.Column('name', sa.String(length=255), nullable=False),
-    sa.Column('group_link', sa.String(length=512), nullable=True),
-    sa.Column('curator_id', sa.UUID(), nullable=True),
-    sa.Column('id', sa.UUID(), nullable=False),
-    sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
-    sa.Column('created_by', sa.UUID(), nullable=True),
-    sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False),
-    sa.Column('updated_by', sa.UUID(), nullable=True),
-    sa.ForeignKeyConstraint(['curator_id'], ['curators.id'], name=op.f('fk_teams_curator_id_curators'), ondelete='SET NULL'),
-    sa.PrimaryKeyConstraint('id', name=op.f('pk_teams'))
-    )
-    op.create_index(op.f('ix_teams_created_by'), 'teams', ['created_by'], unique=False)
-    op.create_index(op.f('ix_teams_updated_by'), 'teams', ['updated_by'], unique=False)
-    op.create_table('curator_teams',
-    sa.Column('curator_id', sa.UUID(), nullable=False),
-    sa.Column('team_id', sa.UUID(), nullable=False),
-    sa.ForeignKeyConstraint(['curator_id'], ['curators.id'], name=op.f('fk_curator_teams_curator_id_curators'), ondelete='CASCADE'),
-    sa.ForeignKeyConstraint(['team_id'], ['teams.id'], name=op.f('fk_curator_teams_team_id_teams'), ondelete='CASCADE'),
-    sa.PrimaryKeyConstraint('curator_id', 'team_id', name=op.f('pk_curator_teams')),
-    sa.UniqueConstraint('curator_id', 'team_id', name='uq_curator_teams_curator_team')
-    )
     op.create_table('meetings',
     sa.Column('name', sa.String(length=255), nullable=False),
     sa.Column('resume', sa.String(length=2000), nullable=True),
@@ -188,6 +151,22 @@ def upgrade() -> None:
     )
     op.create_index(op.f('ix_meetings_created_by'), 'meetings', ['created_by'], unique=False)
     op.create_index(op.f('ix_meetings_updated_by'), 'meetings', ['updated_by'], unique=False)
+    op.create_table('milestones',
+    sa.Column('project_id', sa.UUID(), nullable=False),
+    sa.Column('date', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('title', sa.String(length=255), nullable=False),
+    sa.Column('type', sa.Enum('CONTROL_POINT', 'PROTECTION', name='milestonetype', native_enum=False), nullable=False),
+    sa.Column('description', sa.String(length=2000), nullable=True),
+    sa.Column('id', sa.UUID(), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('created_by', sa.UUID(), nullable=True),
+    sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('updated_by', sa.UUID(), nullable=True),
+    sa.ForeignKeyConstraint(['project_id'], ['projects.id'], name=op.f('fk_milestones_project_id_projects'), ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_milestones'))
+    )
+    op.create_index(op.f('ix_milestones_created_by'), 'milestones', ['created_by'], unique=False)
+    op.create_index(op.f('ix_milestones_updated_by'), 'milestones', ['updated_by'], unique=False)
     op.create_table('project_teams',
     sa.Column('project_id', sa.UUID(), nullable=False),
     sa.Column('team_id', sa.UUID(), nullable=False),
@@ -263,8 +242,7 @@ def upgrade() -> None:
     sa.Column('task_id', sa.UUID(), nullable=False),
     sa.ForeignKeyConstraint(['meeting_id'], ['meetings.id'], name=op.f('fk_meeting_tasks_meeting_id_meetings'), ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['task_id'], ['tasks.id'], name=op.f('fk_meeting_tasks_task_id_tasks'), ondelete='CASCADE'),
-    sa.PrimaryKeyConstraint('meeting_id', 'task_id', name=op.f('pk_meeting_tasks')),
-    sa.UniqueConstraint('meeting_id', 'task_id', name='uq_meeting_tasks_meeting_task')
+    sa.PrimaryKeyConstraint('meeting_id', 'task_id', name=op.f('pk_meeting_tasks'))
     )
     # ### end Alembic commands ###
 
@@ -289,19 +267,19 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_team_members_created_by'), table_name='team_members')
     op.drop_table('team_members')
     op.drop_table('project_teams')
+    op.drop_index(op.f('ix_milestones_updated_by'), table_name='milestones')
+    op.drop_index(op.f('ix_milestones_created_by'), table_name='milestones')
+    op.drop_table('milestones')
     op.drop_index(op.f('ix_meetings_updated_by'), table_name='meetings')
     op.drop_index(op.f('ix_meetings_created_by'), table_name='meetings')
     op.drop_table('meetings')
+    op.drop_index(op.f('ix_evaluations_updated_by'), table_name='evaluations')
+    op.drop_index(op.f('ix_evaluations_created_by'), table_name='evaluations')
+    op.drop_table('evaluations')
     op.drop_table('curator_teams')
     op.drop_index(op.f('ix_teams_updated_by'), table_name='teams')
     op.drop_index(op.f('ix_teams_created_by'), table_name='teams')
     op.drop_table('teams')
-    op.drop_index(op.f('ix_milestones_updated_by'), table_name='milestones')
-    op.drop_index(op.f('ix_milestones_created_by'), table_name='milestones')
-    op.drop_table('milestones')
-    op.drop_index(op.f('ix_evaluations_updated_by'), table_name='evaluations')
-    op.drop_index(op.f('ix_evaluations_created_by'), table_name='evaluations')
-    op.drop_table('evaluations')
     op.drop_index(op.f('ix_tasks_updated_by'), table_name='tasks')
     op.drop_index(op.f('ix_tasks_created_by'), table_name='tasks')
     op.drop_table('tasks')
@@ -312,9 +290,6 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_projects_created_by'), table_name='projects')
     op.drop_table('projects')
     op.drop_index(op.f('ix_curators_updated_by'), table_name='curators')
-    op.drop_index(op.f('ix_curators_refresh_token'), table_name='curators')
-    op.drop_index(op.f('ix_curators_is_revoked'), table_name='curators')
-    op.drop_index(op.f('ix_curators_expires_at'), table_name='curators')
     op.drop_index(op.f('ix_curators_created_by'), table_name='curators')
     op.drop_table('curators')
     op.drop_index(op.f('ix_artifacts_updated_by'), table_name='artifacts')
