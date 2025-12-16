@@ -1,40 +1,42 @@
-from typing import TYPE_CHECKING
-from app.domain.enums.project_status import ProjectStatus
-from app.domain.enums.semester import Semester
-from app.domain.entities import BaseEntity
-from uuid import UUID
+from pydantic import Field
+from typing import Optional, TYPE_CHECKING
+from app.domain.entities.base_entity import BaseEntity
+from app.domain.enums import ProjectStatus, Semester
 
 if TYPE_CHECKING:
-    from app.domain.entities.teams.team import Team 
+    from app.domain.entities.teams.team import Team
+
 
 class Project(BaseEntity):
-    def __init__(self, name: str, desription: str | None, goal : str | None, requirements: str | None, 
-                 eval_criteria: str | None, year: int, semester: Semester,
-                   status: ProjectStatus, id: UUID | None, teams : list[Team] | None):
-        super().__init__(id)
-        self.name = name
-        self.description = desription
-        self.goal = goal
-        self.requirements = requirements
-        self.eval_criteria = eval_criteria
-        self.year = year 
-        self.semester = semester
-        self.status = status
-        self.teams = teams or []
+    """Доменная модель проекта"""
+    
+    name: str = Field(..., min_length=1, max_length=255)
+    description: Optional[str] = Field(None, max_length=2000, alias='desription')
+    goal: Optional[str] = Field(None, max_length=1000)
+    requirements: Optional[str] = Field(None, max_length=2000)
+    eval_criteria: Optional[str] = Field(None, max_length=2000)
+    year: int = Field(..., ge=2000, le=2100)
+    semester: Semester
+    status: ProjectStatus = ProjectStatus.PLANNED
+    teams: list['Team'] = Field(default_factory=list)
 
-    def add_team(self, team: Team):
+    def add_team(self, team: 'Team') -> None:
+        """Добавить команду к проекту"""
         if team not in self.teams:
             self.teams.append(team)
 
-    def start(self):
+    def start(self) -> None:
+        """Запустить проект"""
         if self.status != ProjectStatus.PLANNED:
             raise ValueError("Можно запустить только запланированный проект")
         self.status = ProjectStatus.IN_PROGRESS
 
-    def complete(self):
-        if self.status != ProjectStatus.COMPLETED:
+    def complete(self) -> None:
+        """Завершить проект"""
+        if self.status != ProjectStatus.IN_PROGRESS:
             raise ValueError("Можно завершить только начатый проект")
         self.status = ProjectStatus.COMPLETED
     
-    def archive(self):
+    def archive(self) -> None:
+        """Архивировать проект"""
         self.status = ProjectStatus.ARCHIVED

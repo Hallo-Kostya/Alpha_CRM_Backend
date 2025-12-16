@@ -1,9 +1,9 @@
-from uuid import UUID
-from app.domain.entities import BaseEntity
+from pydantic import Field
+from app.domain.entities.base_entity import BaseEntity
 
 
 class Task(BaseEntity):
-    def __init__(self, desription: str, is_completed: bool, id: UUID | None):
-        super().__init__(id)
-        self.desription = desription
-        self.is_completed = is_completed
+    """Доменная модель задачи"""
+    
+    description: str = Field(..., min_length=1, max_length=2000, alias='desription')
+    is_completed: bool = False

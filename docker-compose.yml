@@ -6,7 +6,7 @@ services:
     depends_on:
       - pg_db
     ports:
-      - "8001:8000"  
+      - "8001:8000"
     networks:
       - app-network
     env_file:
