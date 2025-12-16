@@ -1,4 +1,4 @@
-from pydantic import Field
+from pydantic import ConfigDict, Field
 from typing import Optional, TYPE_CHECKING
 from app.domain.entities.base_entity import BaseEntity
 from app.domain.enums import ProjectStatus, Semester
@@ -18,7 +18,7 @@ class Project(BaseEntity):
     year: int = Field(..., ge=2000)
     semester: Semester
     status: ProjectStatus = ProjectStatus.PLANNED
-    teams: list['Team'] = Field(default_factory=list)
+    teams: list["Team"] = Field(default_factory=list, exclude=True)
 
     def add_team(self, team: 'Team') -> None:
         """Добавить команду к проекту"""

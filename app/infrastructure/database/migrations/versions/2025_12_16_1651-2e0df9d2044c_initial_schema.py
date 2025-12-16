@@ -1,8 +1,8 @@
 """initial schema
 
-Revision ID: cf0200de345f
+Revision ID: 2e0df9d2044c
 Revises: 
-Create Date: 2025-12-16 16:34:34.480422
+Create Date: 2025-12-16 16:51:50.511521
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'cf0200de345f'
+revision: str = '2e0df9d2044c'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -196,24 +196,17 @@ def upgrade() -> None:
     sa.Column('artifact_id', sa.UUID(), nullable=False),
     sa.Column('project_id', sa.UUID(), nullable=True),
     sa.Column('meeting_id', sa.UUID(), nullable=True),
-    sa.Column('id', sa.UUID(), nullable=False),
-    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-    sa.Column('created_by', sa.UUID(), nullable=True),
-    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-    sa.Column('updated_by', sa.UUID(), nullable=True),
     sa.CheckConstraint('(project_id IS NOT NULL AND meeting_id IS NULL) OR (project_id IS NULL AND meeting_id IS NOT NULL)', name=op.f('ck_artifact_links_ck_artifact_links_one_fk')),
     sa.ForeignKeyConstraint(['artifact_id'], ['artifacts.id'], name=op.f('fk_artifact_links_artifact_id_artifacts'), ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['meeting_id'], ['meetings.id'], name=op.f('fk_artifact_links_meeting_id_meetings'), ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['project_id'], ['projects.id'], name=op.f('fk_artifact_links_project_id_projects'), ondelete='CASCADE'),
-    sa.PrimaryKeyConstraint('id', name=op.f('pk_artifact_links')),
+    sa.PrimaryKeyConstraint('artifact_id', 'project_id', name=op.f('pk_artifact_links')),
     sa.UniqueConstraint('artifact_id', 'meeting_id', name='uq_artifact_links_artifact_meeting'),
     sa.UniqueConstraint('artifact_id', 'project_id', name='uq_artifact_links_artifact_project')
     )
     op.create_index(op.f('ix_artifact_links_artifact_id'), 'artifact_links', ['artifact_id'], unique=False)
-    op.create_index(op.f('ix_artifact_links_created_by'), 'artifact_links', ['created_by'], unique=False)
     op.create_index(op.f('ix_artifact_links_meeting_id'), 'artifact_links', ['meeting_id'], unique=False)
     op.create_index(op.f('ix_artifact_links_project_id'), 'artifact_links', ['project_id'], unique=False)
-    op.create_index(op.f('ix_artifact_links_updated_by'), 'artifact_links', ['updated_by'], unique=False)
     op.create_table('attendances',
     sa.Column('meeting_id', sa.UUID(), nullable=False),
     sa.Column('student_id', sa.UUID(), nullable=True),
@@ -257,10 +250,8 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_attendances_curator_id'), table_name='attendances')
     op.drop_index(op.f('ix_attendances_created_by'), table_name='attendances')
     op.drop_table('attendances')
-    op.drop_index(op.f('ix_artifact_links_updated_by'), table_name='artifact_links')
     op.drop_index(op.f('ix_artifact_links_project_id'), table_name='artifact_links')
     op.drop_index(op.f('ix_artifact_links_meeting_id'), table_name='artifact_links')
-    op.drop_index(op.f('ix_artifact_links_created_by'), table_name='artifact_links')
     op.drop_index(op.f('ix_artifact_links_artifact_id'), table_name='artifact_links')
     op.drop_table('artifact_links')
     op.drop_index(op.f('ix_team_members_updated_by'), table_name='team_members')
