@@ -6,12 +6,9 @@ from app.domain.enums import EvaluationType
 
 class Evaluation(BaseModel):
     """Оценка проекта куратором"""
-    
-    model_config = ConfigDict(
-        from_attributes=True,
-        validate_assignment=True
-    )
-    
+
+    model_config = ConfigDict(from_attributes=True, validate_assignment=True)
+
     project_id: UUID
     curator_id: UUID
     type: EvaluationType

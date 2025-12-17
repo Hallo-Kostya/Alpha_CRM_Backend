@@ -5,5 +5,5 @@ test_client = TestClient(main_app)
 
 
 def test_root_status_code():
-    response = test_client.get("/api/v1/health")
+    response = test_client.get("/api/health")
     assert response.status_code == 200

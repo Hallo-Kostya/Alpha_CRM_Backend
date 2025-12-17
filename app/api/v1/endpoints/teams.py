@@ -1,79 +1,93 @@
 from uuid import UUID
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 
-from app.application.dto.team import TeamCreate, TeamUpdate
-from app.application.services.teams_service import TeamService
-from app.core.database import db_helper
-from app.domain.entities.teams.team import Team
-from app.infrastructure.database.models.teams.team import TeamModel
-from app.infrastructure.database.repositories.crud_repository import CRUDRepository
+from app.application.dto.team import TeamCreate, TeamUpdate, TeamRead
+from app.application.services.team_service import TeamService, team_service_getter
 
-
-router = APIRouter(prefix="/teams", tags=["teams"])
+router = APIRouter(
+    prefix="/teams",
+    tags=["teams"],
+    responses={404: {"description": "Team not found"}},
+)
 
 
-async def get_team_service(
-    session: AsyncSession = Depends(db_helper.session_getter),
-) -> TeamService:
-    repo = CRUDRepository[Team, TeamModel](
-        model=TeamModel,
-        domain_model=Team,
-        session=session,
-    )
-    return TeamService(repo)
-
-
-@router.post("/", response_model=Team, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/",
+    response_model=TeamRead,
+    status_code=status.HTTP_201_CREATED,
+    summary="Создать новую команду",
+)
 async def create_team(
     data: TeamCreate,
-    service: TeamService = Depends(get_team_service),
-) -> Team:
-    team = Team(**data.model_dump(exclude_unset=True))
-    return await service.create_team(team)
+    service: TeamService = Depends(team_service_getter),
+):
+    """Создать команду (на начальном этапе без студентов и кураторов)."""
+    return await service.create(data)
 
 
-@router.get("/", response_model=List[Team])
+@router.get("/", response_model=List[TeamRead], summary="Список всех команд")
 async def list_teams(
-    service: TeamService = Depends(get_team_service),
-) -> List[Team]:
-    return await service.list_teams()
+    service: TeamService = Depends(team_service_getter),
+):
+    """Получить список всех команд."""
+    return await service.get_list()
 
 
-@router.get("/{team_id}", response_model=Team)
+@router.get(
+    "/{team_id}",
+    response_model=TeamRead,
+    summary="Получить команду по ID",
+)
 async def get_team(
     team_id: UUID,
-    service: TeamService = Depends(get_team_service),
-) -> Team:
-    team = await service.get_team(team_id)
+    service: TeamService = Depends(team_service_getter),
+):
+    """Получить детальную информацию о команде."""
+    team = await service.get_by_id(team_id)
     if team is None:
-        raise HTTPException(status_code=404, detail="Team not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Команда с ID {team_id} не найдена",
+        )
     return team
 
 
-@router.put("/{team_id}", response_model=Team)
+@router.patch(
+    "/{team_id}",
+    response_model=TeamRead,
+    summary="Обновить данные команды (частично)",
+)
 async def update_team(
     team_id: UUID,
     data: TeamUpdate,
-    service: TeamService = Depends(get_team_service),
-) -> Team:
-    update_data = data.model_dump(exclude_unset=True)
-    if not update_data:
-        raise HTTPException(status_code=400, detail="No data provided for update")
-
-    existing = await service.get_team(team_id)
-    if existing is None:
-        raise HTTPException(status_code=404, detail="Team not found")
-
-    updated_team = existing.model_copy(update=update_data)
-    return await service.update_team(updated_team)
+    service: TeamService = Depends(team_service_getter),
+):
+    """Частичное обновление команды (название, ссылка на чат и т.д.)."""
+    updated_data = await service.update(data, team_id)
+    if not updated_data:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Команда с ID {team_id} не найдена для обновления",
+        )
+    return updated_data
 
 
-@router.delete("/{team_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{team_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Удалить команду",
+)
 async def delete_team(
     team_id: UUID,
-    service: TeamService = Depends(get_team_service),
-) -> None:
-    await service.delete_team(team_id)
+    service: TeamService = Depends(team_service_getter),
+):
+    """Удалить команду. Каскадно удалятся связи со студентами, кураторами, встречами, проектами и артефактами."""
+    deleted = await service.delete(team_id)
+    if not deleted:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Команда с ID {team_id} не найдена для удаления",
+        )
+    return Response(f"successfully deleted student with id {team_id}", 200)

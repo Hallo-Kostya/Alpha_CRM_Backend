@@ -3,14 +3,14 @@ from sqlalchemy import ForeignKey, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID
 
-from app.infrastructure.database.base_association import BaseAssociation
+from app.infrastructure.database.base import Base
 
 if TYPE_CHECKING:
     from app.infrastructure.database.models.meetings.meeting import MeetingModel
     from app.infrastructure.database.models.meetings.task import TaskModel
 
 
-class MeetingTaskModel(BaseAssociation):
+class MeetingTaskModel(Base):
     """Модель связи встречи и задачи (many-to-many)"""
     __tablename__ = "meeting_tasks"
     

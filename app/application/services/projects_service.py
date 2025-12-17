@@ -1,34 +1,51 @@
+from fastapi import Depends
+from app.application.dto.project import (
+    ProjectRead,
+    ProjectCreate,
+    ProjectUpdate,
+)
+from app.infrastructure.database.models import ProjectModel
+from app.application.services.base_service import BaseService
+from app.infrastructure.database.repositories.project_repository import (
+    ProjectRepository,
+    project_repository_getter,
+)
 from uuid import UUID
-from typing import List
-
-from app.domain.entities.projects.project import Project
-from app.infrastructure.database.repositories.crud_repository import CRUDRepository
-from app.infrastructure.database.models.projects.project import ProjectModel  # предполагаем путь
 
 
-class ProjectService:
+class ProjectService(BaseService[ProjectModel, ProjectRead]):
     """
     Application Service для проектов.
     Содержит CRUD и место для доменной логики (start, complete, archive).
     """
 
+    orm_model = ProjectModel
+    pyd_scheme = ProjectRead
+
     def __init__(
         self,
-        project_repo: CRUDRepository[Project, ProjectModel],
-    ) -> None:
-        self._repo = project_repo
+        project_repo: ProjectRepository,
+    ):
+        super().__init__(project_repo)
 
-    async def create_project(self, project: Project) -> Project:
-        return await self._repo.create(project)
+    async def create(self, new_obj: ProjectCreate) -> ProjectRead:
+        orm_model = self._to_orm(new_obj)
+        created_model = await self._repo.create(orm_model)
+        return self._to_schema(created_model)
 
-    async def get_project(self, project_id: UUID) -> Project | None:
-        return await self._repo.get(project_id)
+    async def update(
+        self, new_data: ProjectUpdate, project_id: UUID
+    ) -> ProjectRead | None:
+        old_obj = await self._repo.get_by_id(project_id)
+        if not old_obj:
+            return None
+        updated_obj = await self._repo.update(
+            old_obj, new_data.model_dump(exclude_unset=True)
+        )
+        return self._to_schema(updated_obj)
 
-    async def update_project(self, project: Project) -> Project:
-        return await self._repo.update(project)
 
-    async def delete_project(self, project_id: UUID) -> None:
-        await self._repo.delete(project_id)
-
-    async def list_projects(self) -> List[Project]:
-        return await self._repo.list()
+def project_service_getter(
+    repository: ProjectRepository = Depends(project_repository_getter),
+) -> ProjectService:
+    return ProjectService(repository)

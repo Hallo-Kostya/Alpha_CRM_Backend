@@ -27,7 +27,7 @@ services:
       POSTGRES_PASSWORD: ${DB__PASSWORD}
       POSTGRES_DB: ${DB__NAME}
     ports:
-    - ${DB__PORT}:5432
+    - 5433:5432
 
   pgadmin4:
     image: elestio/pgadmin:REL-9_8

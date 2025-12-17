@@ -3,7 +3,7 @@ from sqlalchemy import Boolean, ForeignKey, UniqueConstraint, CheckConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID
 
-from app.infrastructure.database.base import Base
+from app.infrastructure.database.entity_base import BaseEntity
 
 if TYPE_CHECKING:
     from app.infrastructure.database.models.meetings.meeting import MeetingModel
@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from app.infrastructure.database.models.persons.student import StudentModel
 
 
-class AttendanceModel(Base):
+class AttendanceModel(BaseEntity):
     """Модель посещаемости встречи для студента или куратора"""
     __tablename__ = "attendances"
     

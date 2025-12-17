@@ -11,7 +11,7 @@ class Meeting(BaseEntity):
     
     team_id: UUID
     name: str = Field(..., min_length=1, max_length=255)
-    resume: Optional[str] = Field(None, max_length=5000)
+    resume: Optional[str] = Field(None, max_length=2000)
     date: datetime
     status: MeetingStatus = MeetingStatus.SCHEDULED
     previous: Optional['Meeting'] = None

@@ -3,7 +3,7 @@ from sqlalchemy import String, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID
 
-from app.infrastructure.database.base import Base
+from app.infrastructure.database.entity_base import BaseEntity
 
 if TYPE_CHECKING:
     from app.infrastructure.database.models.meetings.meeting import MeetingModel
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from app.infrastructure.database.models.teams.team_member import TeamMemberModel
 
 
-class TeamModel(Base):
+class TeamModel(BaseEntity):
     """Модель команды"""
     __tablename__ = "teams"
     
