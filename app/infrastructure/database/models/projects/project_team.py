@@ -3,14 +3,14 @@ from sqlalchemy import ForeignKey, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID
 
-from app.infrastructure.database.base_association import BaseAssociation
+from app.infrastructure.database.base import Base
 
 if TYPE_CHECKING:
     from app.infrastructure.database.models.projects.project import ProjectModel
     from app.infrastructure.database.models.teams.team import TeamModel
 
 
-class ProjectTeamModel(BaseAssociation):
+class ProjectTeamModel(Base):
     """Модель связи проекта и команды (many-to-many)"""
     __tablename__ = "project_teams"
     

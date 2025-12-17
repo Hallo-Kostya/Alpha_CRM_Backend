@@ -4,7 +4,7 @@ from sqlalchemy import String, DateTime, ForeignKey, Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID
 
-from app.infrastructure.database.base import Base
+from app.infrastructure.database.entity_base import BaseEntity
 from app.domain.enums.meeting_status import MeetingStatus
 
 if TYPE_CHECKING:
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from app.infrastructure.database.models.teams.team import TeamModel
 
 
-class MeetingModel(Base):
+class MeetingModel(BaseEntity):
     """Модель встречи"""
     __tablename__ = "meetings"
 
@@ -28,6 +28,7 @@ class MeetingModel(Base):
     status: Mapped[MeetingStatus] = mapped_column(
         SQLEnum(MeetingStatus, native_enum=False, values_callable=lambda x: [e.value for e in MeetingStatus]),
         nullable=False,
+        default=MeetingStatus.SCHEDULED.value
     )
     # Предыдущая встреча
     previous_meeting_id: Mapped[UUID | None] = mapped_column(

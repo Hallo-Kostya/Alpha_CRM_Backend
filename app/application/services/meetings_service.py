@@ -2,8 +2,10 @@ from uuid import UUID
 from typing import List
 
 from app.domain.entities.meetings.meetings import Meeting
-from app.infrastructure.database.repositories.crud_repository import CRUDRepository
-from app.infrastructure.database.models.meetings.meeting import MeetingModel  # предполагаем
+from app.infrastructure.database.repositories.base_repository import CRUDRepository
+from app.infrastructure.database.models.meetings.meeting import (
+    MeetingModel,
+)  # предполагаем
 
 
 class MeetingService:

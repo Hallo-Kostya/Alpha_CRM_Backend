@@ -1,29 +1,42 @@
 from uuid import UUID
-from typing import List
+from fastapi import Depends
+from app.application.services.base_service import BaseService
+from app.application.dto.student import StudentCreate, StudentRead, StudentUpdate
+from app.infrastructure.database.models import StudentModel
+from app.infrastructure.database.repositories.student_repository import (
+    StudentRepository,
+    student_repository_getter,
+)
 
-from app.domain.entities.persons.student import Student
-from app.infrastructure.database.repositories.crud_repository import CRUDRepository
-from app.infrastructure.database.models.persons.student import StudentModel  # предполагаем
 
+class StudentService(BaseService[StudentModel, StudentRead]):
+    orm_model = StudentModel
+    pyd_scheme = StudentRead
 
-class StudentService:
     def __init__(
         self,
-        student_repo: CRUDRepository[Student, StudentModel],
-    ) -> None:
-        self._repo = student_repo
+        student_repo: StudentRepository,
+    ):
+        super().__init__(student_repo)
 
-    async def create_student(self, student: Student) -> Student:
-        return await self._repo.create(student)
+    async def create(self, student: StudentCreate) -> StudentRead:
+        orm_obj = self._to_orm(student)
+        created_obj = await self._repo.create(orm_obj)
+        return self._to_schema(created_obj)
 
-    async def get_student(self, student_id: UUID) -> Student | None:
-        return await self._repo.get(student_id)
+    async def update(
+        self, new_data: StudentUpdate, student_id: UUID
+    ) -> StudentRead | None:
+        old_obj = await self._repo.get_by_id(student_id)
+        if not old_obj:
+            return None
+        updated_orm = await self._repo.update(
+            old_obj, new_data.model_dump(exclude_unset=True)
+        )
+        return self._to_schema(updated_orm)
 
-    async def update_student(self, student: Student) -> Student:
-        return await self._repo.update(student)
 
-    async def delete_student(self, student_id: UUID) -> None:
-        await self._repo.delete(student_id)
-
-    async def list_students(self) -> List[Student]:
-        return await self._repo.list()
+def student_service_getter(
+    repository: StudentRepository = Depends(student_repository_getter),
+):
+    return StudentService(repository)

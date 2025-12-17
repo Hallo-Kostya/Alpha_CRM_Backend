@@ -2,13 +2,13 @@ from typing import TYPE_CHECKING
 from sqlalchemy import String, Boolean
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.infrastructure.database.base import Base
+from app.infrastructure.database.entity_base import BaseEntity
 
 if TYPE_CHECKING:
     from app.infrastructure.database.models.meetings.meeting_task import MeetingTaskModel
 
 
-class TaskModel(Base):
+class TaskModel(BaseEntity):
     """Модель задачи"""
     __tablename__ = "tasks"
     
