@@ -57,7 +57,7 @@ async def get_student(
     return student
 
 
-@router.put(
+@router.patch(
     "/{student_id}",
     response_model=StudentRead,
     summary="Обновить данные студента",

@@ -60,7 +60,7 @@ async def get_project(
     return project
 
 
-@router.put(
+@router.patch(
     "/{project_id}",
     response_model=ProjectRead,
     summary="Обновить проект (частично)",
