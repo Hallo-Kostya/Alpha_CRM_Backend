@@ -6,11 +6,14 @@ from app.application.dto.project import (
     ProjectCreate,
     ProjectUpdate,
 )
+from app.application.dto.project_team import ProjectTeamCreate, ProjectTeamUpdate, ProjectTeamWithInfo
+from app.application.services.project_team_service import ProjectTeamService, project_team_service_getter
 from app.application.services.projects_service import (
     project_service_getter,
     ProjectService,
 )
 from app.domain.entities.projects.project import Project
+from app.domain.entities.projects.project_team import ProjectTeam
 
 
 router = APIRouter(
@@ -99,3 +102,88 @@ async def delete_project(
             detail=f"Проект с ID {project_id} не найден для удаления",
         )
     return Response(f"successfully deleted project with id {project_id}", 200)
+
+
+@router.post(
+    "/{project_id}/teams",
+    response_model=ProjectTeam,
+    status_code=status.HTTP_201_CREATED,
+    summary="Назначить команду на проект",
+)
+async def assign_team_to_project(
+    project_id: UUID,
+    data: ProjectTeamCreate,
+    service: ProjectTeamService = Depends(project_team_service_getter),
+):
+    """
+    Назначить команду на проект.
+    
+    Ограничения:
+    - Команда не может участвовать в двух проектах в одном семестре
+    - Команда не может быть назначена на один проект дважды
+    """
+    return await service.assign_team_to_project(project_id, data)
+
+@router.get(
+    "/{project_id}/teams",
+    response_model=List[ProjectTeam],
+    summary="Получить все команды проекта",
+)
+async def get_project_teams(
+    project_id: UUID,
+    service: ProjectTeamService = Depends(project_team_service_getter),
+):
+    """Получить список всех команд, назначенных на проект."""
+    return await service.get_project_teams(project_id)
+
+@router.get(
+    "/{project_id}/teams/detailed",
+    response_model=List[ProjectTeamWithInfo],
+    summary="Получить команды проекта с детальной информацией",
+)
+async def get_project_teams_detailed(
+    project_id: UUID,
+    service: ProjectTeamService = Depends(project_team_service_getter),
+):
+    """Получить список команд проекта с информацией о командах."""
+    return await service.get_project_teams_with_info(project_id)
+
+@router.patch(
+    "/{project_id}/teams/{team_id}",
+    response_model=ProjectTeam,
+    summary="Обновить статус команды в проекте",
+)
+async def update_project_team(
+    project_id: UUID,
+    team_id: UUID,
+    data: ProjectTeamUpdate,
+    service: ProjectTeamService = Depends(project_team_service_getter),
+):
+    """Обновить статус участия команды в проекте."""
+    return await service.update_project_team(project_id, team_id, data)
+
+@router.delete(
+    "/{project_id}/teams/{team_id}",
+    status_code=status.HTTP_200_OK,
+    summary="Открепить команду от проекта",
+)
+
+
+async def remove_team_from_project(
+    project_id: UUID,
+    team_id: UUID,
+    service: ProjectTeamService = Depends(project_team_service_getter),
+):
+    """
+    Открепить команду от проекта.
+    
+    Примечание: вместо удаления связь помечается статусом WITHDRAWN
+    для сохранения истории.
+    """
+    deleted = await service.remove_team_from_project(project_id, team_id)
+    if not deleted:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Связь между проектом и командой не найдена"
+        )
+    return Response(f"Successfully removed team {team_id} from project {project_id}", 200)

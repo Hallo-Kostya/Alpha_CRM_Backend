@@ -3,10 +3,13 @@ from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 
+from app.application.dto.project_team import ProjectTeamWithInfo
 from app.application.dto.team import TeamCreate, TeamUpdate
 from app.application.dto.team_member import TeamMemberCreate, TeamMemberUpdate
+from app.application.services.project_team_service import ProjectTeamService, project_team_service_getter
 from app.application.services.team_member_service import TeamMemberService, team_member_service_getter
 from app.application.services.team_service import TeamService, team_service_getter
+from app.domain.entities.projects.project_team import ProjectTeam
 from app.domain.entities.teams.team import Team
 from app.domain.entities.teams.team_member import TeamMember
 
@@ -158,3 +161,57 @@ async def remove_student_from_team(
             detail="Связь между командой и студентом не найдена"
         )
     return Response(f"Successfully removed student {student_id} from team {team_id}", 200)
+
+
+@router.get(
+    "/{team_id}/projects",
+    response_model=List[ProjectTeam],
+    summary="Получить все проекты команды",
+)
+async def get_team_projects(
+    team_id: UUID,
+    service: ProjectTeamService = Depends(project_team_service_getter),
+):
+    """Получить список всех проектов, в которых участвует команда."""
+    return await service.get_team_projects(team_id)
+
+
+@router.get(
+    "/{team_id}/projects/current",
+    response_model=ProjectTeam,
+    summary="Получить текущий проект команды",
+)
+async def get_current_team_project(
+    team_id: UUID,
+    service: ProjectTeamService = Depends(project_team_service_getter),
+):
+    """
+    Получить текущий активный проект команды.
+    
+    Возвращает проект со статусом ACTIVE для текущего семестра.
+    """
+    project = await service.get_current_team_project(team_id)
+    if not project:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"У команды с ID {team_id} нет активного проекта"
+        )
+    return project
+
+
+@router.get(
+    "/{team_id}/projects/detailed",
+    response_model=List[ProjectTeamWithInfo],
+    summary="Получить проекты команды с детальной информацией",
+)
+async def get_team_projects_detailed(
+    team_id: UUID,
+    service: ProjectTeamService = Depends(project_team_service_getter),
+):
+    """Получить список проектов команды с информацией о проектах."""
+    # Для этого нужно добавить соответствующий метод в ProjectTeamService
+    # или использовать существующий get_team_projects с предзагрузкой информации
+    raise HTTPException(
+        status_code=status.HTTP_501_NOT_IMPLEMENTED,
+        detail="Метод пока не реализован"
+    )
