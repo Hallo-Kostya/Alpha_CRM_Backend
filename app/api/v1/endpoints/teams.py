@@ -4,8 +4,11 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 
 from app.application.dto.team import TeamCreate, TeamUpdate
+from app.application.dto.team_member import TeamMemberCreate, TeamMemberUpdate
+from app.application.services.team_member_service import TeamMemberService, team_member_service_getter
 from app.application.services.team_service import TeamService, team_service_getter
 from app.domain.entities.teams.team import Team
+from app.domain.entities.teams.team_member import TeamMember
 
 router = APIRouter(
     prefix="/teams",
@@ -77,7 +80,7 @@ async def update_team(
 
 @router.delete(
     "/{team_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
+    status_code=status.HTTP_200_OK,
     summary="Удалить команду",
 )
 async def delete_team(
@@ -91,4 +94,67 @@ async def delete_team(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Команда с ID {team_id} не найдена для удаления",
         )
-    return Response(f"successfully deleted student with id {team_id}", 200)
+    return Response(f"Successfully deleted team with id {team_id}", 200)
+
+
+@router.post(
+    "/{team_id}/students",
+    response_model=TeamMember,  # Используем доменную сущность
+    status_code=status.HTTP_201_CREATED,
+    summary="Добавить студента в команду",
+)
+async def add_student_to_team(
+    team_id: UUID,
+    data: TeamMemberCreate,
+    service: TeamMemberService = Depends(team_member_service_getter),
+):
+    """Добавить студента в команду с указанием роли и учебной группы."""
+    return await service.add_student_to_team(team_id, data)
+
+
+@router.get(
+    "/{team_id}/students",
+    response_model=List[TeamMember],  # Используем доменную сущность
+    summary="Получить всех студентов команды",
+)
+async def get_team_students(
+    team_id: UUID,
+    service: TeamMemberService = Depends(team_member_service_getter),
+):
+    """Получить список всех студентов, состоящих в команде."""
+    return await service.get_team_members(team_id)
+
+
+@router.patch(
+    "/{team_id}/students/{student_id}",
+    response_model=TeamMember,  # Используем доменную сущность
+    summary="Обновить данные студента в команде",
+)
+async def update_team_member(
+    team_id: UUID,
+    student_id: UUID,
+    data: TeamMemberUpdate,
+    service: TeamMemberService = Depends(team_member_service_getter),
+):
+    """Обновить роль или учебную группу студента в команде."""
+    return await service.update_team_member(team_id, student_id, data)
+
+
+@router.delete(
+    "/{team_id}/students/{student_id}",
+    status_code=status.HTTP_200_OK,
+    summary="Удалить студента из команды",
+)
+async def remove_student_from_team(
+    team_id: UUID,
+    student_id: UUID,
+    service: TeamMemberService = Depends(team_member_service_getter),
+):
+    """Удалить студента из команды."""
+    deleted = await service.remove_student_from_team(team_id, student_id)
+    if not deleted:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Связь между командой и студентом не найдена"
+        )
+    return Response(f"Successfully removed student {student_id} from team {team_id}", 200)

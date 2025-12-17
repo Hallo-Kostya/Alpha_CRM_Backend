@@ -9,6 +9,11 @@ from app.application.services.students_service import (
     student_service_getter,
 )
 from app.domain.entities.persons.student import Student
+from app.application.services.team_member_service import (
+    TeamMemberService,
+    team_member_service_getter,
+)
+from app.domain.entities.teams.team_member import TeamMember
 
 router = APIRouter(
     prefix="/students",
@@ -80,6 +85,7 @@ async def update_student(
 
 @router.delete(
     "/{student_id}",
+    status_code=status.HTTP_200_OK,
     summary="Удалить студента",
 )
 async def delete_student(
@@ -93,4 +99,17 @@ async def delete_student(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Студент с ID {student_id} не найден для удаления",
         )
-    return Response(f"successfully deleted student with id {student_id}", 200)
+    return Response(f"Successfully deleted student with id {student_id}", 200)
+
+
+@router.get(
+    "/{student_id}/teams",
+    response_model=List[TeamMember],
+    summary="Получить все команды студента",
+)
+async def get_student_teams(
+    student_id: UUID,
+    service: TeamMemberService = Depends(team_member_service_getter),
+):
+    """Получить список всех команд, в которых состоит студент."""
+    return await service.get_student_teams(student_id)
