@@ -1,4 +1,4 @@
-from typing import Optional, List
+from typing import Optional
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
@@ -6,6 +6,8 @@ from pydantic import BaseModel, ConfigDict
 
 from app.domain.enums.project_status import ProjectStatus
 from app.domain.enums.semester import Semester
+
+
 class ProjectCreate(BaseModel):
     name: str
     description: Optional[str] = None

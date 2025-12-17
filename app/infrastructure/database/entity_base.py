@@ -5,8 +5,10 @@ from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.dialects.postgresql import UUID
 from app.infrastructure.database.base import Base
 
+
 class BaseEntity(Base):
     """Базовый класс для основных сущностей (с id, датами, аудит)"""
+
     __abstract__ = True
 
     id: Mapped[uuid.UUID] = mapped_column(
