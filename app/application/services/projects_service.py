@@ -29,7 +29,7 @@ class ProjectService(BaseService[ProjectModel, ProjectRead]):
         super().__init__(project_repo)
 
     async def create(self, new_obj: ProjectCreate) -> ProjectRead:
-        orm_model = ProjectModel(**new_obj.model_dump(exclude_unset=True))
+        orm_model = self._to_orm(new_obj)
         created_model = await self._repo.create(orm_model)
         return self._to_schema(created_model)
 

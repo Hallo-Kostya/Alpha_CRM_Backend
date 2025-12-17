@@ -21,6 +21,9 @@ class BaseService(Generic[TModel, P_OUT]):
     ):
         self._repo = base_repo
 
+    def _to_orm(self, scheme) -> TModel:
+        return self.orm_model(**scheme.model_dump(exclude_unset=True))
+
     def _to_schema(self, orm_model: TModel) -> P_OUT:
         return self.pyd_scheme.model_validate(orm_model, from_attributes=True)
 

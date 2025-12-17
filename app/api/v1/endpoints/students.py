@@ -1,34 +1,19 @@
 from uuid import UUID
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 
 from app.application.dto.student import StudentCreate, StudentUpdate, StudentRead
-from app.application.services.students_service import StudentService
-from app.core.database import db_helper
-from app.domain.entities.persons.student import Student
-from app.infrastructure.database.models.persons.student import StudentModel
-from app.infrastructure.database.repositories.crud_repository import CRUDRepository
-
+from app.application.services.students_service import (
+    StudentService,
+    student_service_getter,
+)
 
 router = APIRouter(
     prefix="/students",
     tags=["students"],
     responses={404: {"description": "Student not found"}},
 )
-
-
-async def get_student_service(
-    session: AsyncSession = Depends(db_helper.session_getter),
-) -> StudentService:
-    """Фабрика для StudentService с CRUD-репозиторием."""
-    repo = CRUDRepository[Student, StudentModel](
-        model=StudentModel,
-        domain_model=Student,
-        session=session,
-    )
-    return StudentService(student_repo=repo)
 
 
 @router.post(
@@ -39,19 +24,18 @@ async def get_student_service(
 )
 async def create_student(
     data: StudentCreate,
-    service: StudentService = Depends(get_student_service),
-) -> Student:
+    service: StudentService = Depends(student_service_getter),
+):
     """Создать нового студента (без привязки к команде)."""
-    student = Student(**data.model_dump(exclude_unset=True))
-    return await service.create_student(student)
+    return await service.create(data)
 
 
 @router.get("/", response_model=List[StudentRead], summary="Список всех студентов")
 async def list_students(
-    service: StudentService = Depends(get_student_service),
-) -> List[Student]:
+    service: StudentService = Depends(student_service_getter),
+):
     """Получить список всех студентов."""
-    return await service.list_students()
+    return await service.get_list()
 
 
 @router.get(
@@ -61,10 +45,10 @@ async def list_students(
 )
 async def get_student(
     student_id: UUID,
-    service: StudentService = Depends(get_student_service),
-) -> Student:
+    service: StudentService = Depends(student_service_getter),
+):
     """Получить информацию о студенте."""
-    student = await service.get_student(student_id)
+    student = await service.get_by_id(student_id)
     if student is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -81,41 +65,31 @@ async def get_student(
 async def update_student(
     student_id: UUID,
     data: StudentUpdate,
-    service: StudentService = Depends(get_student_service),
-) -> Student:
+    service: StudentService = Depends(student_service_getter),
+):
     """Частичное обновление данных студента."""
-    update_data = data.model_dump(exclude_unset=True)
-    if not update_data:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Не переданы данные для обновления",
-        )
-
-    existing = await service.get_student(student_id)
-    if existing is None:
+    updated_student = await service.update(data, student_id)
+    if not updated_student:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Студент с ID {student_id} не найден",
+            detail=f"Студент с ID {student_id} не найден для обновления",
         )
-
-    updated_student = existing.model_copy(update=update_data)
-    return await service.update_student(updated_student)
+    return updated_student
 
 
 @router.delete(
     "/{student_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
     summary="Удалить студента",
 )
 async def delete_student(
     student_id: UUID,
-    service: StudentService = Depends(get_student_service),
-) -> None:
+    service: StudentService = Depends(student_service_getter),
+):
     """Удалить студента (каскадно удалятся связи с командами и посещаемость)."""
-    student = await service.get_student(student_id)
-    if student is None:
+    deleted = await service.delete(student_id)
+    if not deleted:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Студент с ID {student_id} не найден",
+            detail=f"Студент с ID {student_id} не найден для удаления",
         )
-    await service.delete_student(student_id)
+    return Response(f"successfully deleted student with id {student_id}", 200)
