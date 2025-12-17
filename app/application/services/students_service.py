@@ -1,7 +1,8 @@
 from uuid import UUID
 from fastapi import Depends
 from app.application.services.base_service import BaseService
-from app.application.dto.student import StudentCreate, StudentRead, StudentUpdate
+from app.application.dto.student import StudentCreate, StudentUpdate
+from app.domain.entities.persons.student import Student
 from app.infrastructure.database.models import StudentModel
 from app.infrastructure.database.repositories.student_repository import (
     StudentRepository,
@@ -9,9 +10,9 @@ from app.infrastructure.database.repositories.student_repository import (
 )
 
 
-class StudentService(BaseService[StudentModel, StudentRead]):
+class StudentService(BaseService[StudentModel, Student]):
     orm_model = StudentModel
-    pyd_scheme = StudentRead
+    pyd_scheme = Student
 
     def __init__(
         self,
@@ -19,14 +20,14 @@ class StudentService(BaseService[StudentModel, StudentRead]):
     ):
         super().__init__(student_repo)
 
-    async def create(self, student: StudentCreate) -> StudentRead:
+    async def create(self, student: StudentCreate) -> Student:
         orm_obj = self._to_orm(student)
         created_obj = await self._repo.create(orm_obj)
         return self._to_schema(created_obj)
 
     async def update(
         self, new_data: StudentUpdate, student_id: UUID
-    ) -> StudentRead | None:
+    ) -> Student | None:
         old_obj = await self._repo.get_by_id(student_id)
         if not old_obj:
             return None

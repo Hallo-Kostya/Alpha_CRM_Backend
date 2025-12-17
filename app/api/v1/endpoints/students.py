@@ -3,11 +3,12 @@ from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 
-from app.application.dto.student import StudentCreate, StudentUpdate, StudentRead
+from app.application.dto.student import StudentCreate, StudentUpdate
 from app.application.services.students_service import (
     StudentService,
     student_service_getter,
 )
+from app.domain.entities.persons.student import Student
 
 router = APIRouter(
     prefix="/students",
@@ -18,7 +19,7 @@ router = APIRouter(
 
 @router.post(
     "/",
-    response_model=StudentRead,
+    response_model=Student,
     status_code=status.HTTP_201_CREATED,
     summary="Создать студента",
 )
@@ -30,7 +31,7 @@ async def create_student(
     return await service.create(data)
 
 
-@router.get("/", response_model=List[StudentRead], summary="Список всех студентов")
+@router.get("/", response_model=List[Student], summary="Список всех студентов")
 async def list_students(
     service: StudentService = Depends(student_service_getter),
 ):
@@ -40,7 +41,7 @@ async def list_students(
 
 @router.get(
     "/{student_id}",
-    response_model=StudentRead,
+    response_model=Student,
     summary="Получить студента по ID",
 )
 async def get_student(
@@ -59,7 +60,7 @@ async def get_student(
 
 @router.patch(
     "/{student_id}",
-    response_model=StudentRead,
+    response_model=Student,
     summary="Обновить данные студента",
 )
 async def update_student(

@@ -1,7 +1,5 @@
 from typing import Optional
-from uuid import UUID
-
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel
 
 
 class TeamCreate(BaseModel):
@@ -11,12 +9,4 @@ class TeamCreate(BaseModel):
 
 class TeamUpdate(BaseModel):
     name: Optional[str] = None
-    group_link: Optional[str] = None
-
-
-class TeamRead(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    id: UUID
-    name: str
     group_link: Optional[str] = None

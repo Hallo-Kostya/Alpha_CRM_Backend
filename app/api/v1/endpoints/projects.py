@@ -5,12 +5,12 @@ from fastapi import APIRouter, Depends, HTTPException, Response, status
 from app.application.dto.project import (
     ProjectCreate,
     ProjectUpdate,
-    ProjectRead,
 )
 from app.application.services.projects_service import (
     project_service_getter,
     ProjectService,
 )
+from app.domain.entities.projects.project import Project
 
 
 router = APIRouter(
@@ -22,7 +22,7 @@ router = APIRouter(
 
 @router.post(
     "/",
-    response_model=ProjectRead,
+    response_model=Project,
     status_code=status.HTTP_201_CREATED,
     summary="Создать новый проект",
 )
@@ -34,7 +34,7 @@ async def create_project(
     return await service.create(data)
 
 
-@router.get("/", response_model=List[ProjectRead], summary="Список всех проектов")
+@router.get("/", response_model=List[Project], summary="Список всех проектов")
 async def list_projects(
     service: ProjectService = Depends(project_service_getter),
 ):
@@ -44,7 +44,7 @@ async def list_projects(
 
 @router.get(
     "/{project_id}",
-    response_model=ProjectRead,
+    response_model=Project,
     summary="Получить проект по ID",
 )
 async def get_project(
@@ -62,7 +62,7 @@ async def get_project(
 
 @router.patch(
     "/{project_id}",
-    response_model=ProjectRead,
+    response_model=Project,
     summary="Обновить проект (частично)",
 )
 async def update_project(

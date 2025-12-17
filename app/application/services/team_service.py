@@ -1,7 +1,8 @@
 from uuid import UUID
 from fastapi import Depends
 from app.application.services.base_service import BaseService
-from app.application.dto.team import TeamCreate, TeamRead, TeamUpdate
+from app.application.dto.team import TeamCreate, TeamUpdate
+from app.domain.entities.teams.team import Team
 from app.infrastructure.database.models import TeamModel
 from app.infrastructure.database.repositories.team_repository import (
     TeamRepository,
@@ -9,9 +10,9 @@ from app.infrastructure.database.repositories.team_repository import (
 )
 
 
-class TeamService(BaseService[TeamModel, TeamRead]):
+class TeamService(BaseService[TeamModel, Team]):
     orm_model = TeamModel
-    pyd_scheme = TeamRead
+    pyd_scheme = Team
 
     def __init__(
         self,
@@ -19,12 +20,12 @@ class TeamService(BaseService[TeamModel, TeamRead]):
     ):
         super().__init__(team_repo)
 
-    async def create(self, team: TeamCreate) -> TeamRead:
+    async def create(self, team: TeamCreate) -> Team:
         orm_obj = self._to_orm(team)
         created_obj = await self._repo.create(orm_obj)
         return self._to_schema(created_obj)
 
-    async def update(self, new_data: TeamUpdate, team_id: UUID) -> TeamRead | None:
+    async def update(self, new_data: TeamUpdate, team_id: UUID) -> Team | None:
         old_obj = await self._repo.get_by_id(team_id)
         if not old_obj:
             return None

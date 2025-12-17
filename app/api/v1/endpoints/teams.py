@@ -3,8 +3,9 @@ from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 
-from app.application.dto.team import TeamCreate, TeamUpdate, TeamRead
+from app.application.dto.team import TeamCreate, TeamUpdate
 from app.application.services.team_service import TeamService, team_service_getter
+from app.domain.entities.teams.team import Team
 
 router = APIRouter(
     prefix="/teams",
@@ -15,7 +16,7 @@ router = APIRouter(
 
 @router.post(
     "/",
-    response_model=TeamRead,
+    response_model=Team,
     status_code=status.HTTP_201_CREATED,
     summary="Создать новую команду",
 )
@@ -27,7 +28,7 @@ async def create_team(
     return await service.create(data)
 
 
-@router.get("/", response_model=List[TeamRead], summary="Список всех команд")
+@router.get("/", response_model=List[Team], summary="Список всех команд")
 async def list_teams(
     service: TeamService = Depends(team_service_getter),
 ):
@@ -37,7 +38,7 @@ async def list_teams(
 
 @router.get(
     "/{team_id}",
-    response_model=TeamRead,
+    response_model=Team,
     summary="Получить команду по ID",
 )
 async def get_team(
@@ -56,7 +57,7 @@ async def get_team(
 
 @router.patch(
     "/{team_id}",
-    response_model=TeamRead,
+    response_model=Team,
     summary="Обновить данные команды (частично)",
 )
 async def update_team(
