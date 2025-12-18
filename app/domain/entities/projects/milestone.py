@@ -1,14 +1,16 @@
-from datetime import datetime
+from pydantic import Field
+from typing import Optional
 from uuid import UUID
-from app.domain.entities import BaseEntity
+from datetime import datetime
+from app.domain.entities.base_entity import BaseEntity
 from app.domain.enums import MilestoneType
 
 
 class Milestone(BaseEntity):
-    def __init__(self, project_id: UUID, date: datetime, title: str, type: MilestoneType, desription: str | None, id: UUID | None):
-        super().__init__(id)
-        self.project_id = project_id
-        self.date = date
-        self.title = title
-        self.type = type
-        self.description = desription
+    """Доменная модель контрольной точки проекта"""
+
+    project_id: UUID
+    date: datetime
+    title: str = Field(..., min_length=1, max_length=255)
+    type: MilestoneType
+    description: Optional[str] = Field(None, max_length=2000, alias="desription")

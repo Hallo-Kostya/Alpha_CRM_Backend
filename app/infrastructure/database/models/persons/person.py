@@ -1,9 +1,9 @@
 from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.infrastructure.database.base import Base
+from app.infrastructure.database.entity_base import BaseEntity
 
-class PersonModel(Base):
+class PersonModel(BaseEntity):
     """Базовая модель для всех персон (Person, Student, Curator)"""
     __tablename__ = "persons"
     __abstract__ = True

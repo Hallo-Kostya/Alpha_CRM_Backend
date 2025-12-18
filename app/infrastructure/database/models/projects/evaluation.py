@@ -3,15 +3,15 @@ from sqlalchemy import String, ForeignKey, UniqueConstraint, Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID
 
-from app.infrastructure.database.base import Base
-from app.domain.enums.evaluation_type import EvaluationType\
+from app.infrastructure.database.entity_base import BaseEntity
+from app.domain.enums.evaluation_type import EvaluationType
 
 if TYPE_CHECKING:
     from app.infrastructure.database.models.persons.curator import CuratorModel
     from app.infrastructure.database.models.projects.project import ProjectModel
 
 
-class EvaluationModel(Base):
+class EvaluationModel(BaseEntity):
     """Модель оценки проекта куратором"""
     __tablename__ = "evaluations"
     

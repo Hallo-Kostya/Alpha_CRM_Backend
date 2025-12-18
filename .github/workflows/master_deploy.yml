@@ -1,7 +1,4 @@
 on:
-  push:
-    branches: 
-      - master
   pull_request:
     branches: 
       - master
@@ -9,6 +6,7 @@ on:
 jobs:
   run_pull:
     name: run pull
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
       - name: install ssh keys

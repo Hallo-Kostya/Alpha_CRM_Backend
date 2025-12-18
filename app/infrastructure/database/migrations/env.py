@@ -1,13 +1,11 @@
 import asyncio
 from logging.config import fileConfig
-
+from app.infrastructure.database.base import Base
+import app.infrastructure.database.models
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 from app.core.config import settings
-from app.infrastructure.database.base import Base
-# Импортируем все модели, чтобы они зарегистрировались в Base.metadata
-from app.infrastructure.database.models import *
 from alembic import context
 
 # this is the Alembic Config object, which provides

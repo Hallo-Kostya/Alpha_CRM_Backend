@@ -1,16 +1,8 @@
-from uuid import UUID
-from app.domain.entities import BaseEntity
-from app.domain.entities import Curator
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from app.domain.entities.projects.project import Project
+from pydantic import ConfigDict, Field, HttpUrl
+from typing import Optional, TYPE_CHECKING
+from app.domain.entities.base_entity import BaseEntity
 
 class Team(BaseEntity):
-    def __init__(self, name: str, curator: Curator | None , group_link: str | None,
-                 projects: list[Project], id: UUID | None):
-        super().__init__(id)
-        self.name = name
-        self.curator = curator
-        self.group_link = group_link
-        self.projects = projects or []
+    """Доменная модель команды"""
+    name: str = Field(..., min_length=1, max_length=255)
+    group_link: Optional[str] = Field(None, max_length=500)

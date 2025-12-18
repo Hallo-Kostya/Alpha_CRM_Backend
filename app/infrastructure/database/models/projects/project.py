@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING
 from sqlalchemy import String, Integer, Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.infrastructure.database.base import Base
+from app.infrastructure.database.entity_base import BaseEntity
 from app.domain.enums.project_status import ProjectStatus
 from app.domain.enums.semester import Semester
 
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from app.infrastructure.database.models.teams.team import TeamModel
 
 
-class ProjectModel(Base):
+class ProjectModel(BaseEntity):
     """Модель проекта"""
     __tablename__ = "projects"
     

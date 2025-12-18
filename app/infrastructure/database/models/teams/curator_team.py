@@ -3,14 +3,14 @@ from sqlalchemy import ForeignKey, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID
 
-from app.infrastructure.database.base_association import BaseAssociation
+from app.infrastructure.database.base import Base
 
 if TYPE_CHECKING:
     from app.infrastructure.database.models.persons.curator import CuratorModel
     from app.infrastructure.database.models.teams.team import TeamModel
 
 
-class CuratorTeamModel(BaseAssociation):
+class CuratorTeamModel(Base):
     """Модель связи куратора и команды (many-to-many)"""
     __tablename__ = "curator_teams"
 
