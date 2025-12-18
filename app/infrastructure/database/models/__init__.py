@@ -25,6 +25,10 @@ from app.infrastructure.database.models.artifacts import (
     ArtifactModel,
     ArtifactLinkModel,
 )
+from app.infrastructure.database.models.auth_tokens import (
+    OAuthTokenModel,
+    RefreshTokenModel
+)
 
 __all__ = [
     # Persons
@@ -48,5 +52,7 @@ __all__ = [
     # Artifacts
     "ArtifactModel",
     "ArtifactLinkModel",
+    # Auth_Tokens
+    "OAuthTokenModel",
+    "RefreshTokenModel",
 ]
-

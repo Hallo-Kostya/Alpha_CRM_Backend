@@ -1,8 +1,9 @@
 from uuid import UUID
 from typing import List
+import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
-
+from app.api.utils.auth import validate_curator
 from app.application.dto.project_team import ProjectTeamWithInfo
 from app.application.dto.team import TeamCreate, TeamUpdate
 from app.application.dto.team_member import TeamMemberCreate, TeamMemberUpdate
@@ -29,6 +30,7 @@ router = APIRouter(
 async def create_team(
     data: TeamCreate,
     service: TeamService = Depends(team_service_getter),
+    curator_id: uuid.UUID = Depends(validate_curator)
 ):
     """Создать команду (на начальном этапе без студентов и кураторов)."""
     return await service.create(data)
@@ -70,6 +72,7 @@ async def update_team(
     team_id: UUID,
     data: TeamUpdate,
     service: TeamService = Depends(team_service_getter),
+    curator_id: uuid.UUID = Depends(validate_curator)
 ):
     """Частичное обновление команды (название, ссылка на чат и т.д.)."""
     updated_data = await service.update(data, team_id)
@@ -89,6 +92,7 @@ async def update_team(
 async def delete_team(
     team_id: UUID,
     service: TeamService = Depends(team_service_getter),
+    curator_id: uuid.UUID = Depends(validate_curator)
 ):
     """Удалить команду. Каскадно удалятся связи со студентами, кураторами, встречами, проектами и артефактами."""
     deleted = await service.delete(team_id)
@@ -110,6 +114,7 @@ async def add_student_to_team(
     team_id: UUID,
     data: TeamMemberCreate,
     service: TeamMemberService = Depends(team_member_service_getter),
+    curator_id: uuid.UUID = Depends(validate_curator)
 ):
     """Добавить студента в команду с указанием роли и учебной группы."""
     return await service.add_student_to_team(team_id, data)
@@ -138,6 +143,7 @@ async def update_team_member(
     student_id: UUID,
     data: TeamMemberUpdate,
     service: TeamMemberService = Depends(team_member_service_getter),
+    curator_id: uuid.UUID = Depends(validate_curator)
 ):
     """Обновить роль или учебную группу студента в команде."""
     return await service.update_team_member(team_id, student_id, data)
@@ -152,6 +158,7 @@ async def remove_student_from_team(
     team_id: UUID,
     student_id: UUID,
     service: TeamMemberService = Depends(team_member_service_getter),
+    curator_id: uuid.UUID = Depends(validate_curator)
 ):
     """Удалить студента из команды."""
     deleted = await service.remove_student_from_team(team_id, student_id)

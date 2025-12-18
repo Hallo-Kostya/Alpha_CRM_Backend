@@ -1,8 +1,9 @@
 from uuid import UUID
 from typing import List
+import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
-
+from app.api.utils.auth import validate_curator
 from app.application.dto.student import StudentCreate, StudentUpdate
 from app.application.services.students_service import (
     StudentService,
@@ -31,6 +32,7 @@ router = APIRouter(
 async def create_student(
     data: StudentCreate,
     service: StudentService = Depends(student_service_getter),
+    curator_id: uuid.UUID = Depends(validate_curator)
 ):
     """Создать нового студента (без привязки к команде)."""
     return await service.create(data)
@@ -72,6 +74,7 @@ async def update_student(
     student_id: UUID,
     data: StudentUpdate,
     service: StudentService = Depends(student_service_getter),
+    curator_id: uuid.UUID = Depends(validate_curator)
 ):
     """Частичное обновление данных студента."""
     updated_student = await service.update(data, student_id)
@@ -91,6 +94,7 @@ async def update_student(
 async def delete_student(
     student_id: UUID,
     service: StudentService = Depends(student_service_getter),
+    curator_id: uuid.UUID = Depends(validate_curator)
 ):
     """Удалить студента (каскадно удалятся связи с командами и посещаемость)."""
     deleted = await service.delete(student_id)

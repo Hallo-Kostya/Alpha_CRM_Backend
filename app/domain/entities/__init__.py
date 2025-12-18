@@ -12,8 +12,8 @@ from app.domain.entities.teams.team_member import TeamMember
 from app.domain.entities.persons.curator import Curator
 from app.domain.entities.projects.milestone import Milestone
 from app.domain.entities.projects.evaluation import Evaluation
-from app.domain.entities.persons.auth_refresh_token import AuthRefreshToken
-from app.domain.entities.persons.oauth_token import OAuthToken
+from app.domain.entities.auth_tokens.auth_token import AuthToken
+from app.domain.entities.auth_tokens.oauth_tokens import OAuthTokens
 
 __all__ = [
     'BaseEntity',
@@ -30,6 +30,6 @@ __all__ = [
     'Curator',
     'Milestone',
     'Evaluation',
-    'AuthRefreshToken',
-    'OAuthToken',
+    'AuthToken',
+    'OAuthTokens',
 ]
