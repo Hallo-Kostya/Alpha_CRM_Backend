@@ -1,5 +1,6 @@
 from uuid import UUID
 from typing import List
+import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from app.application.dto.project import (
@@ -14,6 +15,7 @@ from app.application.services.projects_service import (
 )
 from app.domain.entities.projects.project import Project
 from app.domain.entities.projects.project_team import ProjectTeam
+from app.api.utils.auth import validate_curator
 
 
 router = APIRouter(
@@ -32,6 +34,7 @@ router = APIRouter(
 async def create_project(
     data: ProjectCreate,
     service: ProjectService = Depends(project_service_getter),
+    curator_id: uuid.UUID = Depends(validate_curator)
 ):
     """Создать проект (на этапе планирования, без команд)."""
     return await service.create(data)
@@ -72,6 +75,7 @@ async def update_project(
     project_id: UUID,
     data: ProjectUpdate,
     service: ProjectService = Depends(project_service_getter),
+    credentials: tuple[uuid.UUID, str] = Depends(validate_curator)
 ):
     """Частичное обновление данных проекта."""
     updated_obj = await service.update(data, project_id)
@@ -90,6 +94,7 @@ async def update_project(
 async def delete_project(
     project_id: UUID,
     service: ProjectService = Depends(project_service_getter),
+    credentials: tuple[uuid.UUID, str] = Depends(validate_curator)
 ):
     """
     Удалить проект. Каскадно удалятся вехи, оценки,
@@ -114,6 +119,7 @@ async def assign_team_to_project(
     project_id: UUID,
     data: ProjectTeamCreate,
     service: ProjectTeamService = Depends(project_team_service_getter),
+    credentials: tuple[uuid.UUID, str] = Depends(validate_curator)
 ):
     """
     Назначить команду на проект.
@@ -158,6 +164,7 @@ async def update_project_team(
     team_id: UUID,
     data: ProjectTeamUpdate,
     service: ProjectTeamService = Depends(project_team_service_getter),
+    credentials: tuple[uuid.UUID, str] = Depends(validate_curator)
 ):
     """Обновить статус участия команды в проекте."""
     return await service.update_project_team(project_id, team_id, data)
@@ -167,12 +174,11 @@ async def update_project_team(
     status_code=status.HTTP_200_OK,
     summary="Открепить команду от проекта",
 )
-
-
 async def remove_team_from_project(
     project_id: UUID,
     team_id: UUID,
     service: ProjectTeamService = Depends(project_team_service_getter),
+    credentials: tuple[uuid.UUID, str] = Depends(validate_curator)
 ):
     """
     Открепить команду от проекта.

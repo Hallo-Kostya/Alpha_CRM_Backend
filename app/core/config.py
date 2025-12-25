@@ -4,6 +4,8 @@ from pathlib import Path
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+
 class RunConfig(BaseModel):
     host: str = "0.0.0.0"
     port: int = 8000
@@ -19,8 +21,11 @@ class ApiPrefix(BaseModel):
 
 
 class HashConfig(BaseModel):
-    secret: str = ""
+    access_secret: str = ""
+    refresh_secret: str = ""
     algorithm: str = ""
+    access_expire_minutes: int = 30
+    refresh_expire_days: int = 30
 
 
 class DatabaseConfig(BaseModel):
