@@ -50,14 +50,14 @@ class ProjectTeamService(BaseService[ProjectTeamModel, ProjectTeamResponse]):
         if not project:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Проект с ID {project_id} не найден"
+                detail=f"Проект с ID {project_id} не найден",
             )
 
         team = await self._team_repo.get_by_id(team_id)
         if not team:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Команда с ID {team_id} не найдена"
+                detail=f"Команда с ID {team_id} не найдена",
             )
 
     async def assign_team_to_project(
@@ -72,16 +72,16 @@ class ProjectTeamService(BaseService[ProjectTeamModel, ProjectTeamResponse]):
         if not project:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Проект с ID {project_id} не найден"
+                detail=f"Проект с ID {project_id} не найден",
             )
-        
+
         # Проверяем, что у проекта есть year и semester
-        if not hasattr(project, 'year') or not hasattr(project, 'semester'):
+        if not hasattr(project, "year") or not hasattr(project, "semester"):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Проект не имеет указанных года и семестра"
+                detail="Проект не имеет указанных года и семестра",
             )
-        
+
         # Проверяем, не назначена ли команда уже на этот проект
         existing = await self._project_team_repo.get_by_project_and_team(
             project_id, data.team_id
@@ -89,27 +89,29 @@ class ProjectTeamService(BaseService[ProjectTeamModel, ProjectTeamResponse]):
         if existing:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Команда уже назначена на этот проект"
+                detail="Команда уже назначена на этот проект",
             )
 
         # Проверяем, что у команды нет другого активного проекта в том же семестре
-        active_project = await self._project_team_repo.get_active_project_for_team_in_semester(
-            data.team_id, project.year, project.semester
+        active_project = (
+            await self._project_team_repo.get_active_project_for_team_in_semester(
+                data.team_id, project.year, project.semester
+            )
         )
         if active_project:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Команда уже участвует в проекте {active_project.project_id} "
-                      f"в {project.year} {project.semester.value} семестре"
+                f"в {project.year} {project.semester.value} семестре",
             )
 
         # Создаем связь
         project_team_data = {
             "project_id": project_id,
             "team_id": data.team_id,
-            "status": data.status
+            "status": data.status,
         }
-        
+
         orm_obj = ProjectTeamModel(**project_team_data)
         created_obj = await self._repo.create(orm_obj)
         return self._to_schema(created_obj)
@@ -123,7 +125,7 @@ class ProjectTeamService(BaseService[ProjectTeamModel, ProjectTeamResponse]):
         if not project:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Проект с ID {project_id} не найден"
+                detail=f"Проект с ID {project_id} не найден",
             )
 
         project_teams = await self._project_team_repo.get_by_project_id(
@@ -140,7 +142,7 @@ class ProjectTeamService(BaseService[ProjectTeamModel, ProjectTeamResponse]):
         if not team:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Команда с ID {team_id} не найдена"
+                detail=f"Команда с ID {team_id} не найдена",
             )
 
         team_projects = await self._project_team_repo.get_by_team_id(
@@ -157,14 +159,14 @@ class ProjectTeamService(BaseService[ProjectTeamModel, ProjectTeamResponse]):
         if not team:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Команда с ID {team_id} не найдена"
+                detail=f"Команда с ID {team_id} не найдена",
             )
-        
+
         # Находим активные связи команды
         active_links = await self._project_team_repo.get_by_team_id(
             team_id, ProjectTeamStatus.ACTIVE
         )
-        
+
         # Возвращаем первую активную связь (должна быть только одна по бизнес-правилам)
         if active_links:
             return self._to_schema(active_links[0])
@@ -179,7 +181,7 @@ class ProjectTeamService(BaseService[ProjectTeamModel, ProjectTeamResponse]):
         if not project:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Проект с ID {project_id} не найден"
+                detail=f"Проект с ID {project_id} не найден",
             )
 
         # Получаем связи с предзагрузкой информации о командах
@@ -188,14 +190,14 @@ class ProjectTeamService(BaseService[ProjectTeamModel, ProjectTeamResponse]):
             .where(ProjectTeamModel.project_id == project_id)
             .options(selectinload(ProjectTeamModel.team))
         )
-        
+
         result = await self._project_team_repo.session.execute(query)
         project_teams = result.scalars().all()
-        
+
         # Преобразуем в DTO с информацией
         result_list = []
         for pt in project_teams:
-        # Передаем project.semester как есть - валидатор в DTO обработает конвертацию
+            # Передаем project.semester как есть - валидатор в DTO обработает конвертацию
             result_list.append(
                 ProjectTeamWithInfo(
                     project_id=UUID(str(pt.project_id)),
@@ -205,10 +207,10 @@ class ProjectTeamService(BaseService[ProjectTeamModel, ProjectTeamResponse]):
                     project_name=project.name,
                     team_name=pt.team.name if pt.team else "Неизвестная команда",
                     project_year=project.year,
-                    project_semester=project.semester
+                    project_semester=project.semester,
                 )
             )
-        
+
         return result_list
 
     async def update_project_team(
@@ -222,7 +224,7 @@ class ProjectTeamService(BaseService[ProjectTeamModel, ProjectTeamResponse]):
         if not project_team:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Связь между проектом и командой не найдена"
+                detail="Связь между проектом и командой не найдена",
             )
 
         # Если меняем статус на ACTIVE, проверяем ограничения
@@ -237,7 +239,7 @@ class ProjectTeamService(BaseService[ProjectTeamModel, ProjectTeamResponse]):
                     raise HTTPException(
                         status_code=status.HTTP_400_BAD_REQUEST,
                         detail=f"Команда уже участвует в активном проекте "
-                              f"{other_active.project_id} в этом семестре"
+                        f"{other_active.project_id} в этом семестре",
                     )
 
         # Обновляем данные
@@ -245,9 +247,7 @@ class ProjectTeamService(BaseService[ProjectTeamModel, ProjectTeamResponse]):
         updated_obj = await self._repo.update(project_team, update_data)
         return self._to_schema(updated_obj)
 
-    async def remove_team_from_project(
-        self, project_id: UUID, team_id: UUID
-    ) -> bool:
+    async def remove_team_from_project(self, project_id: UUID, team_id: UUID) -> bool:
         """Удалить команду из проекта (или изменить статус)"""
         # Находим связь
         project_team = await self._project_team_repo.get_by_project_and_team(
@@ -256,14 +256,14 @@ class ProjectTeamService(BaseService[ProjectTeamModel, ProjectTeamResponse]):
         if not project_team:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Связь между проектом и командой не найдена"
+                detail="Связь между проектом и командой не найдена",
             )
 
         # Вместо удаления меняем статус на WITHDRAWN для истории
         project_team.status = ProjectTeamStatus.WITHDRAWN
         await self._repo.session.commit()
         await self._repo.session.refresh(project_team)
-        
+
         return True
 
 

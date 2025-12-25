@@ -27,7 +27,7 @@ class ArtifactLinkModel(Base):
     project_id: Mapped[UUID | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("projects.id", ondelete="CASCADE"),
-        nullable=True,
+        nullable=False,
         index=True,
         primary_key=True,
     )
