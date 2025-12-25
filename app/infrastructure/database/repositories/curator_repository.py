@@ -17,13 +17,21 @@ class CuratorRepository(BaseRepository[CuratorModel]):
 
     async def get_by_id(self, obj_id: UUID) -> CuratorModel | None:
         result = await self.session.execute(
-            select(self.model).options(selectinload(CuratorModel.teams)).where(self.model.id == obj_id)
+            select(self.model)
+            .options(selectinload(CuratorModel.teams))
+            .where(self.model.id == obj_id)
         )
         obj = result.scalar_one_or_none()
         return obj
-    
-    async def get_list(self, **filter_attrs) -> Sequence[CuratorModel] | list[CuratorModel]:
-        query = select(self.model).options(selectinload(CuratorModel.teams)).filter_by(**filter_attrs)
+
+    async def get_list(
+        self, **filter_attrs
+    ) -> Sequence[CuratorModel] | list[CuratorModel]:
+        query = (
+            select(self.model)
+            .options(selectinload(CuratorModel.teams))
+            .filter_by(**filter_attrs)
+        )
         result = await self.session.scalars(query)
         return result.all()
 

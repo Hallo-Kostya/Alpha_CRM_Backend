@@ -32,7 +32,7 @@ router = APIRouter(
 async def create_student(
     data: StudentCreate,
     service: StudentService = Depends(student_service_getter),
-    curator_id: uuid.UUID = Depends(validate_curator)
+    credentials: tuple[uuid.UUID, str] = Depends(validate_curator)
 ):
     """Создать нового студента (без привязки к команде)."""
     return await service.create(data)
@@ -41,6 +41,7 @@ async def create_student(
 @router.get("/", response_model=List[Student], summary="Список всех студентов")
 async def list_students(
     service: StudentService = Depends(student_service_getter),
+    credentials: tuple[uuid.UUID, str] = Depends(validate_curator)
 ):
     """Получить список всех студентов."""
     return await service.get_list()
@@ -54,6 +55,7 @@ async def list_students(
 async def get_student(
     student_id: UUID,
     service: StudentService = Depends(student_service_getter),
+    credentials: tuple[uuid.UUID, str] = Depends(validate_curator)
 ):
     """Получить информацию о студенте."""
     student = await service.get_by_id(student_id)
@@ -74,7 +76,7 @@ async def update_student(
     student_id: UUID,
     data: StudentUpdate,
     service: StudentService = Depends(student_service_getter),
-    curator_id: uuid.UUID = Depends(validate_curator)
+    credentials: tuple[uuid.UUID, str] = Depends(validate_curator)
 ):
     """Частичное обновление данных студента."""
     updated_student = await service.update(data, student_id)
@@ -94,7 +96,7 @@ async def update_student(
 async def delete_student(
     student_id: UUID,
     service: StudentService = Depends(student_service_getter),
-    curator_id: uuid.UUID = Depends(validate_curator)
+    credentials: tuple[uuid.UUID, str] = Depends(validate_curator)
 ):
     """Удалить студента (каскадно удалятся связи с командами и посещаемость)."""
     deleted = await service.delete(student_id)
@@ -114,6 +116,7 @@ async def delete_student(
 async def get_student_teams(
     student_id: UUID,
     service: TeamMemberService = Depends(team_member_service_getter),
+    credentials: tuple[uuid.UUID, str] = Depends(validate_curator)
 ):
     """Получить список всех команд, в которых состоит студент."""
     return await service.get_student_teams(student_id)

@@ -75,7 +75,7 @@ async def update_project(
     project_id: UUID,
     data: ProjectUpdate,
     service: ProjectService = Depends(project_service_getter),
-    curator_id: uuid.UUID = Depends(validate_curator)
+    credentials: tuple[uuid.UUID, str] = Depends(validate_curator)
 ):
     """Частичное обновление данных проекта."""
     updated_obj = await service.update(data, project_id)
@@ -94,7 +94,7 @@ async def update_project(
 async def delete_project(
     project_id: UUID,
     service: ProjectService = Depends(project_service_getter),
-    curator_id: uuid.UUID = Depends(validate_curator)
+    credentials: tuple[uuid.UUID, str] = Depends(validate_curator)
 ):
     """
     Удалить проект. Каскадно удалятся вехи, оценки,
@@ -119,7 +119,7 @@ async def assign_team_to_project(
     project_id: UUID,
     data: ProjectTeamCreate,
     service: ProjectTeamService = Depends(project_team_service_getter),
-    curator_id: uuid.UUID = Depends(validate_curator)
+    credentials: tuple[uuid.UUID, str] = Depends(validate_curator)
 ):
     """
     Назначить команду на проект.
@@ -164,7 +164,7 @@ async def update_project_team(
     team_id: UUID,
     data: ProjectTeamUpdate,
     service: ProjectTeamService = Depends(project_team_service_getter),
-    curator_id: uuid.UUID = Depends(validate_curator)
+    credentials: tuple[uuid.UUID, str] = Depends(validate_curator)
 ):
     """Обновить статус участия команды в проекте."""
     return await service.update_project_team(project_id, team_id, data)
@@ -178,7 +178,7 @@ async def remove_team_from_project(
     project_id: UUID,
     team_id: UUID,
     service: ProjectTeamService = Depends(project_team_service_getter),
-    curator_id: uuid.UUID = Depends(validate_curator)
+    credentials: tuple[uuid.UUID, str] = Depends(validate_curator)
 ):
     """
     Открепить команду от проекта.

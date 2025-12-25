@@ -7,8 +7,14 @@ from app.api.utils.auth import validate_curator
 from app.application.dto.project_team import ProjectTeamWithInfo
 from app.application.dto.team import TeamCreate, TeamUpdate
 from app.application.dto.team_member import TeamMemberCreate, TeamMemberUpdate
-from app.application.services.project_team_service import ProjectTeamService, project_team_service_getter
-from app.application.services.team_member_service import TeamMemberService, team_member_service_getter
+from app.application.services.project_team_service import (
+    ProjectTeamService,
+    project_team_service_getter,
+)
+from app.application.services.team_member_service import (
+    TeamMemberService,
+    team_member_service_getter,
+)
 from app.application.services.team_service import TeamService, team_service_getter
 from app.domain.entities.projects.project_team import ProjectTeam
 from app.domain.entities.teams.team import Team
@@ -30,7 +36,7 @@ router = APIRouter(
 async def create_team(
     data: TeamCreate,
     service: TeamService = Depends(team_service_getter),
-    curator_id: uuid.UUID = Depends(validate_curator)
+    credentials: tuple[uuid.UUID, str] = Depends(validate_curator)
 ):
     """Создать команду (на начальном этапе без студентов и кураторов)."""
     return await service.create(data)
@@ -72,7 +78,7 @@ async def update_team(
     team_id: UUID,
     data: TeamUpdate,
     service: TeamService = Depends(team_service_getter),
-    curator_id: uuid.UUID = Depends(validate_curator)
+    credentials: tuple[uuid.UUID, str] = Depends(validate_curator)
 ):
     """Частичное обновление команды (название, ссылка на чат и т.д.)."""
     updated_data = await service.update(data, team_id)
@@ -92,7 +98,7 @@ async def update_team(
 async def delete_team(
     team_id: UUID,
     service: TeamService = Depends(team_service_getter),
-    curator_id: uuid.UUID = Depends(validate_curator)
+    credentials: tuple[uuid.UUID, str] = Depends(validate_curator)
 ):
     """Удалить команду. Каскадно удалятся связи со студентами, кураторами, встречами, проектами и артефактами."""
     deleted = await service.delete(team_id)
@@ -114,7 +120,7 @@ async def add_student_to_team(
     team_id: UUID,
     data: TeamMemberCreate,
     service: TeamMemberService = Depends(team_member_service_getter),
-    curator_id: uuid.UUID = Depends(validate_curator)
+    credentials: tuple[uuid.UUID, str] = Depends(validate_curator)
 ):
     """Добавить студента в команду с указанием роли и учебной группы."""
     return await service.add_student_to_team(team_id, data)
@@ -143,7 +149,7 @@ async def update_team_member(
     student_id: UUID,
     data: TeamMemberUpdate,
     service: TeamMemberService = Depends(team_member_service_getter),
-    curator_id: uuid.UUID = Depends(validate_curator)
+    credentials: tuple[uuid.UUID, str] = Depends(validate_curator)
 ):
     """Обновить роль или учебную группу студента в команде."""
     return await service.update_team_member(team_id, student_id, data)
@@ -158,16 +164,18 @@ async def remove_student_from_team(
     team_id: UUID,
     student_id: UUID,
     service: TeamMemberService = Depends(team_member_service_getter),
-    curator_id: uuid.UUID = Depends(validate_curator)
+    credentials: tuple[uuid.UUID, str] = Depends(validate_curator)
 ):
     """Удалить студента из команды."""
     deleted = await service.remove_student_from_team(team_id, student_id)
     if not deleted:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Связь между командой и студентом не найдена"
+            detail="Связь между командой и студентом не найдена",
         )
-    return Response(f"Successfully removed student {student_id} from team {team_id}", 200)
+    return Response(
+        f"Successfully removed student {student_id} from team {team_id}", 200
+    )
 
 
 @router.get(
@@ -194,14 +202,14 @@ async def get_current_team_project(
 ):
     """
     Получить текущий активный проект команды.
-    
+
     Возвращает проект со статусом ACTIVE для текущего семестра.
     """
     project = await service.get_current_team_project(team_id)
     if not project:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"У команды с ID {team_id} нет активного проекта"
+            detail=f"У команды с ID {team_id} нет активного проекта",
         )
     return project
 
@@ -214,11 +222,11 @@ async def get_current_team_project(
 async def get_team_projects_detailed(
     team_id: UUID,
     service: ProjectTeamService = Depends(project_team_service_getter),
+    credentials: tuple[uuid.UUID, str] = Depends(validate_curator)
 ):
     """Получить список проектов команды с информацией о проектах."""
     # Для этого нужно добавить соответствующий метод в ProjectTeamService
     # или использовать существующий get_team_projects с предзагрузкой информации
     raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail="Метод пока не реализован"
+        status_code=status.HTTP_501_NOT_IMPLEMENTED, detail="Метод пока не реализован"
     )
