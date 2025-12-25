@@ -31,10 +31,10 @@ class ProjectTeamRepository(BaseRepository[ProjectTeamModel]):
     ) -> Sequence[ProjectTeamModel]:
         """Получить все связи для проекта"""
         query = select(self.model).where(self.model.project_id == project_id)
-        
+
         if status:
             query = query.where(self.model.status == status)
-            
+
         result = await self.session.scalars(query)
         return result.all()
 
@@ -67,7 +67,7 @@ class ProjectTeamRepository(BaseRepository[ProjectTeamModel]):
                 ProjectModel.semester == semester  # Ссылаемся на ProjectModel
             )
         )
-        
+
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 

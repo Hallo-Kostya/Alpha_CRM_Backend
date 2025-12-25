@@ -3,6 +3,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.infrastructure.database.entity_base import BaseEntity
 
+
 class PersonModel(BaseEntity):
     """Базовая модель для всех персон (Person, Student, Curator)"""
     __tablename__ = "persons"
