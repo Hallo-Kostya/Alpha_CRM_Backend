@@ -1,7 +1,7 @@
 """auth_tokens
 
 Revision ID: 49ddef25e963
-Revises: 99659893e836
+Revises: 3d6c83a0130a
 Create Date: 2025-12-18 21:28:48.546481
 
 """
@@ -13,7 +13,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision: str = '49ddef25e963'
-down_revision: Union[str, Sequence[str], None] = '99659893e836'
+down_revision: Union[str, Sequence[str], None] = '3d6c83a0130a'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
