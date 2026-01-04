@@ -21,4 +21,4 @@ class CuratorPATCH(BaseModel):
     patronymic: Optional[str] = None
     email: Optional[EmailStr] = None
     tg_link: Optional[str] = None
-
+    avatar_s3_path: Optional[str] = None
