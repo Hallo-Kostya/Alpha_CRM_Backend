@@ -28,6 +28,32 @@ class HashConfig(BaseModel):
     refresh_expire_days: int = 30
 
 
+class CuratorBucketConfig(BaseModel):
+    name: str = "curators"
+
+    @property
+    def policy(self) -> dict:
+        return {
+            'Version': '2012-10-17',
+            'Statement': [{
+                'Sid': 'AddPerm',
+                'Effect': 'Allow',
+                'Principal': '*',
+                'Action': ['s3:GetObject'],
+                'Resource': f'arn:aws:s3:::{self.name}/*'
+            }]
+        }
+
+
+class S3Config(BaseModel):
+    private_host: str = ""
+    public_host: str = "http://localhost:9000"
+    access_key: str = ""
+    secret_key: str = ""
+    region: str = ""
+    curator_bucket: CuratorBucketConfig = CuratorBucketConfig()
+
+
 class DatabaseConfig(BaseModel):
     scheme: str = "postgresql+asyncpg"
     name: str = "Alpha_dev"
@@ -71,6 +97,7 @@ class Settings(BaseSettings):
     api: ApiPrefix = ApiPrefix()
     db: DatabaseConfig = DatabaseConfig()
     hash: HashConfig = HashConfig()
+    s3: S3Config = S3Config()
 
 
 settings = Settings()  # type: ignore
