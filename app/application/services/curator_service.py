@@ -43,7 +43,7 @@ class CuratorService(BaseService[CuratorModel, Curator]):
         return CuratorModel(
             hashed_password=scheme_.password,
             first_name=scheme_.first_name,
-            last_name=scheme_.first_name,
+            last_name=scheme_.last_name,
             email=scheme_.email,
             patronymic=scheme_.patronymic,
             tg_link=scheme_.tg_link,
