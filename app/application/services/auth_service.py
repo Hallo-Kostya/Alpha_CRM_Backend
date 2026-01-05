@@ -1,4 +1,4 @@
-from fastapi import Depends, HTTPException, Header
+from fastapi import Depends, HTTPException
 import jwt
 import uuid
 from passlib.context import CryptContext
@@ -6,7 +6,7 @@ from app.core.config import settings
 from datetime import datetime, timedelta, timezone
 from app.application.services.base_service import BaseService
 from app.domain.entities.auth_tokens.auth_token import AuthToken
-from app.infrastructure.database.models import CuratorModel, RefreshTokenModel
+from app.infrastructure.database.models import RefreshTokenModel
 from app.infrastructure.database.repositories.token_repository import (
     TokenRepository,
     token_repository_getter,
@@ -104,11 +104,8 @@ class AuthService(BaseService[RefreshTokenModel, AuthToken]):
         return pwd_context.verify(plain_password, hashed_password)
 
     @staticmethod
-    def get_curator_id_from_access(authorization: str) -> uuid.UUID:
+    def get_curator_id_from_access(token: str) -> uuid.UUID:
         """Метод для обработки входящего токена авторизации в заголовках"""
-        if not authorization.startswith("Bearer "):
-            raise HTTPException(status_code=401, detail="Invalid authorization header")
-        token = authorization.split(" ")[1]
         try:
             payload = jwt.decode(
                 token,
@@ -122,13 +119,13 @@ class AuthService(BaseService[RefreshTokenModel, AuthToken]):
                     status_code=401, detail="Could not validate credentials"
                 )
             return curator_id
-        except Exception:
+        except Exception as e:
+            print(e)
             raise HTTPException(status_code=401, detail="Invalid authorization token")
 
     @staticmethod
     def get_curator_id_from_refresh(token: str) -> uuid.UUID:
         """Метод для обработки входящего токена авторизации в заголовках"""
-        print(token)
         try:
             payload = jwt.decode(
                 token,

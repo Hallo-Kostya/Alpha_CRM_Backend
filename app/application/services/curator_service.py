@@ -1,11 +1,11 @@
-from fastapi import Depends
+from fastapi import Depends, UploadFile
 from app.application.dto.curator import (
     CuratorPOST,
     CuratorPATCH,
     CuratorPostBase,
 )
 from app.application.services.auth_service import AuthService, auth_service_getter
-from app.domain.entities.teams.team import Team
+from app.core.config import settings
 from app.infrastructure.database.models import CuratorModel
 from app.domain.entities.persons.curator import Curator
 from app.application.services.base_service import BaseService
@@ -14,8 +14,8 @@ from app.infrastructure.database.repositories.curator_repository import (
     CuratorRepository,
     curator_repository_getter,
 )
+from app.infrastructure.s3_storage.s3_client import S3Client
 from uuid import UUID
-from typing import Sequence
 from sqlalchemy.exc import IntegrityError
 
 
@@ -35,6 +35,9 @@ class CuratorService(BaseService[CuratorModel, Curator]):
     ):
         super().__init__(curator_repo)
         self.auth_service = auth_service
+        self.s3_client = S3Client(
+            settings.s3.curator_bucket.name, settings.s3.curator_bucket.policy,
+        )
 
     def _to_orm(self, scheme_: CuratorPOST) -> CuratorModel:
         return CuratorModel(
@@ -79,18 +82,33 @@ class CuratorService(BaseService[CuratorModel, Curator]):
             return None
 
     async def login_curator(
-        self, curator_data: CuratorPostBase, existing_curator: CuratorModel,
+        self,
+        curator_data: CuratorPostBase,
+        existing_curator: CuratorModel,
     ) -> tuple[AuthToken, AuthToken] | None:
-        is_password_correct = self.auth_service.verify_password(curator_data.password, existing_curator.hashed_password)
+        is_password_correct = self.auth_service.verify_password(
+            curator_data.password, existing_curator.hashed_password
+        )
         if not is_password_correct:
             return None
         auth_tokens = await self.auth_service.create_token_pair(existing_curator.id)
         return auth_tokens
 
-    async def logout_curator(
-            self, refresh_token: str
-    ) -> None:
+    async def logout_curator(self, refresh_token: str) -> None:
         await self.auth_service.revoke_token_pair(refresh_token)
+
+    async def upload_avatar(
+        self,
+        file: UploadFile,
+        curator_id: UUID,
+    ) -> Curator | None:
+        avatar_file_path = build_avatar_path(
+            curator_id, file.filename if file.filename else "default.jpg"
+        )
+        self.s3_client.put_object(avatar_file_path, file)
+        data_to_update = CuratorPATCH(
+            avatar_s3_path=f"{settings.s3.public_host}/{settings.s3.curator_bucket.name}{avatar_file_path}")
+        return await self.update(data_to_update, curator_id)
 
 
 def curator_service_getter(
@@ -98,3 +116,7 @@ def curator_service_getter(
     auth_service: AuthService = Depends(auth_service_getter),
 ) -> CuratorService:
     return CuratorService(curator_repository, auth_service)
+
+
+def build_avatar_path(curator_id: UUID, file_name: str) -> str:
+    return f"/avatars/{curator_id}/{file_name}"
