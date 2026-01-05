@@ -1,5 +1,5 @@
 import uuid
-from fastapi import APIRouter
+from fastapi import APIRouter, File, UploadFile
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from app.application.dto.curator import (
     CuratorPATCH,
@@ -107,3 +107,18 @@ async def get_curator(curator_id: uuid.UUID, service: CuratorService = Depends(c
 @router.get("/")
 async def list_curators(service: CuratorService = Depends(curator_service_getter)):
     return await service.get_list()
+
+
+@router.post("/avatar")
+async def upload_file(
+    file: UploadFile = File(...),
+    service: CuratorService = Depends(curator_service_getter),
+    credentials: tuple[uuid.UUID, str] = Depends(validate_curator),
+):
+    if file.size and file.size > 50 * 1024 * 1024:
+        raise HTTPException(400, "File too large")
+    curator_id, _ = credentials
+    updated_curator = await service.upload_avatar(file, curator_id)
+    if not updated_curator:
+        raise HTTPException(status_code=401, detail="User with this id was not found")
+    return updated_curator
