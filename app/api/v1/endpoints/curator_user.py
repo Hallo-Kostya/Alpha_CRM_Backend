@@ -22,19 +22,6 @@ router = APIRouter(
     prefix="/auth", tags=["auth"], responses={404: {"description": "Curator not found"}}
 )
 
-
-def notify_registration(user_id: int, email: str):
-    requests.post(
-        "https://functions.yandexcloud.net/<function-id>",
-        json={
-            "event": "user_registered",
-            "user_id": user_id,
-            "email": email
-        },
-        timeout=2
-    )
-
-
 @router.post(
     "/register",
     description="""
