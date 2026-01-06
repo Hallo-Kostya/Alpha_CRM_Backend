@@ -109,9 +109,8 @@ class CuratorService(BaseService[CuratorModel, Curator]):
             curator_id, file.filename if file.filename else "default.jpg"
         )
         self.s3_client.put_object(avatar_file_path, file)
-        print(f"{settings.s3.public_host.rstrip("/")}/{settings.s3.curator_bucket.name.rstrip("/")}{avatar_file_path}")
         data_to_update = CuratorPATCH(
-            avatar_s3_path=f"{settings.s3.public_host.rstrip("/")}/{settings.s3.curator_bucket.name.rstrip("/")}{avatar_file_path}")
+            avatar_s3_path=f"{settings.s3.public_host}/{settings.s3.curator_bucket.name}/{avatar_file_path}")
         return await self.update(data_to_update, curator_id)
 
 
@@ -123,7 +122,7 @@ def curator_service_getter(
 
 
 def build_avatar_path(curator_id: UUID, file_name: str) -> str:
-    return f"/avatars/{curator_id}/{file_name}"
+    return f"avatars/{curator_id}/{file_name}"
 
 
 def notify_auth(user_id: UUID, email: str):
