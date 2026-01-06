@@ -122,7 +122,7 @@ def curator_service_getter(
 
 
 def build_avatar_path(curator_id: UUID, file_name: str) -> str:
-    return f"avatars/{curator_id}/{file_name}"
+    return f"/avatars/{curator_id}/{file_name}"
 
 
 def notify_auth(user_id: UUID, email: str):
