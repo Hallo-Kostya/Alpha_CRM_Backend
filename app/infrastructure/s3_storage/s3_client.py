@@ -19,14 +19,6 @@ class S3Client:
         )
         self.bucket = bucket
         self.bucket_policy = policy
-        self._check_bucket_existence()
-
-    def _check_bucket_existence(self) -> None:
-        try:
-            self.client.head_bucket(Bucket=self.bucket)
-        except ClientError:
-            self.client.create_bucket(Bucket=self.bucket)
-        self.client.put_bucket_policy(Bucket=self.bucket, Policy=json.dumps(self.bucket_policy))
 
     def list_objects(self, prefix: str | None = None) -> dict:
         return self.client.list_objects_v2(self.bucket, Prefix=prefix)
