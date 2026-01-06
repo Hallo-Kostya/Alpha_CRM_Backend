@@ -4,7 +4,6 @@ from app.api.v1.routes import routers as v1_routers
 from app.domain.entities.persons.curator import Curator
 from app.domain.entities.teams.team import Team
 from app.domain.entities.projects.project import Project
-from app.middleware.metrics import metrics_middleware
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.middleware import PrometheusMiddleware
@@ -22,7 +21,6 @@ main_app.add_middleware(
 )
 
 main_app.include_router(v1_routers, prefix="/api")
-main_app.middleware("http")(metrics_middleware)
 main_app.add_middleware(PrometheusMiddleware)
 
 Team.model_rebuild(force=True)
