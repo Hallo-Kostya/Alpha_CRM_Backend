@@ -1,16 +1,17 @@
-from pydantic import Field, EmailStr
+from pydantic import Field
 from typing import Optional
 from app.domain.entities.base_entity import BaseEntity
+from app.domain.entities.custom_types import EmailField, NameField, TgField
 
 
 class Person(BaseEntity):
     """Базовая сущность персоны"""
 
-    first_name: str = Field(..., min_length=1, max_length=100)
-    last_name: str = Field(..., min_length=1, max_length=100)
-    patronymic: Optional[str] = Field(None, max_length=100)
-    email: Optional[EmailStr] = None
-    tg_link: Optional[str] = Field(None, max_length=255)
+    first_name: NameField = Field(..., examples=["Иван"])
+    last_name: NameField = Field(..., examples=["Иванов"])
+    patronymic: Optional[NameField] = Field(None, examples=["Иванович"])
+    email: EmailField
+    tg_link: TgField
 
     def full_name(self) -> str:
         """Получить полное имя"""

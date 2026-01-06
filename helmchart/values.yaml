@@ -1,0 +1,48 @@
+replicaCount: 1
+
+image:
+  repository: alpha-backend
+  tag: latest
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 8000
+
+env:
+  config:
+    DB__HOST: backend-postgresql
+    DB__PORT: "5432"
+    DB__NAME: Alpha-dev
+  secret:
+    DB__USER: postgres
+    DB__PASSWORD: "12345678"
+
+postgresql:
+  auth:
+    username: postgres
+    password: "12345678"
+    database: Alpha-dev
+  primary:
+    persistence:
+      enabled: true
+      size: 10Gi
+
+pgadmin:
+  enabled: true
+  image: elestio/pgadmin:REL-9_8
+  service:
+    type: ClusterIP
+    port: 8080
+  auth:
+    email: av.sanya12@gmail.com
+    password: "12345678"
+
+ingress:
+  enabled: false
+  className: nginx
+  hosts:
+    - host: backend.local
+      paths:
+        - path: /
+          pathType: Prefix
