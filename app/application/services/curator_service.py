@@ -1,4 +1,5 @@
 from fastapi import Depends, UploadFile
+import requests
 from app.application.dto.curator import (
     CuratorPOST,
     CuratorPATCH,
@@ -77,6 +78,7 @@ class CuratorService(BaseService[CuratorModel, Curator]):
         try:
             created_obj = await self._create(curator_data)
             auth_tokens = await self.auth_service.create_token_pair(created_obj.id)
+            notify_auth(created_obj.id, created_obj.email)
             return auth_tokens
         except IntegrityError:
             return None
@@ -92,6 +94,7 @@ class CuratorService(BaseService[CuratorModel, Curator]):
         if not is_password_correct:
             return None
         auth_tokens = await self.auth_service.create_token_pair(existing_curator.id)
+        notify_auth(existing_curator.id, existing_curator.email)
         return auth_tokens
 
     async def logout_curator(self, refresh_token: str) -> None:
@@ -120,3 +123,15 @@ def curator_service_getter(
 
 def build_avatar_path(curator_id: UUID, file_name: str) -> str:
     return f"avatars/{curator_id}/{file_name}"
+
+
+def notify_auth(user_id: UUID, email: str):
+    requests.post(
+        settings.yandex_log.url,
+        json={
+            "event": "user_authenticated",
+            "user_id": str(user_id),
+            "email": email
+        },
+        timeout=2
+    )

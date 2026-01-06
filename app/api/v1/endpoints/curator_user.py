@@ -1,8 +1,7 @@
 import uuid
-from fastapi import APIRouter, File, UploadFile
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+import requests
+from fastapi import APIRouter, File, UploadFile, Depends, HTTPException
 from app.application.dto.curator import (
-    CuratorPATCH,
     CuratorPOST,
     CuratorPostBase,
 )
@@ -22,6 +21,18 @@ from app.api.utils.responses import OkResponse
 router = APIRouter(
     prefix="/auth", tags=["auth"], responses={404: {"description": "Curator not found"}}
 )
+
+
+def notify_registration(user_id: int, email: str):
+    requests.post(
+        "https://functions.yandexcloud.net/<function-id>",
+        json={
+            "event": "user_registered",
+            "user_id": user_id,
+            "email": email
+        },
+        timeout=2
+    )
 
 
 @router.post(

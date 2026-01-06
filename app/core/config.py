@@ -86,6 +86,10 @@ class DatabaseConfig(BaseModel):
         )
 
 
+class YandexLogConfig(BaseSettings):
+    url: str = ""
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=BASE_DIR / ".env",
@@ -98,6 +102,7 @@ class Settings(BaseSettings):
     db: DatabaseConfig = DatabaseConfig()
     hash: HashConfig = HashConfig()
     s3: S3Config = S3Config()
+    yandex_log: YandexLogConfig = YandexLogConfig()
 
 
 settings = Settings()  # type: ignore
