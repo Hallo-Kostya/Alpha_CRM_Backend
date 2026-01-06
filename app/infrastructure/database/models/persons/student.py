@@ -10,14 +10,14 @@ if TYPE_CHECKING:
 class StudentModel(PersonModel):
     """Модель студента"""
     __tablename__ = "students"
-    
+
     # Связь с командой
     team_links: Mapped[list["TeamMemberModel"]] = relationship(
         "TeamMemberModel",
         back_populates="student",
         cascade="all, delete-orphan",
     )
-    
+
     # Посещаемость студента на встречах
     attendances: Mapped[list["AttendanceModel"]] = relationship(
         "AttendanceModel",

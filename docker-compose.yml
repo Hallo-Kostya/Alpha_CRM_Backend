@@ -5,6 +5,7 @@ services:
       dockerfile: Dockerfile
     depends_on:
       - pg_db
+      - minio
     ports:
       - "8001:8000"
     networks:
@@ -41,7 +42,22 @@ services:
     ports:
       - "8082:8080"
     depends_on:
-      - pg_db
+      - pg_db 
+
+  minio:
+    image: minio/minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: ${S3__ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${S3__SECRET_KEY}
+    volumes:
+      - minio_data:/data
+    networks:
+      - app-network
+    command: server /data --console-address ":9001"
+
 
   prometheus:
     image: prom/prometheus:latest
@@ -82,6 +98,7 @@ services:
       - grafana_data:/var/lib/grafana
 
 volumes:
+  minio_data:
   main_pg_data:
   grafana_data:
 

@@ -1,4 +1,5 @@
 from typing import TYPE_CHECKING
+from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.infrastructure.database.models.persons.person import PersonModel
 
@@ -11,27 +12,34 @@ if TYPE_CHECKING:
 
 class CuratorModel(PersonModel):
     """Модель куратора"""
+
     __tablename__ = "curators"
 
+    hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
+
+    email: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
+
+    avatar_s3_path: Mapped[str] = mapped_column(String(255), nullable=True)
+
     # Команды, для которых является куратором (M2M)
-    teams: Mapped[list["TeamModel"]] = relationship(  
+    teams: Mapped[list["TeamModel"]] = relationship(
         "TeamModel",
         secondary="curator_teams",
         back_populates="curators",
         viewonly=True,
     )
     # Many-to-many связь через curator_teams
-    curator_team_links: Mapped[list["CuratorTeamModel"]] = relationship(  
+    curator_team_links: Mapped[list["CuratorTeamModel"]] = relationship(
         "CuratorTeamModel",
         back_populates="curator",
         cascade="all, delete-orphan",
     )
     # Оценки от куратора
-    evaluations: Mapped[list["EvaluationModel"]] = relationship(  
+    evaluations: Mapped[list["EvaluationModel"]] = relationship(
         "EvaluationModel",
         back_populates="curator",
     )
-    
+
     # Посещаемость куратора на встречах
     attendances: Mapped[list["AttendanceModel"]] = relationship(
         "AttendanceModel",
@@ -39,4 +47,3 @@ class CuratorModel(PersonModel):
         back_populates="curator",
         cascade="all, delete-orphan",
     )
-
