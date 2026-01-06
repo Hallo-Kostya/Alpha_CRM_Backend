@@ -13,7 +13,7 @@ class S3Client:
             "s3",
             endpoint_url=settings.s3.private_host,
             aws_access_key_id=settings.s3.access_key,
-            aws_secret_access_key=settings.s3.access_key,
+            aws_secret_access_key=settings.s3.secret_key,
             region_name=settings.s3.region,
             config=Config(signature_version="s3v4")
         )
