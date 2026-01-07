@@ -70,7 +70,7 @@ class AuthService(BaseService[RefreshTokenModel, AuthToken]):
         expires_at = datetime.now(tz=timezone.utc) + timedelta(
             minutes=settings.hash.access_expire_minutes
         )
-        to_encode.update({"exp": int(expires_at.timestamp()), "jti": str(uuid.uuid4())})
+        to_encode.update({"exp": int(expires_at.timestamp()), "jti": str(uuid.uuid4())}) # type: ignore
         encoded_jwt = jwt.encode(
             to_encode, settings.hash.access_secret, algorithm=settings.hash.algorithm
         )
@@ -88,7 +88,7 @@ class AuthService(BaseService[RefreshTokenModel, AuthToken]):
         expires_at = datetime.now(tz=timezone.utc) + timedelta(
             days=settings.hash.refresh_expire_days
         )
-        to_encode.update({"exp": int(expires_at.timestamp()), "jti": str(uuid.uuid4())})
+        to_encode.update({"exp": int(expires_at.timestamp()), "jti": str(uuid.uuid4())}) # type: ignore
         encoded_jwt = jwt.encode(
             to_encode, settings.hash.refresh_secret, algorithm=settings.hash.algorithm
         )

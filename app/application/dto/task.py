@@ -1,6 +1,6 @@
 from uuid import UUID
 from typing import Optional
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, ConfigDict, field_validator
 
 
 class TaskCreate(BaseModel):
@@ -19,9 +19,7 @@ class TaskResponse(BaseModel):
     id: UUID
     description: str
     is_completed: bool
-    
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class MeetingTaskCreate(BaseModel):
@@ -37,5 +35,4 @@ class MeetingTaskResponse(BaseModel):
     description: str
     is_completed: bool
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

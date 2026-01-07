@@ -1,6 +1,6 @@
 from uuid import UUID
 from typing import Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class TeamMemberCreate(BaseModel):
@@ -24,5 +24,4 @@ class TeamMemberWithTeamInfo(BaseModel):
     team_name: str  # Добавляем название команды
     team_group_link: Optional[str] = None  # Ссылка на чат команды
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

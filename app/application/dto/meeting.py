@@ -1,7 +1,7 @@
 from datetime import datetime
 from uuid import UUID
 from typing import Optional
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, ConfigDict, field_validator
 
 from app.domain.enums.meeting_status import MeetingStatus
 
@@ -36,6 +36,4 @@ class MeetingResponse(BaseModel):
     team_id: UUID
     previous_meeting_id: Optional[UUID] = None
     next_meeting_id: Optional[UUID] = None
-    
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
