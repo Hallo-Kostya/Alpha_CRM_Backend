@@ -8,7 +8,7 @@ class Project(BaseEntity):
     """Доменная модель проекта"""
 
     name: str = Field(..., min_length=1, max_length=255)
-    description: str | None = Field(None, max_length=2000, alias="desсription")
+    description: str | None = Field(None, max_length=2000)
     goal: str | None = Field(None, max_length=1000)
     requirements: str | None = Field(None, max_length=2000)
     eval_criteria: str | None = Field(None, max_length=2000)

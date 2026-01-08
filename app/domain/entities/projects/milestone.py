@@ -13,4 +13,4 @@ class Milestone(BaseEntity):
     date: datetime
     title: str = Field(..., min_length=1, max_length=255)
     type: MilestoneType
-    description: Optional[str] = Field(None, max_length=2000, alias="desription")
+    description: Optional[str] = Field(None, max_length=2000)

@@ -8,6 +8,6 @@ class Artifact(BaseEntity):
     """Доменная модель артефакта (файл, видео, ссылка)"""
     
     name: str = Field(..., min_length=1, max_length=255)
-    description: Optional[str] = Field(None, max_length=1000, alias='description')
+    description: Optional[str] = Field(None, max_length=1000)
     type: ArtifactType
     url: str = Field(..., min_length=1, max_length=2000)
