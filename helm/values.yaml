@@ -1,0 +1,4 @@
+backend:
+  image:
+    repository: your_dockerhub/alpha-crm-backend
+    tag: latest
