@@ -1,7 +1,7 @@
 replicaCount: 1
 
 image:
-  repository: your_dockerhub/alpha-crm-backend
+  repository: komotske/alpha-backend
   tag: latest
   pullPolicy: IfNotPresent
 
