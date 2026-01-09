@@ -1,9 +1,10 @@
 from pydantic import Field
 from app.domain.entities.base_entity import BaseEntity
+from app.domain.entities.custom_types import MediumText
 
 
 class Task(BaseEntity):
     """Доменная модель задачи"""
     
-    description: str = Field(..., min_length=1, max_length=1000)
+    description: MediumText = Field(..., examples=["Описание задачи"])
     is_completed: bool = False

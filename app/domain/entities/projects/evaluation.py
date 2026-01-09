@@ -2,6 +2,7 @@ from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional
 from uuid import UUID
 from app.domain.enums import EvaluationType
+from app.domain.entities.custom_types import LongText
 
 
 class Evaluation(BaseModel):
@@ -12,4 +13,4 @@ class Evaluation(BaseModel):
     project_id: UUID
     curator_id: UUID
     type: EvaluationType
-    comment: Optional[str] = Field(None, max_length=2000)
+    comment: LongText = Field(None, examples=["Комментарий к оценке"])

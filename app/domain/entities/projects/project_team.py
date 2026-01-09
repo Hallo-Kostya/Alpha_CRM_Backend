@@ -21,4 +21,4 @@ class ProjectTeam(BaseEntity):
     team_id: UUID
     assigned_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     status: ProjectTeamStatus = ProjectTeamStatus.ACTIVE
-    role_in_project: str | None = Field(None, max_length=100)
+    role_in_project: str | None = Field(None, max_length=100, examples=["Разработчик"])

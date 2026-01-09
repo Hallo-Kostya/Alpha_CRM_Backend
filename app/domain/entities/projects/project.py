@@ -2,16 +2,20 @@ from datetime import datetime
 from pydantic import Field
 from app.domain.entities.base_entity import BaseEntity
 from app.domain.enums import ProjectStatus, Semester
+from app.domain.entities.custom_types import LongText, NameField, MediumText
 
 
 class Project(BaseEntity):
     """Доменная модель проекта"""
 
-    name: str = Field(..., min_length=1, max_length=255)
-    description: str | None = Field(None, max_length=2000)
-    goal: str | None = Field(None, max_length=1000)
-    requirements: str | None = Field(None, max_length=2000)
-    eval_criteria: str | None = Field(None, max_length=2000)
+    name: NameField
+    description: LongText = Field(None, examples=["Описание проекта"])
+    goal: MediumText = Field(None, examples=["Цель проекта"])
+    requirements: LongText = Field(None, examples=["Требования к проекту"])
+    eval_criteria: MediumText = Field(
+        None,
+        examples=["Критерии оценки проекта"]
+    )
     semester: Semester
     status: ProjectStatus = ProjectStatus.PLANNED
     
