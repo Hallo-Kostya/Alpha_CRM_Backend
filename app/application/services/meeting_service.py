@@ -107,16 +107,6 @@ class MeetingService(BaseService[MeetingModel, MeetingResponse]):
         )
         return [self._to_schema(meeting) for meeting in meetings]
 
-    async def get_meeting_with_tasks(self, meeting_id: UUID) -> MeetingResponse:
-        """Получить встречу с задачами"""
-        meeting = await self._meeting_repo.get_meeting_with_tasks(meeting_id)
-        if not meeting:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Встреча с ID {meeting_id} не найдена"
-            )
-        return self._to_schema(meeting)
-
     async def complete_meeting(self, meeting_id: UUID) -> MeetingResponse:
         """Завершить встречу и перенести незавершенные задачи"""
         # Получаем встречу с задачами

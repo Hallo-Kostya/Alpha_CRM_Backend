@@ -213,40 +213,6 @@ class ProjectTeamService(BaseService[ProjectTeamModel, ProjectTeamResponse]):
 
         return result_list
 
-    async def update_project_team(
-        self, project_id: UUID, team_id: UUID, data: ProjectTeamUpdate
-    ) -> Optional[ProjectTeamResponse]:
-        """Обновить данные связи (статус)"""
-        # Проверяем существование связи
-        project_team = await self._project_team_repo.get_by_project_and_team(
-            project_id, team_id
-        )
-        if not project_team:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Связь между проектом и командой не найдена",
-            )
-
-        # Если меняем статус на ACTIVE, проверяем ограничения
-        if data.status == ProjectTeamStatus.ACTIVE:
-            project = await self._project_repo.get_by_id(project_id)
-            if project:
-                # Проверяем, что у команды нет других активных проектов в этом семестре
-                other_active = await self._project_team_repo.get_active_project_for_team_in_semester(
-                    team_id, project.year, project.semester
-                )
-                if other_active and other_active.project_id != project_id:
-                    raise HTTPException(
-                        status_code=status.HTTP_400_BAD_REQUEST,
-                        detail=f"Команда уже участвует в активном проекте "
-                        f"{other_active.project_id} в этом семестре",
-                    )
-
-        # Обновляем данные
-        update_data = data.model_dump(exclude_unset=True)
-        updated_obj = await self._repo.update(project_team, update_data)
-        return self._to_schema(updated_obj)
-
     async def remove_team_from_project(self, project_id: UUID, team_id: UUID) -> bool:
         """Удалить команду из проекта (или изменить статус)"""
         # Находим связь

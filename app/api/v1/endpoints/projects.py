@@ -142,33 +142,6 @@ async def get_project_teams(
     """Получить список всех команд, назначенных на проект."""
     return await service.get_project_teams(project_id)
 
-@router.get(
-    "/{project_id}/teams/detailed",
-    response_model=List[ProjectTeamWithInfo],
-    summary="Получить команды проекта с детальной информацией",
-)
-async def get_project_teams_detailed(
-    project_id: UUID,
-    service: ProjectTeamService = Depends(project_team_service_getter),
-):
-    """Получить список команд проекта с информацией о командах."""
-    return await service.get_project_teams_with_info(project_id)
-
-@router.patch(
-    "/{project_id}/teams/{team_id}",
-    response_model=ProjectTeam,
-    summary="Обновить статус команды в проекте",
-)
-async def update_project_team(
-    project_id: UUID,
-    team_id: UUID,
-    data: ProjectTeamUpdate,
-    service: ProjectTeamService = Depends(project_team_service_getter),
-    credentials: tuple[uuid.UUID, str] = Depends(validate_curator)
-):
-    """Обновить статус участия команды в проекте."""
-    return await service.update_project_team(project_id, team_id, data)
-
 @router.delete(
     "/{project_id}/teams/{team_id}",
     status_code=status.HTTP_200_OK,

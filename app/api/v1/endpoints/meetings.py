@@ -69,19 +69,6 @@ async def get_meeting(
     return meeting
 
 
-@router.get(
-    "/{meeting_id}/with-tasks",
-    response_model=MeetingResponse,
-    summary="Получить встречу с задачами",
-)
-async def get_meeting_with_tasks(
-    meeting_id: UUID,
-    service: MeetingService = Depends(meeting_service_getter),
-):
-    """Получить встречу со списком всех задач."""
-    return await service.get_meeting_with_tasks(meeting_id)
-
-
 @router.patch(
     "/{meeting_id}",
     response_model=MeetingResponse,
