@@ -20,7 +20,7 @@ jobs:
 
       - name: connect, pull and run
         run: |
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} -p 19052 -vvv << 'EOF'
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} -p 19052 << 'EOF'
           cd ${{ secrets.PROJECT_FOLDER }}
           git checkout master
           git pull origin master
