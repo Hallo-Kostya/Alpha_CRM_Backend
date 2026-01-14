@@ -45,6 +45,10 @@ class CuratorBucketConfig(BaseModel):
         }
 
 
+class FrontendConfig(BaseModel):
+    host: str = "http://localhost:3000"
+
+
 class S3Config(BaseModel):
     private_host: str = ""
     public_host: str = "http://localhost:9000"
@@ -85,6 +89,7 @@ class DatabaseConfig(BaseModel):
             path=self.name,
         )
 
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=BASE_DIR / ".env",
@@ -97,6 +102,7 @@ class Settings(BaseSettings):
     db: DatabaseConfig = DatabaseConfig()
     hash: HashConfig = HashConfig()
     s3: S3Config = S3Config()
+    frontend: FrontendConfig = FrontendConfig()
 
 
 settings = Settings()  # type: ignore

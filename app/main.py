@@ -5,7 +5,7 @@ from app.domain.entities.persons.curator import Curator
 from app.domain.entities.teams.team import Team
 from app.domain.entities.projects.project import Project
 from fastapi.middleware.cors import CORSMiddleware
-
+from app.core.config import settings
 from app.core.middleware import PrometheusMiddleware
 
 main_app = FastAPI()
@@ -13,7 +13,7 @@ main_app = FastAPI()
 main_app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:3000",
+        settings.frontend.host
     ],
     allow_credentials=True,
     allow_methods=["*"],
