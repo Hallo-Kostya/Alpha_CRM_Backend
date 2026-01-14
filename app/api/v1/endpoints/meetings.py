@@ -49,6 +49,17 @@ async def create_meeting(
     """
     return await service.create(data)
 
+@router.get(
+    "/all",
+    response_model=List[MeetingResponse],
+    summary="Получить все встречи всех команд",
+)
+async def get_all_meetings(
+    service: MeetingService = Depends(meeting_service_getter),
+):
+    """Получить все встречи всех команд, отсортированные по времени."""
+    return await service.get_all_meetings()
+
 
 @router.get(
     "/{meeting_id}",
@@ -67,7 +78,6 @@ async def get_meeting(
             detail=f"Встреча с ID {meeting_id} не найдена"
         )
     return meeting
-
 
 @router.patch(
     "/{meeting_id}",

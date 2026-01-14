@@ -106,6 +106,10 @@ class MeetingService(BaseService[MeetingModel, MeetingResponse]):
             team_id, status, from_date, to_date
         )
         return [self._to_schema(meeting) for meeting in meetings]
+    
+    async def get_all_meetings(self) -> List[MeetingResponse]:
+        meetings = await self._meeting_repo.get_all_ordered_by_date()
+        return [self._to_schema(meeting) for meeting in meetings]
 
     async def complete_meeting(self, meeting_id: UUID) -> MeetingResponse:
         """Завершить встречу и перенести незавершенные задачи"""

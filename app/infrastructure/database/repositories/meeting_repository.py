@@ -37,6 +37,16 @@ class MeetingRepository(BaseRepository[MeetingModel]):
         query = query.order_by(self.model.date.asc())
         result = await self.session.scalars(query)
         return result.all()
+    
+    async def get_all_ordered_by_date(self) -> Sequence[MeetingModel]:
+        """Получить все встречи всех команд, отсортированные по времени"""
+        query = (
+            select(self.model)
+            .order_by(self.model.date.asc())
+        )
+
+        result = await self.session.scalars(query)
+        return result.all()
 
     async def get_upcoming_meeting(self, team_id: UUID) -> Optional[MeetingModel]:
         """Получить ближайшую запланированную встречу команды"""
