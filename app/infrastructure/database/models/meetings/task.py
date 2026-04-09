@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING
 from sqlalchemy import String, Boolean
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.infrastructure.database.entity_base import BaseEntity
+from app.infrastructure.database.models.entity_base import BaseEntity
 
 if TYPE_CHECKING:
     from app.infrastructure.database.models.meetings.meeting_task import MeetingTaskModel

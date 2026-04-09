@@ -7,7 +7,7 @@ from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, join
 from typing import List, Tuple
-from app.domain.enums.semester import Semester
+from app.common.enums import Semester
 
 
 class ProjectRepository(BaseRepository[ProjectModel]):

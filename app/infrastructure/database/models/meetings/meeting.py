@@ -4,8 +4,8 @@ from sqlalchemy import String, DateTime, ForeignKey, Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID
 
-from app.infrastructure.database.entity_base import BaseEntity
-from app.domain.enums.meeting_status import MeetingStatus
+from app.infrastructure.database.models.entity_base import BaseEntity
+from app.common.enums import MeetingStatus
 
 if TYPE_CHECKING:
     from app.infrastructure.database.models.artifacts.artifact_link import ArtifactLinkModel

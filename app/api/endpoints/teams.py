@@ -1,0 +1,133 @@
+from uuid import UUID
+from typing import Optional
+
+from fastapi import APIRouter, Depends, HTTPException, Response, status, Query
+from app.schemas.team import TeamCreate, TeamUpdate, TeamSummary, TeamSummaryResponse
+from app.schemas.team_member import TeamMemberCreate, TeamMemberUpdate
+from app.services.team_service import (
+    TeamService,
+    team_service_getter,
+)
+from app.services.team_member_service import (
+    TeamMemberService,
+    team_member_service_getter,
+)
+from app.schemas.team import Team
+from app.schemas.team_member import TeamMember
+
+
+router = APIRouter(
+    prefix="/teams",
+    tags=["v2", "teams"],
+    responses={404: {"description": "Team not found"}},
+)
+
+
+@router.post("/", response_model=Team, summary="Создать команду")
+async def create_team(
+    data: TeamCreate,
+    service: TeamService = Depends(team_service_getter),
+):
+    """Создать новую команду с именем и опциональной ссылкой на беседу."""
+    return await service.create(data)
+
+
+@router.get("/", response_model=TeamSummaryResponse, summary="Список команд")
+async def list_teams(
+    project_id: UUID = Query(None, description="ID проекта для фильтрации команд"),
+    service: TeamService = Depends(team_service_getter),
+):
+    """Получить список команд с фильтром по проекту. Включает ID, имя, количество участников и список участников."""
+    return await service.get_teams_summary(project_id)
+
+
+@router.get("/full", response_model=list[Team], summary="Полный список команд")
+async def list_teams_full(
+    project_id: UUID = Query(None, description="ID проекта для фильтрации команд"),
+    service: TeamService = Depends(team_service_getter),
+):
+    """Получить полный список команд с фильтром по проекту. Возвращает полные данные команд."""
+    return await service.get_teams_by_project(project_id)
+
+
+@router.get("/{team_id}", response_model=Team, summary="Получить команду по ID")
+async def get_team(
+    team_id: UUID,
+    service: TeamService = Depends(team_service_getter),
+):
+    """Получить детальную информацию о команде."""
+    team = await service.get_by_id(team_id)
+    if team is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Команда с ID {team_id} не найдена",
+        )
+    return team
+
+
+@router.post("/{team_id}/students", response_model=TeamMember, summary="Добавить студента в команду")
+async def add_student_to_team(
+    team_id: UUID,
+    data: TeamMemberCreate,
+    member_service: TeamMemberService = Depends(team_member_service_getter),
+):
+    """Добавить студента в команду с указанием роли и группы."""
+    return await member_service.add_student_to_team(team_id, data.student_id, data.role, data.study_group)
+
+
+@router.get("/{team_id}/students", response_model=list[TeamMember], summary="Получить студентов команды")
+async def get_team_students(
+    team_id: UUID,
+    service: TeamMemberService = Depends(team_member_service_getter),
+):
+    """Получить список студентов команды."""
+    return await service.get_team_students(team_id)
+
+
+@router.patch("/{team_id}/students/{student_id}", response_model=TeamMember, summary="Обновить студента в команде")
+async def update_team_member(
+    team_id: UUID,
+    student_id: UUID,
+    data: TeamMemberUpdate,
+    service: TeamMemberService = Depends(team_member_service_getter),
+):
+    """Обновить роль и группу студента в команде."""
+    return await service.update_student_role_and_group(team_id, student_id, data.role, data.study_group)
+
+
+@router.delete("/{team_id}/students/{student_id}", summary="Удалить студента из команды")
+async def remove_student_from_team(
+    team_id: UUID,
+    student_id: UUID,
+    service: TeamMemberService = Depends(team_member_service_getter),
+):
+    """Удалить студента из команды."""
+    deleted = await service.remove_student_from_team(team_id, student_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Связь не найдена")
+    return Response("Студент удален из команды", status.HTTP_200_OK)
+
+
+@router.patch("/{team_id}", response_model=Team, summary="Обновить команду")
+async def update_team(
+    team_id: UUID,
+    data: TeamUpdate,
+    service: TeamService = Depends(team_service_getter),
+):
+    """Обновить данные команды: имя, ссылка на беседу."""
+    return await service.update(team_id, data)
+
+
+@router.delete("/{team_id}", summary="Удалить команду")
+async def delete_team(
+    team_id: UUID,
+    service: TeamService = Depends(team_service_getter),
+):
+    """Удалить команду."""
+    deleted = await service.delete(team_id)
+    if not deleted:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Команда с ID {team_id} не найдена для удаления",
+        )
+    return Response(f"successfully deleted team with id {team_id}", status.HTTP_200_OK)

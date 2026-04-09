@@ -1,0 +1,100 @@
+from uuid import UUID
+from fastapi import Depends
+from app.schemas.team import TeamCreate, TeamUpdate, TeamSummary, TeamMemberSummary, TeamSummaryResponse
+from app.schemas.team import Team
+from app.infrastructure.database.models import TeamModel
+from app.infrastructure.database.repositories.team_repository import (
+    TeamRepository,
+    team_repository_getter,
+)
+
+
+class TeamService:
+    """Application service for teams."""
+
+    def __init__(self, team_repo: TeamRepository):
+        self._repo = team_repo
+
+    def _to_orm(self, scheme: TeamCreate) -> TeamModel:
+        """Convert schema to ORM model."""
+        return TeamModel(**scheme.model_dump(exclude_unset=True))
+
+    def _to_schema(self, orm_model: TeamModel) -> Team:
+        """Convert ORM model to schema."""
+        return Team.model_validate(orm_model, from_attributes=True)
+
+    async def create(self, team: TeamCreate) -> Team:
+        """Create new team."""
+        orm_obj = self._to_orm(team)
+        created_obj = await self._repo.create(orm_obj)
+        return self._to_schema(created_obj)
+
+    async def update(self, team_id: UUID, new_data: TeamUpdate) -> Team | None:
+        """Update team."""
+        old_obj = await self._repo.get_by_id(team_id)
+        if not old_obj:
+            return None
+        updated_orm = await self._repo.update(
+            old_obj, new_data.model_dump(exclude_unset=True)
+        )
+        return self._to_schema(updated_orm)
+
+    async def delete(self, team_id: UUID) -> bool:
+        """Delete team."""
+        obj = await self._repo.get_by_id(team_id)
+        if not obj:
+            return False
+        await self._repo.delete(obj)
+        return True
+
+    async def get_by_id(self, team_id: UUID) -> Team | None:
+        """Get team by ID."""
+        obj = await self._repo.get_by_id(team_id)
+        if not obj:
+            return None
+        return self._to_schema(obj)
+
+    async def get_list(self, **filter_attrs) -> list[Team]:
+        """Get list of teams."""
+        items = await self._repo.get_list(**filter_attrs)
+        return [self._to_schema(item) for item in items]
+
+    async def get_teams_by_project(self, project_id: UUID = None) -> list[Team]:
+        """Get list of teams, optionally filtered by project_id."""
+        if project_id:
+            # Get teams assigned to specific project
+            teams = await self._repo.get_teams_by_project(project_id)
+        else:
+            # Get all teams
+            teams = await self._repo.get_list()
+        return [self._to_schema(team) for team in teams]
+
+    async def get_teams_summary(self, project_id=None) -> TeamSummaryResponse:
+        """Get teams summary with members as Pydantic models."""
+        raw_teams = await self._repo.get_teams_summary(project_id)
+        
+        teams = []
+        for raw_team in raw_teams:
+            members = [
+                TeamMemberSummary(
+                    id=UUID(member["id"]),
+                    full_name=member["full_name"]
+                )
+                for member in raw_team["members"]
+            ]
+            
+            team_summary = TeamSummary(
+                id=UUID(raw_team["id"]),
+                name=raw_team["name"],
+                members_count=raw_team["members_count"],
+                members=members
+            )
+            teams.append(team_summary)
+        
+        return TeamSummaryResponse(total=len(teams), teams=teams)
+
+
+def team_service_getter(
+    repository: TeamRepository = Depends(team_repository_getter),
+):
+    return TeamService(repository)

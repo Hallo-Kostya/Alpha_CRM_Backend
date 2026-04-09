@@ -4,8 +4,8 @@ from sqlalchemy import String, DateTime, ForeignKey, Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID
 
-from app.infrastructure.database.entity_base import BaseEntity
-from app.domain.enums.milestone_type import MilestoneType
+from app.infrastructure.database.models.entity_base import BaseEntity
+from app.common.enums import MilestoneType
 
 if TYPE_CHECKING:
     from app.infrastructure.database.models.projects.project import ProjectModel

@@ -1,10 +1,9 @@
 from fastapi import FastAPI
 import uvicorn
-from app.api.v1.routes import routers as v1_routers
-from app.api.v2.routes import routers as v2_routers
-from app.domain.entities.persons.curator import Curator
-from app.domain.entities.teams.team import Team
-from app.domain.entities.projects.project import Project
+from app.api.routes import routers as v2_routers
+from app.schemas.curator import Curator
+from app.schemas.team import Team
+from app.schemas.project import Project
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.core.middleware import PrometheusMiddleware
@@ -21,7 +20,6 @@ main_app.add_middleware(
     allow_headers=["*"],
 )
 
-# main_app.include_router(v1_routers, prefix="/api")
 main_app.include_router(v2_routers, prefix="/api")
 main_app.add_middleware(PrometheusMiddleware)
 

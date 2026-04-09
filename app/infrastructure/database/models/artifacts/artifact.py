@@ -2,8 +2,8 @@ from typing import TYPE_CHECKING
 from sqlalchemy import String, Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.infrastructure.database.entity_base import BaseEntity
-from app.domain.enums.artifact_type import ArtifactType
+from app.infrastructure.database.models.entity_base import BaseEntity
+from app.common.enums import ArtifactType
 
 if TYPE_CHECKING:
     from app.infrastructure.database.models.artifacts.artifact_link import ArtifactLinkModel

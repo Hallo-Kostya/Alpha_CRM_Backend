@@ -3,10 +3,10 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
-from app.domain.interfaces.repositories.repository_interface import (
+from app.common.repository_interface import (
     RepositoryInterface,
 )
-from app.infrastructure.database.entity_base import BaseEntity
+from app.infrastructure.database.models.entity_base import BaseEntity
 
 T = TypeVar("T", bound=BaseEntity)
 
