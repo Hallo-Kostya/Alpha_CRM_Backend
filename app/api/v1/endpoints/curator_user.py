@@ -20,7 +20,9 @@ from app.api.utils.responses import OkResponse
 
 
 router = APIRouter(
-    prefix="/auth", tags=["auth"], responses={404: {"description": "Curator not found"}}
+    prefix="/auth",
+    tags=["v1", "auth"],
+    responses={404: {"description": "Curator not found"}},
 )
 
 

@@ -17,6 +17,8 @@ services:
     restart: always
     volumes:
       - ./app:/backend/app
+    environment:
+      - ENVIRONMENT=development
 
   pg_db:
     image: postgres:17

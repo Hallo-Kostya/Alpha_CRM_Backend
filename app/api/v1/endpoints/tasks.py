@@ -7,7 +7,7 @@ from app.application.services.task_service import TaskService, task_service_gett
 
 router = APIRouter(
     prefix="/tasks",
-    tags=["tasks"],
+    tags=["v1", "tasks"],
     responses={404: {"description": "Task not found"}},
 )
 

@@ -27,6 +27,7 @@ class CuratorService(BaseService[CuratorModel, Curator]):
 
     orm_model = CuratorModel
     pyd_scheme = Curator
+    eager_loads = ['teams']
 
     def __init__(
         self,
@@ -39,14 +40,14 @@ class CuratorService(BaseService[CuratorModel, Curator]):
             settings.s3.curator_bucket.name, settings.s3.curator_bucket.policy,
         )
 
-    def _to_orm(self, scheme_: CuratorPOST) -> CuratorModel:
+    def _to_orm(self, scheme) -> CuratorModel:
         return CuratorModel(
-            hashed_password=scheme_.password,
-            first_name=scheme_.first_name,
-            last_name=scheme_.last_name,
-            email=scheme_.email,
-            patronymic=scheme_.patronymic,
-            tg_link=scheme_.tg_link,
+            hashed_password=scheme.password if hasattr(scheme, 'password') else scheme.hashed_password,
+            first_name=scheme.first_name,
+            last_name=scheme.last_name,
+            email=scheme.email,
+            patronymic=scheme.patronymic,
+            tg_link=scheme.tg_link,
         )
 
     async def get_by_email(self, email: str) -> CuratorModel | None:
@@ -55,27 +56,13 @@ class CuratorService(BaseService[CuratorModel, Curator]):
             return curators[0]
         return None
 
-    async def _create(self, new_obj: CuratorPOST) -> CuratorModel:
-        orm_model = self._to_orm(new_obj)
-        created_obj = await self._repo.create(orm_model)
-        return created_obj
-
-    async def update(self, new_data: CuratorPATCH, curator_id: UUID) -> Curator | None:
-        old_obj = await self._repo.get_by_id(curator_id)
-        if not old_obj:
-            return None
-        updated_obj = await self._repo.update(
-            old_obj, new_data.model_dump(exclude_unset=True)
-        )
-        return self._to_schema(updated_obj)
-
     async def register_curator(
         self, curator_data: CuratorPOST
     ) -> tuple[AuthToken, AuthToken] | None:
         hashed_pass = self.auth_service.get_hashed_pass(curator_data.password)
         curator_data.password = hashed_pass
         try:
-            created_obj = await self._create(curator_data)
+            created_obj = await self.create(curator_data)
             auth_tokens = await self.auth_service.create_token_pair(created_obj.id)
             return auth_tokens
         except IntegrityError:

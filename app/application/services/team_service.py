@@ -34,6 +34,11 @@ class TeamService(BaseService[TeamModel, Team]):
         )
         return self._to_schema(updated_orm)
 
+    async def get_teams_summary(self, project_id=None):
+        """Получить сводку команд с участниками"""
+        teams = await self._repo.get_teams_summary(project_id)
+        return len(teams), teams
+
 
 def team_service_getter(
     repository: TeamRepository = Depends(team_repository_getter),

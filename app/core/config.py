@@ -15,9 +15,14 @@ class ApiV1Prefix(BaseModel):
     prefix: str = "/v1"
 
 
+class ApiV2Prefix(BaseModel):
+    prefix: str = "/v2"
+
+
 class ApiPrefix(BaseModel):
     prefix: str = "/internal/api"
     v1: ApiV1Prefix = ApiV1Prefix()
+    v2: ApiV2Prefix = ApiV2Prefix()
 
 
 class HashConfig(BaseModel):

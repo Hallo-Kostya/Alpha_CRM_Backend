@@ -18,7 +18,7 @@ from app.domain.entities.teams.team_member import TeamMember
 
 router = APIRouter(
     prefix="/students",
-    tags=["students"],
+    tags=["v1", "students"],
     responses={404: {"description": "Student not found"}},
 )
 

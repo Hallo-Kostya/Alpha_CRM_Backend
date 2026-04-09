@@ -26,7 +26,7 @@ from app.domain.enums.meeting_status import MeetingStatus
 
 router = APIRouter(
     prefix="/meetings",
-    tags=["meetings"],
+    tags=["v1", "meetings"],
     responses={404: {"description": "Meeting not found"}},
 )
 

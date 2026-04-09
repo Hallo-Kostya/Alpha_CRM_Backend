@@ -12,3 +12,20 @@ class TeamCreate(BaseModel):
 class TeamUpdate(BaseModel):
     name: Optional[NameField] = Field(None, examples=["Название команды"])
     group_link: Optional[str] = None
+
+
+class TeamMemberSummary(BaseModel):
+    id: str  # UUID as str
+    full_name: str
+
+
+class TeamSummary(BaseModel):
+    id: str  # UUID as str
+    name: str
+    members_count: int
+    members: list[TeamMemberSummary]
+
+
+class TeamSummaryResponse(BaseModel):
+    total: int
+    teams: list[TeamSummary]

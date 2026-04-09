@@ -2,10 +2,11 @@ from uuid import UUID
 from typing import List
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status, Query
 from app.application.dto.project import (
     ProjectCreate,
     ProjectUpdate,
+    ProjectSummary,
 )
 from app.application.dto.project_team import ProjectTeamCreate, ProjectTeamUpdate, ProjectTeamWithInfo
 from app.application.services.project_team_service import ProjectTeamService, project_team_service_getter
@@ -15,12 +16,13 @@ from app.application.services.projects_service import (
 )
 from app.domain.entities.projects.project import Project
 from app.domain.entities.projects.project_team import ProjectTeam
+from app.domain.enums.semester import Semester
 from app.api.utils.auth import validate_curator
 
 
 router = APIRouter(
     prefix="/projects",
-    tags=["projects"],
+    tags=["v1", "projects"],
     responses={404: {"description": "Project not found"}},
 )
 

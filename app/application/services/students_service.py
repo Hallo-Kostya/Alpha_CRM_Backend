@@ -53,6 +53,14 @@ class StudentService(BaseService[StudentModel, Student]):
             logger.exception(f'{log_prefix} Failed to update student {student_id}: {e}')
             raise
 
+    async def get_students_summary(self) -> tuple[int, list[dict]]:
+        """Получить сводку студентов: id, full_name"""
+        return await self._repo.get_students_summary()
+
+    async def get_students_detailed(self) -> tuple[int, list[dict]]:
+        """Получить детальную сводку студентов: id, full_name, email, tg_link"""
+        return await self._repo.get_students_detailed()
+
 
 def student_service_getter(
     repository: StudentRepository = Depends(student_repository_getter),

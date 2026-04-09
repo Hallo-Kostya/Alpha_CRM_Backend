@@ -22,7 +22,7 @@ from app.domain.entities.teams.team_member import TeamMember
 
 router = APIRouter(
     prefix="/teams",
-    tags=["teams"],
+    tags=["v1", "teams"],
     responses={404: {"description": "Team not found"}},
 )
 

@@ -36,3 +36,20 @@ class Project(BaseEntity):
     semester: Semester = Field(
         default_factory=_get_current_semester
     )
+
+    @classmethod
+    def compute_status(cls, year: int, semester: Semester) -> ProjectStatus:
+        """Вычисляет статус проекта по году/семестру относительно текущей даты."""
+        now = datetime.now()
+        current_year = now.year
+        current_semester = cls._get_current_semester()
+
+        if year > current_year:
+            return ProjectStatus.PLANNED
+        elif year < current_year:
+            return ProjectStatus.COMPLETED
+        else:  # равный год
+            if semester == current_semester:
+                return ProjectStatus.IN_PROGRESS
+            else:
+                return ProjectStatus.COMPLETED
