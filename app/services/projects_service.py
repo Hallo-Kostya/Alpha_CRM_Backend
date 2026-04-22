@@ -12,7 +12,7 @@ from app.infrastructure.database.repositories.project_repository import (
     project_repository_getter,
 )
 from app.common.enums import Semester, ProjectStatus
-from typing import List
+from typing import Optional
 from datetime import datetime
 from uuid import UUID
 
@@ -88,9 +88,9 @@ class ProjectService:
             return None
         return self._to_schema(obj)
 
-    async def get_projects_summary(self, year: int = None, semester: Semester = None) -> ProjectSummaryResponse:
+    async def get_projects_summary(self, year: Optional[int] = None, semester: Optional[Semester] = None, team_id: Optional[UUID] = None) -> ProjectSummaryResponse:
         """Get projects summary."""
-        total, items = await self.project_repo.get_projects_summary(year, semester)
+        total, items = await self.project_repo.get_projects_summary(year, semester, team_id)
         summaries = [ProjectSummary(**item) for item in items]
         return ProjectSummaryResponse(total=total, projects=summaries)
 

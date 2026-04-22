@@ -146,8 +146,9 @@ class MeetingService:
         )
         return [self._to_schema(meeting) for meeting in meetings]
     
-    async def get_all_meetings(self) -> List[Meeting]:
-        """Get all meetings ordered by date."""
+    async def get_meetings_for_calendar(self, team_id: Optional[UUID] = None, start_date: Optional[datetime] = None, end_date: Optional[datetime] = None) -> List[dict]:
+        """Get meetings for calendar view."""
+        return await self._meeting_repo.get_meetings_for_calendar(team_id, start_date, end_date)
         meetings = await self._meeting_repo.get_all_ordered_by_date()
         return [self._to_schema(meeting) for meeting in meetings]
 

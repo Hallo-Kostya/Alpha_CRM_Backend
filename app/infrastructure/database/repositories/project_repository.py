@@ -6,7 +6,8 @@ from app.core.database import db_helper
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, join
-from typing import List, Tuple
+from typing import Tuple, List, Optional
+from sqlalchemy.dialects.postgresql import UUID
 from app.common.enums import Semester
 
 
@@ -14,7 +15,7 @@ class ProjectRepository(BaseRepository[ProjectModel]):
     def __init__(self, session: AsyncSession):
         super().__init__(ProjectModel, session)
 
-    async def get_projects_summary(self, year: int = None, semester: Semester = None) -> Tuple[int, List[dict]]:
+    async def get_projects_summary(self, year: Optional[int] = None, semester: Optional[Semester] = None, team_id: Optional[UUID] = None) -> Tuple[int, List[dict]]:
         # Base query for projects
         query = select(
             ProjectModel.id,
@@ -37,6 +38,8 @@ class ProjectRepository(BaseRepository[ProjectModel]):
             query = query.where(ProjectModel.year == year)
         if semester is not None:
             query = query.where(ProjectModel.semester == semester)
+        if team_id is not None:
+            query = query.where(ProjectTeamModel.team_id == team_id)
 
         # Group by project
         query = query.group_by(ProjectModel.id, ProjectModel.name, ProjectModel.description)
@@ -56,15 +59,8 @@ class ProjectRepository(BaseRepository[ProjectModel]):
             }
             for row in rows
         ]
-
-        # Get total count
-        count_query = select(func.count(ProjectModel.id.distinct())).select_from(ProjectModel)
-        if year is not None:
-            count_query = count_query.where(ProjectModel.year == year)
-        if semester is not None:
-            count_query = count_query.where(ProjectModel.semester == semester)
-        total_result = await self.session.execute(count_query)
-        total = total_result.scalar()
+        
+        total = len(items)
 
         return total, items
 

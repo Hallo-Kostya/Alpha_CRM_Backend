@@ -1,5 +1,6 @@
 from uuid import UUID
 import logging
+from typing import Optional
 from fastapi import Depends
 from app.schemas.student import StudentCreate, StudentUpdate, StudentDetailed, StudentDetailedResponse, StudentSummary, StudentSummaryResponse
 from app.schemas.student import Student
@@ -63,9 +64,9 @@ class StudentService:
             return None
         return self._to_schema(obj)
 
-    async def get_students_summary(self) -> StudentDetailedResponse:
-        """Get detailed students summary: id, full_name, email, tg_link."""
-        total, raw_items = await self.student_repo.get_students_detailed()
+    async def get_students_summary(self, team_id: Optional[UUID] = None, project_id: Optional[UUID] = None) -> StudentDetailedResponse:
+        """Get detailed students summary: id, full_name, email, tg_link with filters."""
+        total, raw_items = await self.student_repo.get_students_detailed(team_id=team_id, project_id=project_id)
         students = [StudentDetailed(**item) for item in raw_items]
         return StudentDetailedResponse(total=total, students=students)
 

@@ -5,6 +5,8 @@ from app.core.config import settings
 from app.api.endpoints.projects import router as projects_router
 from app.api.endpoints.students import router as students_router
 from app.api.endpoints.teams import router as teams_router
+from app.api.endpoints.meetings import router as meetings_router
+from app.api.endpoints.search import router as search_router
 
 routers = APIRouter()
 
@@ -12,6 +14,8 @@ router_list = [
     projects_router,
     students_router,
     teams_router,
+    meetings_router,
+    search_router
 ]
 
 for router in router_list:

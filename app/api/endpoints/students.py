@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from app.schemas.student import StudentCreate, StudentUpdate, StudentSummary, StudentDetailed, StudentSummaryResponse, StudentDetailedResponse
@@ -26,10 +26,12 @@ async def create_student(
 
 @router.get("/", response_model=StudentDetailedResponse, summary="Список студентов")
 async def list_students_summary(
+    team_id: Optional[UUID] = None,
+    project_id: Optional[UUID] = None,
     service: StudentService = Depends(student_service_getter),
 ):
-    """Получить список студентов с ID, ФИО, email и Telegram."""
-    return await service.get_students_summary()
+    """Получить список студентов с ID, ФИО, email и Telegram с фильтрами по команде и проекту."""
+    return await service.get_students_summary(team_id=team_id, project_id=project_id)
 
 @router.get("/{student_id}", response_model=Student, summary="Получить студента по ID")
 async def get_student(

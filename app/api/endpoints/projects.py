@@ -1,4 +1,4 @@
-from typing import List
+from typing import Optional
 from datetime import datetime
 from uuid import UUID
 
@@ -73,12 +73,13 @@ async def delete_project(
 
 @router.get("/", response_model=ProjectSummaryResponse, summary="Сводка проектов для главной страницы")
 async def get_projects_summary(
-    year: int = Query(None, description="Год проекта"),
-    semester: Semester = Query(None, description="Семестр проекта"),
+    year: Optional[int] = Query(None, description="Год проекта"),
+    semester: Optional[Semester] = Query(None, description="Семестр проекта"),
+    team_id: Optional[UUID] = Query(None, description="ID команды для фильтрации проектов"),
     service: ProjectService = Depends(project_service_getter),
 ):
-    """Получить сводку проектов с количеством команд и участников, с фильтрами по году и семестру."""
-    return await service.get_projects_summary(year, semester)
+    """Получить сводку проектов с количеством команд и участников, с фильтрами по году, семестру и команде."""
+    return await service.get_projects_summary(year, semester, team_id)
 
 
 @router.get("/{project_id}", response_model=Project, summary="Получить проект по ID")
