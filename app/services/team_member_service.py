@@ -33,6 +33,14 @@ class TeamMemberService:
         self._student_repo = student_repo
         self._team_member_repo = team_member_repo
 
+    def _to_orm(self, scheme: TeamMemberCreate) -> TeamMemberModel:
+        """Convert schema to ORM model."""
+        return TeamMemberModel(**scheme.model_dump(exclude_unset=True))
+    
+    def _to_schema(self, orm_model: TeamMemberModel) -> TeamMember:
+        """Convert ORM model to schema."""
+        return TeamMember.model_validate(orm_model, from_attributes=True)
+
     async def _validate_team_and_student_exist(
         self, team_id: UUID, student_id: UUID
     ) -> None:
@@ -118,19 +126,6 @@ class TeamMemberService:
             return None
         return self._to_schema(team_member)
 
-    async def get_team_students(self, team_id: UUID) -> List[TeamMember]:
-        """Получить всех студентов из команды."""
-        # Проверяем существование команды
-        team = await self._team_repo.get_by_id(team_id)
-        if not team:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Команда с ID {team_id} не найдена"
-            )
-
-        # Получаем всех участников команды
-        team_members = await self._team_member_repo.get_by_team_id(team_id)
-        return [self._to_schema(member) for member in team_members]
 
     async def get_student_teams(self, student_id: UUID) -> List[TeamMember]:
         """Get all teams of student."""

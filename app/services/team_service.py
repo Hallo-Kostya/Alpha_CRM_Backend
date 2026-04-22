@@ -54,21 +54,6 @@ class TeamService:
             return None
         return self._to_schema(obj)
 
-    async def get_list(self, **filter_attrs) -> list[Team]:
-        """Get list of teams."""
-        items = await self._repo.get_list(**filter_attrs)
-        return [self._to_schema(item) for item in items]
-
-    async def get_teams_by_project(self, project_id: UUID = None) -> list[Team]:
-        """Get list of teams, optionally filtered by project_id."""
-        if project_id:
-            # Get teams assigned to specific project
-            teams = await self._repo.get_teams_by_project(project_id)
-        else:
-            # Get all teams
-            teams = await self._repo.get_list()
-        return [self._to_schema(team) for team in teams]
-
     async def get_teams_summary(self, project_id=None) -> TeamSummaryResponse:
         """Get teams summary with members as Pydantic models."""
         raw_teams = await self._repo.get_teams_summary(project_id)

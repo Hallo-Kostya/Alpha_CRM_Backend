@@ -24,7 +24,7 @@ class ProjectService:
     """
 
     def __init__(self, project_repo: ProjectRepository):
-        self._repo = project_repo
+        self.project_repo = project_repo
 
     def _to_orm(self, scheme: ProjectCreate) -> ProjectModel:
         """Convert schema to ORM model."""
@@ -42,75 +42,55 @@ class ProjectService:
         """
         return Project.compute_status(year, semester)
 
-    async def update_status_based_on_date(self, project_id: UUID) -> Project | None:
-        """Update project status based on year and semester relative to current date."""
-        project = await self.get_by_id(project_id)
-        if not project:
-            return None
-
-        new_status = self.compute_status(project.year, project.semester)
-
-        # Update only if status changed
-        if project.status != new_status:
-            update_data = ProjectUpdate(status=new_status)
-            return await self.update(project_id, update_data)
-        return project
-
     async def create(self, new_obj: ProjectCreate) -> Project:
         """Create new project."""
         # Fill in default values for year/semester/status if missing
-        data = new_obj.model_dump(exclude_unset=True)
         now = datetime.now()
         
-        if "year" not in data or data["year"] is None:
-            data["year"] = now.year
-        if "semester" not in data or data["semester"] is None:
-            data["semester"] = Semester.SPRING if now.month < 7 else Semester.AUTUMN
+        if  new_obj.year is None:
+            new_obj.year = now.year
+        if new_obj.semester is None:
+            new_obj.semester = Semester.SPRING if now.month < 7 else Semester.AUTUMN
         
         # Compute status if not provided
-        if "status" not in data or data["status"] is None:
+        if new_obj.status is None:
             try:
-                data["status"] = self.compute_status(data["year"], data["semester"])
+                new_obj.status = self.compute_status(new_obj.year, new_obj.semester)
             except Exception:
                 pass
         
-        orm_obj = ProjectModel(**data)
-        created_obj = await self._repo.create(orm_obj)
+        orm_obj = self._to_orm(new_obj)
+        created_obj = await self.project_repo.create(orm_obj)
         return self._to_schema(created_obj)
 
     async def update(self, project_id: UUID, new_data: ProjectUpdate) -> Project | None:
         """Update project."""
-        old_obj = await self._repo.get_by_id(project_id)
+        old_obj = await self.project_repo.get_by_id(project_id)
         if not old_obj:
             return None
-        updated_obj = await self._repo.update(
+        updated_obj = await self.project_repo.update(
             old_obj, new_data.model_dump(exclude_unset=True)
         )
         return self._to_schema(updated_obj)
 
     async def delete(self, project_id: UUID) -> bool:
         """Delete project."""
-        obj = await self._repo.get_by_id(project_id)
+        obj = await self.project_repo.get_by_id(project_id)
         if not obj:
             return False
-        await self._repo.delete(obj)
+        await self.project_repo.delete(obj)
         return True
 
     async def get_by_id(self, project_id: UUID) -> Project | None:
         """Get project by ID."""
-        obj = await self._repo.get_by_id(project_id)
+        obj = await self.project_repo.get_by_id(project_id)
         if not obj:
             return None
         return self._to_schema(obj)
 
-    async def get_list(self, **filter_attrs) -> List[Project]:
-        """Get list of projects."""
-        items = await self._repo.get_list(**filter_attrs)
-        return [self._to_schema(item) for item in items]
-
     async def get_projects_summary(self, year: int = None, semester: Semester = None) -> ProjectSummaryResponse:
         """Get projects summary."""
-        total, items = await self._repo.get_projects_summary(year, semester)
+        total, items = await self.project_repo.get_projects_summary(year, semester)
         summaries = [ProjectSummary(**item) for item in items]
         return ProjectSummaryResponse(total=total, projects=summaries)
 

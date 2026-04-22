@@ -24,12 +24,12 @@ async def create_student(
     """Создать нового студента с ФИО, email и Telegram."""
     return await service.create(data)
 
-@router.get("/detailed", response_model=StudentDetailedResponse, summary="Список студентов (детальный)")
-async def list_students_detailed(
+@router.get("/", response_model=StudentDetailedResponse, summary="Список студентов")
+async def list_students_summary(
     service: StudentService = Depends(student_service_getter),
 ):
     """Получить список студентов с ID, ФИО, email и Telegram."""
-    return await service.get_students_detailed()
+    return await service.get_students_summary()
 
 @router.get("/{student_id}", response_model=Student, summary="Получить студента по ID")
 async def get_student(
@@ -69,11 +69,3 @@ async def delete_student(
             detail=f"Студент с ID {student_id} не найден для удаления",
         )
     return Response(f"successfully deleted student with id {student_id}", status.HTTP_200_OK)
-
-
-@router.get("/", response_model=StudentSummaryResponse, summary="Список студентов (базовый)")
-async def list_students_basic(
-    service: StudentService = Depends(student_service_getter),
-):
-    """Получить список студентов с ID и ФИО."""
-    return await service.get_students_summary()

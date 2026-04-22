@@ -24,12 +24,6 @@ class TeamMemberRepository(BaseRepository[TeamMemberModel]):
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
-    async def get_by_team_id(self, team_id: UUID) -> Sequence[TeamMemberModel]:
-        """Получить все связи для команды"""
-        query = select(self.model).where(self.model.team_id == team_id)
-        result = await self.session.scalars(query)
-        return result.all()
-
     async def get_by_student_id(self, student_id: UUID) -> Sequence[TeamMemberModel]:
         """Получить все связи для студента"""
         query = select(self.model).where(self.model.student_id == student_id)

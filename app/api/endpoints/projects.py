@@ -24,16 +24,6 @@ router = APIRouter(
     responses={404: {"description": "Project not found"}},
 )
 
-@router.get("/summary", response_model=ProjectSummaryResponse, summary="Сводка проектов для главной страницы")
-async def get_projects_summary(
-    year: int = Query(None, description="Год проекта"),
-    semester: Semester = Query(None, description="Семестр проекта"),
-    service: ProjectService = Depends(project_service_getter),
-):
-    """Получить сводку проектов с количеством команд и участников, с фильтрами по году и семестру."""
-    return await service.get_projects_summary(year, semester)
-
-
 @router.post("/", response_model=Project, summary="Создать новый проект (минимально)")
 async def create_project_minimal(
     data: ProjectCreateMinimal,
@@ -51,6 +41,44 @@ async def create_project_minimal(
     if data.status is None:
         data.status = service.compute_status(data.year, data.semester)
     return await service.create(data)
+
+
+@router.patch("/{project_id}", response_model=Project, summary="Обновить проект")
+async def update_project(
+    project_id: UUID,
+    data: ProjectUpdate,
+    service: ProjectService = Depends(project_service_getter),
+):
+    """Обновить поля проекта: описание, цель, требования, критерии оценки."""
+    return await service.update(project_id, data)
+
+
+@router.delete("/{project_id}", summary="Удалить проект")
+async def delete_project(
+    project_id: UUID,
+    service: ProjectService = Depends(project_service_getter),
+):
+    """
+    Удалить проект. Каскадно удалятся вехи, оценки,
+    связи с командами и артефакты.
+    """
+    deleted = await service.delete(project_id)
+    if not deleted:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Проект с ID {project_id} не найден для удаления",
+        )
+    return Response(f"successfully deleted project with id {project_id}", status.HTTP_200_OK)
+
+
+@router.get("/", response_model=ProjectSummaryResponse, summary="Сводка проектов для главной страницы")
+async def get_projects_summary(
+    year: int = Query(None, description="Год проекта"),
+    semester: Semester = Query(None, description="Семестр проекта"),
+    service: ProjectService = Depends(project_service_getter),
+):
+    """Получить сводку проектов с количеством команд и участников, с фильтрами по году и семестру."""
+    return await service.get_projects_summary(year, semester)
 
 
 @router.get("/{project_id}", response_model=Project, summary="Получить проект по ID")
@@ -83,15 +111,6 @@ async def assign_team_to_project(
     return await team_service.assign_team_to_project(project_id, data)
 
 
-@router.get("/{project_id}/teams", response_model=list[ProjectTeam], summary="Получить команды проекта")
-async def get_project_teams(
-    project_id: UUID,
-    service: ProjectTeamService = Depends(project_team_service_getter),
-):
-    """Получить список команд проекта."""
-    return await service.get_project_teams(project_id)
-
-
 @router.delete("/{project_id}/teams/{team_id}", summary="Удалить команду из проекта")
 async def remove_team_from_project(
     project_id: UUID,
@@ -99,37 +118,9 @@ async def remove_team_from_project(
     service: ProjectTeamService = Depends(project_team_service_getter),
 ):
     """Удалить команду из проекта."""
-    deleted = await service.remove_team_from_project(project_id, team_id)
+    deleted = await service.delete_team_from_project(project_id, team_id)
     if not deleted:
         raise HTTPException(status_code=404, detail="Связь не найдена")
     return Response("Команда удалена из проекта", status.HTTP_200_OK)
-
-
-@router.patch("/{project_id}", response_model=Project, summary="Обновить проект")
-async def update_project(
-    project_id: UUID,
-    data: ProjectUpdate,
-    service: ProjectService = Depends(project_service_getter),
-):
-    """Обновить поля проекта: описание, цель, требования, критерии оценки."""
-    return await service.update(project_id, data)
-
-
-@router.delete("/{project_id}", summary="Удалить проект")
-async def delete_project(
-    project_id: UUID,
-    service: ProjectService = Depends(project_service_getter),
-):
-    """
-    Удалить проект. Каскадно удалятся вехи, оценки,
-    связи с командами и артефакты.
-    """
-    deleted = await service.delete(project_id)
-    if not deleted:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Проект с ID {project_id} не найден для удаления",
-        )
-    return Response(f"successfully deleted project with id {project_id}", status.HTTP_200_OK)
 
 

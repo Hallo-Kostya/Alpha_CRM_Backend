@@ -60,7 +60,7 @@ class ProjectTeamService:
                 detail=f"Team with ID {team_id} not found",
             )
 
-    async def create(
+    async def assign_team_to_project(
         self, project_id: UUID, data: ProjectTeamCreate
     ) -> ProjectTeam:
         """Assign team to project."""
@@ -113,10 +113,10 @@ class ProjectTeamService:
         }
 
         orm_obj = ProjectTeamModel(**project_team_data)
-        created_obj = await self._repo.create(orm_obj)
+        created_obj = await self._project_team_repo.create(orm_obj)
         return self._to_schema(created_obj)
 
-    async def update(
+    async def update_project_team_status(
         self, project_id: UUID, team_id: UUID, new_data: ProjectTeamUpdate
     ) -> ProjectTeam | None:
         """Update project team."""
@@ -125,12 +125,12 @@ class ProjectTeamService:
         )
         if not project_team:
             return None
-        updated_obj = await self._repo.update(
+        updated_obj = await self._project_team_repo.update(
             project_team, new_data.model_dump(exclude_unset=True)
         )
         return self._to_schema(updated_obj)
 
-    async def delete(self, project_id: UUID, team_id: UUID) -> bool:
+    async def delete_team_from_project(self, project_id: UUID, team_id: UUID) -> bool:
         """Remove team from project (change status to WITHDRAWN)."""
         project_team = await self._project_team_repo.get_by_project_and_team(
             project_id, team_id
@@ -156,22 +156,6 @@ class ProjectTeamService:
         if not project_team:
             return None
         return self._to_schema(project_team)
-
-    async def get_project_teams(
-        self, project_id: UUID, project_team_status: Optional[ProjectTeamStatus] = None
-    ) -> List[ProjectTeam]:
-        """Get all teams of project."""
-        project = await self._project_repo.get_by_id(project_id)
-        if not project:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Project with ID {project_id} not found",
-            )
-
-        project_teams = await self._project_team_repo.get_by_project_id(
-            project_id, project_team_status
-        )
-        return [self._to_schema(team) for team in project_teams]
 
     async def get_team_projects(
         self, team_id: UUID, project_team_status: Optional[ProjectTeamStatus] = None
@@ -200,12 +184,10 @@ class ProjectTeamService:
                 detail=f"Team with ID {team_id} not found",
             )
 
-        # Get active links
         active_links = await self._project_team_repo.get_by_team_id(
             team_id, ProjectTeamStatus.ACTIVE
         )
 
-        # Return first active link (should be only one by business rules)
         if active_links:
             return self._to_schema(active_links[0])
         return None

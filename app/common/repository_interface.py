@@ -33,10 +33,3 @@ class RepositoryInterface(ABC, Generic[T]):
         Удалить объект из бд
         """
         pass
-
-    @abstractmethod
-    async def get_list(self, **filter_attrs) -> Sequence[T] | list[T]:
-        """
-        Вернуть все объекты
-        """
-        pass

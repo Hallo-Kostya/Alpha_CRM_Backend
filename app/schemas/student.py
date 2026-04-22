@@ -55,12 +55,16 @@ class StudentRead(BaseModel):
 
 class StudentSummary(BaseModel):
     id: UUID
-    full_name: str
+    first_name: str
+    last_name: str
+    patronymic: Optional[str] = None
 
 
 class StudentDetailed(BaseModel):
     id: UUID
-    full_name: str
+    first_name: str
+    last_name: str
+    patronymic: Optional[str] = None
     email: str
     tg_link: str
 

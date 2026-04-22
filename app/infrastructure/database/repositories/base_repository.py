@@ -42,40 +42,6 @@ class BaseRepository(RepositoryInterface[T], Generic[T]):
         await self.session.refresh(obj)
         return obj
 
-    async def get_list(self, filters: dict = None, eager_loads: list[str] = None, order_by: list[str] = None, **filter_attrs) -> Sequence[T] | list[T]:
-        query = select(self.model)
-        if eager_loads:
-            for load in eager_loads:
-                query = query.options(selectinload(getattr(self.model, load)))
-        if filters:
-            for key, value in filters.items():
-                if '__' in key:
-                    field, op = key.rsplit('__', 1)
-                    column = getattr(self.model, field)
-                    if op == 'gt':
-                        query = query.where(column > value)
-                    elif op == 'gte':
-                        query = query.where(column >= value)
-                    elif op == 'lt':
-                        query = query.where(column < value)
-                    elif op == 'lte':
-                        query = query.where(column <= value)
-                    elif op == 'ne':
-                        query = query.where(column != value)
-                    elif op == 'like':
-                        query = query.where(column.like(value))
-                    elif op == 'ilike':
-                        query = query.where(column.ilike(value))
-                    # Add more operators as needed
-                else:
-                    query = query.where(getattr(self.model, key) == value)
-        if filter_attrs:
-            query = query.filter_by(**filter_attrs)
-        if order_by:
-            query = query.order_by(*[getattr(self.model, field) for field in order_by])
-        result = await self.session.scalars(query)
-        return result.all()
-
     async def delete(self, obj: T) -> None:
         await self.session.delete(obj)
         await self.session.commit()

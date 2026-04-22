@@ -17,12 +17,9 @@ class StudentRepository(BaseRepository[StudentModel]):
         """Получить сводку студентов: id, full_name"""
         query = select(
             StudentModel.id,
-            func.concat(
-                StudentModel.first_name,
-                ' ',
-                StudentModel.last_name,
-                func.coalesce(func.concat(' ', StudentModel.patronymic), '')
-            ).label("full_name")
+            StudentModel.first_name,
+            StudentModel.last_name,
+            StudentModel.patronymic
         ).select_from(StudentModel)
 
         result = await self.session.execute(query)
@@ -31,7 +28,9 @@ class StudentRepository(BaseRepository[StudentModel]):
         items = [
             {
                 "id": row.id,
-                "full_name": row.full_name.strip()
+                "first_name": row.first_name,
+                "last_name": row.last_name,
+                "patronymic": row.patronymic
             }
             for row in rows
         ]
@@ -43,12 +42,9 @@ class StudentRepository(BaseRepository[StudentModel]):
         """Получить детальную сводку студентов: id, full_name, email, tg_link"""
         query = select(
             StudentModel.id,
-            func.concat(
-                StudentModel.first_name,
-                ' ',
-                StudentModel.last_name,
-                func.coalesce(func.concat(' ', StudentModel.patronymic), '')
-            ).label("full_name"),
+            StudentModel.first_name,
+            StudentModel.last_name,
+            StudentModel.patronymic,
             StudentModel.email,
             StudentModel.tg_link
         ).select_from(StudentModel)
@@ -59,7 +55,9 @@ class StudentRepository(BaseRepository[StudentModel]):
         items = [
             {
                 "id": row.id,
-                "full_name": row.full_name.strip(),
+                "first_name": row.first_name,
+                "last_name": row.last_name,
+                "patronymic": row.patronymic,
                 "email": row.email,
                 "tg_link": row.tg_link
             }

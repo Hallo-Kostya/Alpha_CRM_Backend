@@ -40,16 +40,6 @@ async def list_teams(
     """Получить список команд с фильтром по проекту. Включает ID, имя, количество участников и список участников."""
     return await service.get_teams_summary(project_id)
 
-
-@router.get("/full", response_model=list[Team], summary="Полный список команд")
-async def list_teams_full(
-    project_id: UUID = Query(None, description="ID проекта для фильтрации команд"),
-    service: TeamService = Depends(team_service_getter),
-):
-    """Получить полный список команд с фильтром по проекту. Возвращает полные данные команд."""
-    return await service.get_teams_by_project(project_id)
-
-
 @router.get("/{team_id}", response_model=Team, summary="Получить команду по ID")
 async def get_team(
     team_id: UUID,
@@ -73,15 +63,6 @@ async def add_student_to_team(
 ):
     """Добавить студента в команду с указанием роли и группы."""
     return await member_service.add_student_to_team(team_id, data.student_id, data.role, data.study_group)
-
-
-@router.get("/{team_id}/students", response_model=list[TeamMember], summary="Получить студентов команды")
-async def get_team_students(
-    team_id: UUID,
-    service: TeamMemberService = Depends(team_member_service_getter),
-):
-    """Получить список студентов команды."""
-    return await service.get_team_students(team_id)
 
 
 @router.patch("/{team_id}/students/{student_id}", response_model=TeamMember, summary="Обновить студента в команде")
