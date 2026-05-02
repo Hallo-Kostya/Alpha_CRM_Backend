@@ -6,6 +6,7 @@ from app.api.endpoints.projects import router as projects_router
 from app.api.endpoints.students import router as students_router
 from app.api.endpoints.teams import router as teams_router
 from app.api.endpoints.meetings import router as meetings_router
+from app.api.endpoints.tasks import router as tasks_router
 from app.api.endpoints.search import router as search_router
 
 routers = APIRouter()
@@ -15,11 +16,12 @@ router_list = [
     students_router,
     teams_router,
     meetings_router,
+    tasks_router,
     search_router
 ]
 
 for router in router_list:
-    routers.include_router(router, prefix=settings.api.v2.prefix)
+    routers.include_router(router)
 
 
 @routers.get("/health")

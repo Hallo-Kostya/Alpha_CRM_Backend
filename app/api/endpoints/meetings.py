@@ -3,14 +3,20 @@ from uuid import UUID
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Response, status, Query
 from app.schemas.meeting import MeetingCreate, MeetingUpdate, Meeting
+from app.schemas.task import TaskCreate, TaskResponse
+from app.infrastructure.database.models.meetings.meeting_task import MeetingTaskModel
 from app.services.meeting_service import (
     MeetingService,
     meeting_service_getter,
 )
+from app.services.task_service import (
+    TaskService,
+    task_service_getter,
+)
 
 router = APIRouter(
     prefix="/meetings",
-    tags=["v2", "meetings"],
+    tags=["meetings"],
     responses={404: {"description": "Meeting not found"}},
 )
 
@@ -32,7 +38,7 @@ async def get_meetings_for_calendar(
     service: MeetingService = Depends(meeting_service_getter),
 ):
     """Получить список встреч для отображения в календаре с фильтрами по команде и датам."""
-    return await service.get_meetings_for_calendar(team_id, start_date, end_date)
+    return await service.get_list(team_id, start_date, end_date)
 
 
 @router.get("/{meeting_id}", response_model=Meeting, summary="Получить встречу по ID")
@@ -72,4 +78,45 @@ async def delete_meeting(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Встреча с ID {meeting_id} не найдена для удаления",
         )
-    return Response(f"successfully deleted meeting with id {meeting_id}", status.HTTP_200_OK)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post("/{meeting_id}/tasks", response_model=TaskResponse, summary="Добавить задачу к встрече")
+async def add_task_to_meeting(
+    meeting_id: UUID,
+    task_data: TaskCreate,
+    meeting_service: MeetingService = Depends(meeting_service_getter),
+    task_service: TaskService = Depends(task_service_getter),
+):
+    """Добавить задачу к встрече. Если задача с таким описанием уже существует, она будет привязана к встрече."""
+    # Check if meeting exists
+    meeting = await meeting_service.get_by_id(meeting_id)
+    if meeting is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Встреча с ID {meeting_id} не найдена",
+        )
+    
+    # Create task
+    task = await task_service.create(task_data)
+    
+    # Add task to meeting
+    await task_service.add_to_meeting(task.id, meeting_id)
+    
+    return TaskResponse(
+        meeting_id=meeting_id,
+        task_id=task.id,
+        description=task.description,
+        is_completed=task.is_completed
+    )
+
+
+@router.delete("/{meeting_id}/tasks/{task_id}", summary="Убрать задачу со встречи")
+async def remove_task_from_meeting(
+    meeting_id: UUID,
+    task_id: UUID,
+    task_service: TaskService = Depends(task_service_getter),
+):
+    """Убрать задачу со встречи (не удаляет саму задачу, только связь)."""
+    await task_service.remove_from_meeting(task_id, meeting_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

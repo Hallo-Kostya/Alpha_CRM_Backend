@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Generic, TypeVar, Sequence
+from typing import Any, Generic, Optional, TypeVar, Sequence
 from uuid import UUID
 
 T = TypeVar("T")
@@ -32,4 +32,15 @@ class RepositoryInterface(ABC, Generic[T]):
         """
         Удалить объект из бд
         """
+        pass
+    
+    @abstractmethod
+    async def get_list(
+        self,
+        filters: Optional[dict[str, Any]] = None,
+        order_by: Optional[str] = None,
+        limit: Optional[int] = None,
+        offset: Optional[int] = None,
+    ) -> tuple[int, Sequence[T]]:
+        """Получить список объектов с фильтрами и пагинацией."""
         pass

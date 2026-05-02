@@ -18,7 +18,7 @@ from app.schemas.team_member import TeamMember
 
 router = APIRouter(
     prefix="/teams",
-    tags=["v2", "teams"],
+    tags=["teams"],
     responses={404: {"description": "Team not found"}},
 )
 
@@ -111,4 +111,4 @@ async def delete_team(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Команда с ID {team_id} не найдена для удаления",
         )
-    return Response(f"successfully deleted team with id {team_id}", status.HTTP_200_OK)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

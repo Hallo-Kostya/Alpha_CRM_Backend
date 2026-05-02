@@ -4,7 +4,7 @@ from app.services.search_service import SearchService, search_service_getter
 
 router = APIRouter(
     prefix="/search",
-    tags=["v2", "search"],
+    tags=["search"],
 )
 
 @router.get("/", summary="Умный поиск по сущностям")

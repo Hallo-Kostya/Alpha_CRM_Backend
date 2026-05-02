@@ -20,7 +20,7 @@ from app.schemas.project_team import ProjectTeam
 
 router = APIRouter(
     prefix="/projects",
-    tags=["v2", "projects"],
+    tags=["projects"],
     responses={404: {"description": "Project not found"}},
 )
 
@@ -122,6 +122,6 @@ async def remove_team_from_project(
     deleted = await service.delete_team_from_project(project_id, team_id)
     if not deleted:
         raise HTTPException(status_code=404, detail="Связь не найдена")
-    return Response("Команда удалена из проекта", status.HTTP_200_OK)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 

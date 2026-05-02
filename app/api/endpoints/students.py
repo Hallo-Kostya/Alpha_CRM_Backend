@@ -70,4 +70,4 @@ async def delete_student(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Студент с ID {student_id} не найден для удаления",
         )
-    return Response(f"successfully deleted student with id {student_id}", status.HTTP_200_OK)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

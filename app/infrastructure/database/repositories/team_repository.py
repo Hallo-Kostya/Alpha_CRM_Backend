@@ -17,62 +17,49 @@ class TeamRepository(BaseRepository[TeamModel]):
         super().__init__(TeamModel, session)
 
     async def get_teams_summary(self, project_id=None):
-        """Получить сводку команд с участниками"""
-        # Сначала получить все команды
-        query = select(TeamModel.id, TeamModel.name)
-        if project_id:
-            # Join with project_teams to filter by project
-            from app.infrastructure.database.models.projects.project_team import ProjectTeamModel
-            query = query.select_from(
-                join(TeamModel, ProjectTeamModel, TeamModel.id == ProjectTeamModel.team_id)
-            ).where(ProjectTeamModel.project_id == project_id)
-        
-        teams_result = await self.session.execute(query)
-        teams = teams_result.all()
-
-        result = []
-        for team_row in teams:
-            team_id = team_row.id
-            team_name = team_row.name
-
-            # Получить участников
-            members_query = select(
-                StudentModel.id,
+        query = (
+            select(
+                TeamModel.id,
+                TeamModel.name,
+                StudentModel.id.label("student_id"),
                 func.concat(
-                    StudentModel.first_name,
-                    ' ',
+                    StudentModel.first_name, ' ',
                     StudentModel.last_name,
                     func.coalesce(func.concat(' ', StudentModel.patronymic), '')
-                ).label("full_name")
-            ).select_from(
-                join(TeamMemberModel, StudentModel, TeamMemberModel.student_id == StudentModel.id)
-            ).where(TeamMemberModel.team_id == team_id)
+                ).label("full_name"),
+            )
+            .select_from(TeamModel)
+            .outerjoin(TeamMemberModel, TeamModel.id == TeamMemberModel.team_id)
+            .outerjoin(StudentModel, TeamMemberModel.student_id == StudentModel.id)
+        )
 
-            members_result = await self.session.execute(members_query)
-            members = [
-                {"id": str(row.id), "full_name": row.full_name.strip()}
-                for row in members_result.all()
-            ]
+        if project_id:
+            from app.infrastructure.database.models.projects.project_team import ProjectTeamModel
+            query = query.join(ProjectTeamModel, TeamModel.id == ProjectTeamModel.team_id)
+            query = query.where(ProjectTeamModel.project_id == project_id)
 
-            result.append({
-                "id": str(team_id),
-                "name": team_name,
-                "members_count": len(members),
-                "members": members
-            })
-
-        return result
-
-    async def get_teams_by_project(self, project_id: UUID):
-        """Получить команды, назначенные на проект"""
-        from app.infrastructure.database.models.projects.project_team import ProjectTeamModel
-        
-        query = select(TeamModel).select_from(
-            TeamModel.join(ProjectTeamModel, TeamModel.id == ProjectTeamModel.team_id)
-        ).where(ProjectTeamModel.project_id == project_id)
-        
         result = await self.session.execute(query)
-        return result.scalars().all()
+        rows = result.all()
+
+        # Группируем в памяти
+        teams: dict[UUID, dict] = {}
+        for row in rows:
+            if row.id not in teams:
+                teams[row.id] = {
+                    "id": str(row.id),
+                    "name": row.name,
+                    "members": [],
+                }
+            if row.student_id:
+                teams[row.id]["members"].append({
+                    "id": str(row.student_id),
+                    "full_name": row.full_name.strip(),
+                })
+
+        return [
+            {**team, "members_count": len(team["members"])}
+            for team in teams.values()
+        ]
 
 
 def team_repository_getter(

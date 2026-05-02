@@ -50,6 +50,51 @@ class MeetingRepository(BaseRepository[MeetingModel]):
             }
             for row in rows
         ]
+        
+    async def exists_by_team_and_date(
+        self,
+        team_id: UUID,
+        meeting_date: datetime,
+        exclude_id: Optional[UUID] = None,
+    ) -> bool:
+        """Check whether a meeting exists for the team at the same date/time."""
+        query = select(func.count()).where(
+            MeetingModel.team_id == team_id,
+            MeetingModel.date == meeting_date,
+        )
+        if exclude_id is not None:
+            query = query.where(MeetingModel.id != exclude_id)
+
+        result = await self.session.execute(query)
+        return result.scalar_one() > 0
+
+    async def find_neighbours(
+        self, team_id: UUID, meeting_date: datetime
+    ) -> tuple[MeetingModel | None, MeetingModel | None]:
+        """Find the closest previous and next meetings by date for a given team."""
+        prev_query = (
+            select(MeetingModel)
+            .where(
+                MeetingModel.team_id == team_id,
+                MeetingModel.date < meeting_date,
+            )
+            .order_by(MeetingModel.date.desc())
+            .limit(1)
+        )
+        next_query = (
+            select(MeetingModel)
+            .where(
+                MeetingModel.team_id == team_id,
+                MeetingModel.date > meeting_date,
+            )
+            .order_by(MeetingModel.date.asc())
+            .limit(1)
+        )
+
+        prev_result = await self.session.execute(prev_query)
+        next_result = await self.session.execute(next_query)
+
+        return prev_result.scalar_one_or_none(), next_result.scalar_one_or_none()
 
 
 def meeting_repository_getter(

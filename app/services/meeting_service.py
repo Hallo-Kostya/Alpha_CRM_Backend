@@ -5,6 +5,7 @@ from typing import List, Optional
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
+from app.schemas.common import ListResponse
 from app.schemas.meeting import MeetingCreate, MeetingUpdate, MeetingResponse
 from app.schemas.task import TaskResponse
 from app.schemas.meeting import Meeting
@@ -60,41 +61,147 @@ class MeetingService:
                 detail=f"Team with ID {team_id} not found"
             )
 
-    async def create(self, data: MeetingCreate) -> Meeting:
-        """Create new meeting."""
-        # Check team existence
-        await self._validate_team_exists(data.team_id)
+    async def _ensure_unique_meeting_time(
+        self,
+        team_id: UUID,
+        meeting_date: datetime,
+        exclude_meeting_id: Optional[UUID] = None,
+    ) -> None:
+        """Ensure no other meeting exists for the team at the same date/time."""
+        if await self._meeting_repo.exists_by_team_and_date(
+            team_id,
+            meeting_date,
+            exclude_id=exclude_meeting_id,
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Meeting time must be unique within the team"
+            )
 
-        # Check previous meeting if specified
-        if data.previous_meeting_id:
-            previous_meeting = await self._meeting_repo.get_by_id(data.previous_meeting_id)
-            if not previous_meeting:
+    async def create(self, create_meeting_data: MeetingCreate) -> Meeting:
+        """Create new meeting and automatically insert it into the meeting chain by date."""
+        await self._validate_team_exists(create_meeting_data.team_id)
+
+        await self._ensure_unique_meeting_time(
+            create_meeting_data.team_id,
+            create_meeting_data.date,
+        )
+
+        meeting_data = create_meeting_data.model_dump(exclude_unset=True)
+        meeting_data.pop('previous_meeting_id', None)
+        meeting_data.pop('next_meeting_id', None)
+
+        orm_obj = MeetingModel(**meeting_data)
+        created_obj = await self._meeting_repo.create(orm_obj)
+
+        previous, next_ = await self._meeting_repo.find_neighbours(
+            create_meeting_data.team_id, create_meeting_data.date
+        )
+
+        if previous or next_:
+            await self._chain_meetings(
+                current_id=created_obj.id,
+                previous_id=previous.id if previous else None,
+                next_id=next_.id if next_ else None,
+            )
+            created_obj = await self._meeting_repo.get_by_id(created_obj.id)
+
+        return self._to_schema(created_obj)
+
+    async def _chain_meetings(
+        self, 
+        current_id: UUID, 
+        previous_id: Optional[UUID], 
+        next_id: Optional[UUID]
+    ) -> None:
+        """Chain meetings together, handling insertion into existing chains."""
+        current = await self._meeting_repo.get_by_id(current_id)
+        if not current:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Meeting with ID {current_id} not found"
+            )
+
+        # If there's a previous meeting
+        if previous_id:
+            previous = await self._meeting_repo.get_by_id(previous_id)
+            if not previous:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
-                    detail=f"Previous meeting with ID {data.previous_meeting_id} not found"
+                    detail=f"Previous meeting with ID {previous_id} not found"
                 )
-            if previous_meeting.team_id != data.team_id:
+            
+            # Validate team and date
+            if previous.team_id != current.team_id:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Previous meeting must belong to the same team"
                 )
-
-        # Create meeting
-        meeting_data = data.model_dump(exclude_unset=True)
-        orm_obj = MeetingModel(**meeting_data)
-        created_obj = await self._repo.create(orm_obj)
-        
-        # Update next_meeting_id for previous meeting
-        if data.previous_meeting_id:
-            previous_meeting = await self._meeting_repo.get_by_id(data.previous_meeting_id)
-            if previous_meeting:
-                await self._meeting_repo.update(
-                    previous_meeting, 
-                    {"next_meeting_id": created_obj.id}
+            if previous.date >= current.date:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Previous meeting date must be earlier than current meeting"
                 )
+            
+            # If previous meeting had a next meeting, link it to current
+            old_next_id = previous.next_meeting_id
+            if old_next_id and old_next_id != next_id:
+                old_next = await self._meeting_repo.get_by_id(old_next_id)
+                if old_next:
+                    await self._meeting_repo.update(old_next, {"previous_meeting_id": current_id})
+                    if not next_id:
+                        next_id = old_next_id
+            
+            # Link previous to current
+            await self._meeting_repo.update(current, {"previous_meeting_id": previous_id})
+            await self._meeting_repo.update(previous, {"next_meeting_id": current_id})
 
-        return self._to_schema(created_obj)
+        # If there's a next meeting
+        if next_id:
+            next_meeting = await self._meeting_repo.get_by_id(next_id)
+            if not next_meeting:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Next meeting with ID {next_id} not found"
+                )
+            
+            # Validate team and date
+            if next_meeting.team_id != current.team_id:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Next meeting must belong to the same team"
+                )
+            if next_meeting.date <= current.date:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Next meeting date must be later than current meeting"
+                )
+            
+            # If next meeting had a previous meeting and it's not our previous, unlink it
+            old_previous_id = next_meeting.previous_meeting_id
+            if old_previous_id and old_previous_id != previous_id:
+                old_previous = await self._meeting_repo.get_by_id(old_previous_id)
+                if old_previous:
+                    await self._meeting_repo.update(old_previous, {"next_meeting_id": current_id})
+            
+            # Link current to next
+            await self._meeting_repo.update(current, {"next_meeting_id": next_id})
+            await self._meeting_repo.update(next_meeting, {"previous_meeting_id": current_id})
 
+    async def _unchain_meeting(self, meeting: MeetingModel) -> None:
+        """Remove meeting from chain, linking its neighbours directly to each other."""
+        previous_id = meeting.previous_meeting_id
+        next_id = meeting.next_meeting_id
+
+        if previous_id:
+            previous = await self._meeting_repo.get_by_id(previous_id)
+            if previous:
+                await self._meeting_repo.update(previous, {"next_meeting_id": next_id})
+
+        if next_id:
+            next_meeting = await self._meeting_repo.get_by_id(next_id)
+            if next_meeting:
+                await self._meeting_repo.update(next_meeting, {"previous_meeting_id": previous_id})
     async def update(
         self, meeting_id: UUID, new_data: MeetingUpdate
     ) -> Meeting | None:
@@ -107,28 +214,37 @@ class MeetingService:
             )
 
         update_data = new_data.model_dump(exclude_unset=True)
-        updated_obj = await self._repo.update(old_obj, update_data)
+
+        if "date" in update_data:
+            await self._ensure_unique_meeting_time(
+                old_obj.team_id,
+                update_data["date"],
+                exclude_meeting_id=meeting_id,
+            )
+
+        if update_data:
+            updated_obj = await self._meeting_repo.update(old_obj, update_data)
+        else:
+            updated_obj = await self._meeting_repo.get_by_id(meeting_id)
+            
         return self._to_schema(updated_obj)
+    
 
     async def delete(self, meeting_id: UUID) -> bool:
-        """Delete meeting."""
-        obj = await self._repo.get_by_id(meeting_id)
+        """Delete meeting and relink its neighbours."""
+        obj = await self._meeting_repo.get_by_id(meeting_id)
         if not obj:
             return False
-        await self._repo.delete(obj)
+        await self._unchain_meeting(obj)
+        await self._meeting_repo.delete(obj)
         return True
 
     async def get_by_id(self, meeting_id: UUID) -> Meeting | None:
         """Get meeting by ID."""
-        obj = await self._repo.get_by_id(meeting_id)
+        obj = await self._meeting_repo.get_by_id(meeting_id)
         if not obj:
             return None
         return self._to_schema(obj)
-
-    async def get_list(self, **filter_attrs) -> List[Meeting]:
-        """Get list of meetings."""
-        items = await self._repo.get_list(**filter_attrs)
-        return [self._to_schema(item) for item in items]
 
     async def get_team_meetings(
         self, 
@@ -146,12 +262,22 @@ class MeetingService:
         )
         return [self._to_schema(meeting) for meeting in meetings]
     
-    async def get_meetings_for_calendar(self, team_id: Optional[UUID] = None, start_date: Optional[datetime] = None, end_date: Optional[datetime] = None) -> List[dict]:
-        """Get meetings for calendar view."""
-        return await self._meeting_repo.get_meetings_for_calendar(team_id, start_date, end_date)
-        meetings = await self._meeting_repo.get_all_ordered_by_date()
-        return [self._to_schema(meeting) for meeting in meetings]
-
+    async def get_list(
+        self,
+        team_id: Optional[UUID] = None,
+        start_date: Optional[datetime] = None,
+        end_date: Optional[datetime] = None,
+    ) -> ListResponse[Meeting]:
+        total, items = await self._meeting_repo.get_list(
+            filters={"team_id": team_id},
+            range_filters={"date": (start_date, end_date)},
+            order_by="date",
+        )
+        return ListResponse(
+            total=total,
+            items=[self._to_schema(i) for i in items],
+        )
+        
     async def complete_meeting(self, meeting_id: UUID) -> Meeting:
         """Complete meeting and move incomplete tasks."""
         # Get meeting with tasks

@@ -1,6 +1,6 @@
-from typing import Generic, Type, TypeVar, Sequence
+from typing import Any, Generic, Optional, Type, TypeVar, Sequence
 from uuid import UUID
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from app.common.repository_interface import (
@@ -45,3 +45,47 @@ class BaseRepository(RepositoryInterface[T], Generic[T]):
     async def delete(self, obj: T) -> None:
         await self.session.delete(obj)
         await self.session.commit()
+
+    async def get_list(
+        self,
+        filters: Optional[dict[str, Any]] = None,
+        range_filters: Optional[dict[str, tuple[Any, Any]]] = None,  # {"meeting_date": (start, end)}
+        order_by: Optional[str] = None,
+        limit: Optional[int] = None,
+        offset: Optional[int] = None,
+    ) -> tuple[int, Sequence[T]]:
+        query = select(self.model)
+
+        if filters:
+            for field, value in filters.items():
+                column = getattr(self.model, field, None)
+                if column is not None and value is not None:
+                    query = query.where(column == value)
+
+        if range_filters:
+            for field, (from_val, to_val) in range_filters.items():
+                column = getattr(self.model, field, None)
+                if column is not None:
+                    if from_val is not None:
+                        query = query.where(column >= from_val)
+                    if to_val is not None:
+                        query = query.where(column <= to_val)
+
+        count_query = select(func.count()).select_from(query.subquery())
+        total = await self.session.scalar(count_query)
+
+        if order_by:
+            desc = order_by.startswith("-")
+            column = getattr(self.model, order_by.lstrip("-"), None)
+            if column is not None:
+                query = query.order_by(column.desc() if desc else column.asc())
+        else:
+            query = query.order_by(self.model.created_at.asc())
+
+        if offset:
+            query = query.offset(offset)
+        if limit:
+            query = query.limit(limit)
+
+        result = await self.session.execute(query)
+        return total, result.scalars().all()

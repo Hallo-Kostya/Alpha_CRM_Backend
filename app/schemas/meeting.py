@@ -33,6 +33,7 @@ class MeetingCreate(BaseModel):
     team_id: UUID
     status: MeetingStatus = MeetingStatus.SCHEDULED
     previous_meeting_id: Optional[UUID] = None
+    next_meeting_id: Optional[UUID] = None
 
 
 class MeetingUpdate(BaseModel):
@@ -41,8 +42,6 @@ class MeetingUpdate(BaseModel):
     resume: Optional[str] = Field(None, examples=["Описание встречи"])
     date: Optional[datetime] = None
     status: Optional[MeetingStatus] = None
-    previous_meeting_id: Optional[UUID] = None
-    next_meeting_id: Optional[UUID] = None
 
 
 # Aliases for backward compatibility
