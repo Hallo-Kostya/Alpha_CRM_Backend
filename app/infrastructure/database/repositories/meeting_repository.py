@@ -8,7 +8,6 @@ from sqlalchemy.orm import selectinload
 
 from app.infrastructure.database.repositories.base_repository import BaseRepository
 from app.infrastructure.database.models.meetings.meeting import MeetingModel
-from app.common.enums import MeetingStatus
 from app.core.database import db_helper
 
 

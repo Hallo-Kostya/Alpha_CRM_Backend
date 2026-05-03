@@ -1,4 +1,5 @@
 from typing import TYPE_CHECKING
+import uuid
 from sqlalchemy import ForeignKey, PrimaryKeyConstraint, UniqueConstraint, CheckConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID
@@ -15,21 +16,24 @@ class ArtifactLinkModel(Base):
     """Модель связи артефакта с проектом или встречей"""
     __tablename__ = "artifact_links" 
     
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
     # FK на артефакт
     artifact_id: Mapped[UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("artifacts.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
-        primary_key=True,
     )
     # FK на проект (nullable)
     project_id: Mapped[UUID | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("projects.id", ondelete="CASCADE"),
-        nullable=False,
+        nullable=True,
         index=True,
-        primary_key=True,
     )
     # FK на встречу (nullable)
     meeting_id: Mapped[UUID | None] = mapped_column(

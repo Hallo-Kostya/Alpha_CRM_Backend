@@ -1,8 +1,8 @@
-"""initial scheme
+"""init base
 
-Revision ID: 3d6c83a0130a
+Revision ID: 272f739779ce
 Revises: 
-Create Date: 2025-12-18 04:36:48.601113
+Create Date: 2026-05-03 20:08:32.793997
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '3d6c83a0130a'
+revision: str = '272f739779ce'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -36,17 +36,20 @@ def upgrade() -> None:
     op.create_index(op.f('ix_artifacts_created_by'), 'artifacts', ['created_by'], unique=False)
     op.create_index(op.f('ix_artifacts_updated_by'), 'artifacts', ['updated_by'], unique=False)
     op.create_table('curators',
+    sa.Column('hashed_password', sa.String(length=255), nullable=False),
+    sa.Column('email', sa.String(length=255), nullable=False),
+    sa.Column('avatar_s3_path', sa.String(length=255), nullable=True),
     sa.Column('first_name', sa.String(length=255), nullable=False),
     sa.Column('last_name', sa.String(length=255), nullable=False),
     sa.Column('patronymic', sa.String(length=255), nullable=True),
-    sa.Column('email', sa.String(length=255), nullable=True),
     sa.Column('tg_link', sa.String(length=255), nullable=True),
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('created_by', sa.UUID(), nullable=True),
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_by', sa.UUID(), nullable=True),
-    sa.PrimaryKeyConstraint('id', name=op.f('pk_curators'))
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_curators')),
+    sa.UniqueConstraint('email', name=op.f('uq_curators_email'))
     )
     op.create_index(op.f('ix_curators_created_by'), 'curators', ['created_by'], unique=False)
     op.create_index(op.f('ix_curators_updated_by'), 'curators', ['updated_by'], unique=False)
@@ -107,6 +110,22 @@ def upgrade() -> None:
     )
     op.create_index(op.f('ix_teams_created_by'), 'teams', ['created_by'], unique=False)
     op.create_index(op.f('ix_teams_updated_by'), 'teams', ['updated_by'], unique=False)
+    op.create_table('auth_sessions',
+    sa.Column('curator_id', sa.UUID(), nullable=False),
+    sa.Column('token_hash', sa.String(length=255), nullable=False),
+    sa.Column('expires_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('is_revoked', sa.Boolean(), nullable=False),
+    sa.Column('id', sa.UUID(), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('created_by', sa.UUID(), nullable=True),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_by', sa.UUID(), nullable=True),
+    sa.ForeignKeyConstraint(['curator_id'], ['curators.id'], name=op.f('fk_auth_sessions_curator_id_curators'), ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_auth_sessions'))
+    )
+    op.create_index(op.f('ix_auth_sessions_created_by'), 'auth_sessions', ['created_by'], unique=False)
+    op.create_index(op.f('ix_auth_sessions_token_hash'), 'auth_sessions', ['token_hash'], unique=True)
+    op.create_index(op.f('ix_auth_sessions_updated_by'), 'auth_sessions', ['updated_by'], unique=False)
     op.create_table('curator_teams',
     sa.Column('curator_id', sa.UUID(), nullable=False),
     sa.Column('team_id', sa.UUID(), nullable=False),
@@ -167,6 +186,25 @@ def upgrade() -> None:
     )
     op.create_index(op.f('ix_milestones_created_by'), 'milestones', ['created_by'], unique=False)
     op.create_index(op.f('ix_milestones_updated_by'), 'milestones', ['updated_by'], unique=False)
+    op.create_table('oauth_sessions',
+    sa.Column('access_token', sa.String(length=255), nullable=False),
+    sa.Column('refresh_token', sa.String(length=255), nullable=False),
+    sa.Column('provider', sa.String(length=255), nullable=False),
+    sa.Column('curator_id', sa.UUID(), nullable=False),
+    sa.Column('expires_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('is_revoked', sa.Boolean(), nullable=False),
+    sa.Column('id', sa.UUID(), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('created_by', sa.UUID(), nullable=True),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_by', sa.UUID(), nullable=True),
+    sa.ForeignKeyConstraint(['curator_id'], ['curators.id'], name=op.f('fk_oauth_sessions_curator_id_curators'), ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_oauth_sessions')),
+    sa.UniqueConstraint('curator_id', 'provider', name='curator_provider_uc')
+    )
+    op.create_index(op.f('ix_oauth_sessions_created_by'), 'oauth_sessions', ['created_by'], unique=False)
+    op.create_index(op.f('ix_oauth_sessions_provider'), 'oauth_sessions', ['provider'], unique=False)
+    op.create_index(op.f('ix_oauth_sessions_updated_by'), 'oauth_sessions', ['updated_by'], unique=False)
     op.create_table('project_teams',
     sa.Column('project_id', sa.UUID(), nullable=False),
     sa.Column('team_id', sa.UUID(), nullable=False),
@@ -202,6 +240,7 @@ def upgrade() -> None:
     op.create_index(op.f('ix_team_members_created_by'), 'team_members', ['created_by'], unique=False)
     op.create_index(op.f('ix_team_members_updated_by'), 'team_members', ['updated_by'], unique=False)
     op.create_table('artifact_links',
+    sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('artifact_id', sa.UUID(), nullable=False),
     sa.Column('project_id', sa.UUID(), nullable=True),
     sa.Column('meeting_id', sa.UUID(), nullable=True),
@@ -209,7 +248,7 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['artifact_id'], ['artifacts.id'], name=op.f('fk_artifact_links_artifact_id_artifacts'), ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['meeting_id'], ['meetings.id'], name=op.f('fk_artifact_links_meeting_id_meetings'), ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['project_id'], ['projects.id'], name=op.f('fk_artifact_links_project_id_projects'), ondelete='CASCADE'),
-    sa.PrimaryKeyConstraint('artifact_id', 'project_id', name=op.f('pk_artifact_links')),
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_artifact_links')),
     sa.UniqueConstraint('artifact_id', 'meeting_id', name='uq_artifact_links_artifact_meeting'),
     sa.UniqueConstraint('artifact_id', 'project_id', name='uq_artifact_links_artifact_project')
     )
@@ -278,6 +317,10 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_project_teams_updated_by'), table_name='project_teams')
     op.drop_index(op.f('ix_project_teams_created_by'), table_name='project_teams')
     op.drop_table('project_teams')
+    op.drop_index(op.f('ix_oauth_sessions_updated_by'), table_name='oauth_sessions')
+    op.drop_index(op.f('ix_oauth_sessions_provider'), table_name='oauth_sessions')
+    op.drop_index(op.f('ix_oauth_sessions_created_by'), table_name='oauth_sessions')
+    op.drop_table('oauth_sessions')
     op.drop_index(op.f('ix_milestones_updated_by'), table_name='milestones')
     op.drop_index(op.f('ix_milestones_created_by'), table_name='milestones')
     op.drop_table('milestones')
@@ -288,6 +331,10 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_evaluations_created_by'), table_name='evaluations')
     op.drop_table('evaluations')
     op.drop_table('curator_teams')
+    op.drop_index(op.f('ix_auth_sessions_updated_by'), table_name='auth_sessions')
+    op.drop_index(op.f('ix_auth_sessions_token_hash'), table_name='auth_sessions')
+    op.drop_index(op.f('ix_auth_sessions_created_by'), table_name='auth_sessions')
+    op.drop_table('auth_sessions')
     op.drop_index(op.f('ix_teams_updated_by'), table_name='teams')
     op.drop_index(op.f('ix_teams_created_by'), table_name='teams')
     op.drop_table('teams')

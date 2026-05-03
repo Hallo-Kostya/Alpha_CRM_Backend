@@ -1,5 +1,6 @@
 # app/infrastructure/s3/s3_client.py
 import aioboto3
+import json
 from botocore.config import Config as BotoConfig
 from types_aiobotocore_s3.client import S3Client as TypedS3Client
 
@@ -13,10 +14,12 @@ class S3Client:
         self,
         bucket_name: str,
         endpoint_url: str | None = None,
+        public_host: str | None = None,
         region_name: str = "us-east-1",
     ):
         self.bucket_name = bucket_name
-        self.endpoint_url = endpoint_url or settings.s3.endpoint_url
+        self.endpoint_url = endpoint_url or settings.s3.private_host or settings.s3.public_host
+        self.public_host = public_host or settings.s3.public_host
         self.region_name = region_name
         
         self._boto_config = BotoConfig(
@@ -36,24 +39,20 @@ class S3Client:
         )
         return await client.__aenter__()
 
-    async def ensure_bucket_exists(self) -> None:
-        """Create bucket if not exists and apply public-read policy."""
+    async def ensure_bucket_exists(self, policy: dict | None = None) -> None:
+        """Create bucket if not exists and apply policy."""
         client = await self._get_client()
         try:
-            # Проверяем существование бакета
             await client.head_bucket(Bucket=self.bucket_name)
         except client.exceptions.ClientError as e:
             error_code = e.response["Error"]["Code"]
             if error_code == "404":
-                # Создаём бакет
                 await client.create_bucket(Bucket=self.bucket_name)
-                # Применяем политику для публичного чтения
-                import json
-                policy = settings.s3.curator_bucket.policy
-                await client.put_bucket_policy(
-                    Bucket=self.bucket_name,
-                    Policy=json.dumps(policy),
-                )
+                if policy:
+                    await client.put_bucket_policy(
+                        Bucket=self.bucket_name,
+                        Policy=json.dumps(policy),
+                    )
             else:
                 raise
         finally:
@@ -74,8 +73,7 @@ class S3Client:
                 Body=body,
                 ContentType=content_type,
             )
-            # Формируем URL: public_host/bucket_name/key
-            public_url = f"{settings.s3.public_host}/{self.bucket_name}/{key}"
+            public_url = f"{self.public_host}/{self.bucket_name}/{key}"
             return public_url
         finally:
             await client.__aexit__(None, None, None)
