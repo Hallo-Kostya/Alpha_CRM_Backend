@@ -11,7 +11,7 @@ from app.schemas.student import Student
 
 router = APIRouter(
     prefix="/students",
-    tags=["v2", "students"],
+    tags=["students"],
     responses={404: {"description": "Student not found"}},
 )
 

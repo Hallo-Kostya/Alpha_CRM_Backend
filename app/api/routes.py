@@ -8,6 +8,7 @@ from app.api.endpoints.teams import router as teams_router
 from app.api.endpoints.meetings import router as meetings_router
 from app.api.endpoints.tasks import router as tasks_router
 from app.api.endpoints.search import router as search_router
+from app.api.endpoints.auth import router as auth_router
 
 routers = APIRouter()
 
@@ -17,7 +18,8 @@ router_list = [
     teams_router,
     meetings_router,
     tasks_router,
-    search_router
+    search_router,
+    auth_router,
 ]
 
 for router in router_list:

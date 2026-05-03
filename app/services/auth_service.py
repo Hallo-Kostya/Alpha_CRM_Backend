@@ -22,7 +22,6 @@ class AuthService:
         self._repo = token_repo
 
     def _to_orm(self, pyd_scheme: AuthToken) -> RefreshTokenModel:
-        """Convert auth token to ORM model."""
         return RefreshTokenModel(
             token_hash=self.get_hash_for_string(pyd_scheme.token),
             curator_id=pyd_scheme.curator_id,
@@ -33,43 +32,40 @@ class AuthService:
     async def create_token_pair(
         self, user_id: uuid.UUID,
     ) -> tuple[AuthToken, AuthToken]:
-        """Create a new access and refresh token pair."""
         access = self._create_access_token(user_id)
         refresh = self._create_refresh_token(user_id)
         orm_refresh = self._to_orm(refresh)
         await self._repo.create(orm_refresh)
         return access, refresh
 
-    async def revoke_token_pair(
-        self,
-        refresh_token: str
-    ) -> None:
-        """Revoke a token pair by marking refresh token as revoked."""
+    async def revoke_token_pair(self, refresh_token: str) -> None:
         hashed_token = self.get_hash_for_string(refresh_token)
         existing_token = await self._repo.get_by_token_hash(hashed_token)
         if not existing_token:
-            raise ValueError
+            raise ValueError("Token not found")
+        if existing_token.is_revoked:
+            raise ValueError("Token already revoked")
+        if existing_token.expires_at < datetime.now(timezone.utc):
+            raise ValueError("Token expired")
         await self._repo.update(existing_token, {"is_revoked": True})
 
-    async def refresh_token_pair(self, refresh_token: str, curator_id: uuid.UUID) -> tuple[AuthToken, AuthToken]:
-        """Refresh an expired token pair."""
+    async def refresh_token_pair(
+        self, refresh_token: str, curator_id: uuid.UUID
+    ) -> tuple[AuthToken, AuthToken]:
         await self.revoke_token_pair(refresh_token)
         token_pair = await self.create_token_pair(curator_id)
         return token_pair
 
     @staticmethod
     def get_hash_for_string(string_: str) -> str:
-        """Hash a string using SHA256."""
         return hashlib.sha256(string_.encode("utf-8")).hexdigest()
 
     @staticmethod
     def get_hashed_pass(string_: str) -> str:
-        """Hash a password using bcrypt."""
         return pwd_context.hash(string_)
 
     @staticmethod
     def _create_access_token(curator_id: uuid.UUID) -> AuthToken:
-        """Create a new access token."""
         payload = {"id": str(curator_id)}
         to_encode = payload.copy()
         expires_at = datetime.now(tz=timezone.utc) + timedelta(
@@ -88,7 +84,6 @@ class AuthService:
 
     @staticmethod
     def _create_refresh_token(curator_id: uuid.UUID) -> AuthToken:
-        """Create a new refresh token."""
         payload = {"id": str(curator_id)}
         to_encode = payload.copy()
         expires_at = datetime.now(tz=timezone.utc) + timedelta(
@@ -107,12 +102,10 @@ class AuthService:
 
     @staticmethod
     def verify_password(plain_password: str, hashed_password: str) -> bool:
-        """Verify a plain password against a hashed password."""
         return pwd_context.verify(plain_password, hashed_password)
 
     @staticmethod
     def get_curator_id_from_access(token: str) -> uuid.UUID:
-        """Extract curator ID from access token."""
         try:
             payload = jwt.decode(
                 token,
@@ -125,14 +118,14 @@ class AuthService:
                 raise HTTPException(
                     status_code=401, detail="Could not validate credentials"
                 )
-            return curator_id
-        except Exception as e:
-            print(e)
+            return uuid.UUID(curator_id)
+        except jwt.ExpiredSignatureError:
+            raise HTTPException(status_code=401, detail="Token expired")
+        except Exception:
             raise HTTPException(status_code=401, detail="Invalid authorization token")
 
     @staticmethod
     def get_curator_id_from_refresh(token: str) -> uuid.UUID:
-        """Extract curator ID from refresh token."""
         try:
             payload = jwt.decode(
                 token,
@@ -145,15 +138,11 @@ class AuthService:
                 raise HTTPException(
                     status_code=401, detail="Could not validate credentials"
                 )
-            return curator_id
+            return uuid.UUID(curator_id)
+        except jwt.ExpiredSignatureError:
+            raise HTTPException(status_code=401, detail="Refresh token expired")
         except Exception:
             raise HTTPException(status_code=401, detail="Invalid authorization token")
-
-
-def auth_service_getter(
-    repository: TokenRepository = Depends(token_repository_getter),
-):
-    return AuthService(repository)
 
 
 def auth_service_getter(

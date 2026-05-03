@@ -14,15 +14,13 @@ router = APIRouter(
 )
 
 
-@router.post("/", response_model=Task, summary="Создать задачу при встрече")
+@router.post("/", response_model=Task, summary="Создать задачу")
 async def create_task(
-    meeting_id: UUID,
     data: TaskCreate,
     service: TaskService = Depends(task_service_getter),
 ):
-    """Создать новую задачу и привязать её к встрече."""
-    return await service.create_for_meeting(meeting_id, data)
-
+    """Создать новую задачу (без привязки к встрече)."""
+    return await service.create(data)
 
 @router.get("/", response_model=List[Task], summary="Получить задачи")
 async def get_tasks(

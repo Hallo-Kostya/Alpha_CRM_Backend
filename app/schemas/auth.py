@@ -23,3 +23,8 @@ class AuthToken(BaseModel):
     def revoke(self) -> None:
         """Отозвать токен"""
         self.is_revoked = True
+        
+class TokenPairResponse(BaseModel):
+    access_token: str
+    refresh_token: str
+    token_type: str = "bearer"

@@ -312,11 +312,18 @@ class MeetingService:
             # Move incomplete tasks
             for meeting_task in meeting_tasks:
                 if not meeting_task.task.is_completed:
-                    new_meeting_task = MeetingTaskModel(
-                        meeting_id=next_meeting.id,
-                        task_id=meeting_task.task.id
+                    existing = await self._meeting_task_repo.session.execute(
+                        select(MeetingTaskModel).where(
+                            MeetingTaskModel.meeting_id == next_meeting.id,
+                            MeetingTaskModel.task_id == meeting_task.task_id
+                        )
                     )
-                    await self._meeting_task_repo.create(new_meeting_task)
+                    if not existing.scalar_one_or_none():
+                        new_meeting_task = MeetingTaskModel(
+                            meeting_id=next_meeting.id,
+                            task_id=meeting_task.task_id
+                        )
+                        await self._meeting_task_repo.create(new_meeting_task)
 
         # Update meeting status
         meeting.status = MeetingStatus.COMPLETED
@@ -345,29 +352,6 @@ class MeetingService:
         await self._meeting_repo.session.refresh(meeting)
 
         return self._to_schema(meeting)
-
-    async def get_meeting_tasks(self, meeting_id: UUID) -> List[TaskResponse]:
-        """Get meeting tasks."""
-        # Check meeting existence
-        meeting = await self._meeting_repo.get_by_id(meeting_id)
-        if not meeting:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Meeting with ID {meeting_id} not found"
-            )
-
-        # Get tasks
-        tasks = await self._task_repo.get_by_meeting_id(meeting_id)
-        
-        # Convert to TaskResponse
-        return [
-            TaskResponse(
-                id=task.id,
-                description=task.description,
-                is_completed=task.is_completed
-            )
-            for task in tasks
-        ]
 
 
 def meeting_service_getter(
