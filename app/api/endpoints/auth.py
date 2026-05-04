@@ -31,13 +31,7 @@ async def login(
     service: CuratorService = Depends(curator_service_getter),
 ):
     """Login curator and return token pair."""
-    curator = await service.get_by_email(data.email)
-    if curator is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid email or password",
-        )
-    result = await service.login_curator(data, curator)
+    result = await service.login_curator(data)
     if result is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -87,5 +81,4 @@ async def me(
     current_curator: CuratorModel = Depends(get_current_curator),
 ):
     """Get current curator profile."""
-    from app.schemas.curator import Curator
     return Curator.model_validate(current_curator, from_attributes=True)

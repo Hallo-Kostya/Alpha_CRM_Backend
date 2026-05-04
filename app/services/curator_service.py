@@ -92,7 +92,7 @@ class CuratorService:
         return [self._to_schema(item) for item in items]
 
     async def get_by_email(self, email: str) -> Curator | None:
-        total, curators = await self._repo.get_list(email=email)
+        total, curators = await self._repo.get_list(filters={"email": email})
         if curators:
             return self._to_schema(curators[0])
         return None
@@ -107,19 +107,25 @@ class CuratorService:
         except IntegrityError:
             return None
 
+    # app/services/curator_service.py
     async def login_curator(
         self,
         curator_data: CuratorPostBase,
-        existing_curator: CuratorModel,
     ) -> tuple[AuthToken, AuthToken] | None:
+        """Login curator by email and password."""
+        total, curators = await self._repo.get_list(filters={"email": curator_data.email})
+        if not curators:
+            return None
+        
+        existing_curator = curators[0]
         is_password_correct = self.auth_service.verify_password(
             curator_data.password, existing_curator.hashed_password
         )
         if not is_password_correct:
             return None
+        
         auth_tokens = await self.auth_service.create_token_pair(existing_curator.id)
         return auth_tokens
-
     async def logout_curator(self, refresh_token: str) -> None:
         await self.auth_service.revoke_token_pair(refresh_token)
 

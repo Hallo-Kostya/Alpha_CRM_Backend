@@ -20,7 +20,6 @@ class Curator(BaseModel):
     email: str
     tg_link: Optional[str] = None
     avatar_s3_path: Optional[str] = None
-    teams: list = Field(default_factory=list)
     
     def full_name(self) -> str:
         """Get full name."""
