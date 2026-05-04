@@ -3,6 +3,7 @@ from typing import List, Optional
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, status, Response
 
+from app.api.dependencies import get_current_curator
 from app.schemas.artifacts import ArtifactCreate, ArtifactFileUpload, ArtifactResponse, ArtifactUpdate
 from app.services.artifact_service import ArtifactService, artifact_service_getter
 
@@ -10,6 +11,7 @@ router = APIRouter(
     prefix="/artifacts",
     tags=["artifacts"],
     responses={404: {"description": "Artifact not found"}},
+    dependencies=[Depends(get_current_curator)]
 )
 
 

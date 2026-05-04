@@ -2,6 +2,7 @@ from uuid import UUID
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status, Query
+from app.api.dependencies import get_current_curator
 from app.schemas.team import TeamCreate, TeamUpdate, TeamSummary, TeamSummaryResponse
 from app.schemas.team_member import TeamMemberCreate, TeamMemberUpdate
 from app.services.team_service import (
@@ -20,6 +21,7 @@ router = APIRouter(
     prefix="/teams",
     tags=["teams"],
     responses={404: {"description": "Team not found"}},
+    dependencies=[Depends(get_current_curator)],
 )
 
 

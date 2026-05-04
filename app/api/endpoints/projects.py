@@ -3,6 +3,7 @@ from datetime import datetime
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, HTTPException, Response, status
+from app.api.dependencies import get_current_curator
 from app.schemas.project import ProjectSummaryResponse, ProjectCreateMinimal, ProjectUpdate
 from app.schemas.project_team import ProjectTeamCreate
 from app.services.projects_service import (
@@ -22,6 +23,7 @@ router = APIRouter(
     prefix="/projects",
     tags=["projects"],
     responses={404: {"description": "Project not found"}},
+    dependencies=[Depends(get_current_curator)],
 )
 
 @router.post("/", response_model=Project, summary="Создать новый проект (минимально)")

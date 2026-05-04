@@ -1,6 +1,7 @@
 from typing import List, Optional
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Response, status
+from app.api.dependencies import get_current_curator
 from app.schemas.student import StudentCreate, StudentUpdate, StudentSummary, StudentDetailed, StudentSummaryResponse, StudentDetailedResponse
 from app.services.students_service import (
     StudentService,
@@ -13,6 +14,7 @@ router = APIRouter(
     prefix="/students",
     tags=["students"],
     responses={404: {"description": "Student not found"}},
+    dependencies=[Depends(get_current_curator)]
 )
 
 

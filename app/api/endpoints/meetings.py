@@ -2,6 +2,7 @@
 from uuid import UUID
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Response, status, Query
+from app.api.dependencies import get_current_curator
 from app.schemas.meeting import MeetingCreate, MeetingUpdate, Meeting
 from app.schemas.task import TaskCreate, TaskResponse
 from app.infrastructure.database.models.meetings.meeting_task import MeetingTaskModel
@@ -18,6 +19,7 @@ router = APIRouter(
     prefix="/meetings",
     tags=["meetings"],
     responses={404: {"description": "Meeting not found"}},
+    dependencies=[Depends(get_current_curator)],
 )
 
 

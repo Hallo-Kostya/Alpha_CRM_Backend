@@ -1,10 +1,12 @@
 from typing import List
 from fastapi import APIRouter, Depends, Query
+from app.api.dependencies import get_current_curator
 from app.services.search_service import SearchService, search_service_getter
 
 router = APIRouter(
     prefix="/search",
     tags=["search"],
+    dependencies=[Depends(get_current_curator)],
 )
 
 @router.get("/", summary="Умный поиск по сущностям")

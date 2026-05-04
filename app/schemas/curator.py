@@ -47,10 +47,15 @@ class CuratorUpdate(BaseModel):
     email: Optional[EmailStr] = None
     tg_link: Optional[str] = None
     avatar_s3_path: Optional[str] = None
+    
+class CuratorLogin(BaseModel):
+    """Login credentials — only email and password."""
+    email: EmailStr
+    password: str = Field(min_length=8, max_length=52)
 
 
 # Aliases for backward compatibility
-CuratorPostBase = CuratorCreate  # Since CuratorCreate has email and password
+CuratorPostBase = CuratorLogin  # Since CuratorCreate has email and password
 CuratorPOST = CuratorCreate
 CuratorPATCH = CuratorUpdate
 
