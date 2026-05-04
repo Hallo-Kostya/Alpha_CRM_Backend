@@ -1,8 +1,7 @@
 from uuid import UUID
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status, Query
-from app.schemas.team import TeamCreate, TeamUpdate, TeamSummary, TeamSummaryResponse
+from app.schemas.team import TeamCreate, TeamUpdate, TeamSummaryResponse
 from app.schemas.team_member import TeamMemberCreate, TeamMemberUpdate
 from app.services.team_service import (
     TeamService,
@@ -14,6 +13,7 @@ from app.services.team_member_service import (
 )
 from app.schemas.team import Team
 from app.schemas.team_member import TeamMember
+from app.api.filters import TeamFilter
 
 
 router = APIRouter(
@@ -36,9 +36,13 @@ async def create_team(
 async def list_teams(
     project_id: UUID = Query(None, description="ID проекта для фильтрации команд"),
     service: TeamService = Depends(team_service_getter),
+    filters: TeamFilter = Depends(),
 ):
     """Получить список команд с фильтром по проекту. Включает ID, имя, количество участников и список участников."""
-    return await service.get_teams_summary(project_id)
+    return await service.get_teams_summary(
+        project_id, **filters.model_dump(exclude_none=True)
+    )
+
 
 @router.get("/{team_id}", response_model=Team, summary="Получить команду по ID")
 async def get_team(
@@ -46,7 +50,7 @@ async def get_team(
     service: TeamService = Depends(team_service_getter),
 ):
     """Получить детальную информацию о команде."""
-    team = await service.get_by_id(team_id)
+    team = await service.get_by_id(team_id, ["members"])
     if team is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -55,17 +59,27 @@ async def get_team(
     return team
 
 
-@router.post("/{team_id}/students", response_model=TeamMember, summary="Добавить студента в команду")
+@router.post(
+    "/{team_id}/students",
+    response_model=TeamMember,
+    summary="Добавить студента в команду",
+)
 async def add_student_to_team(
     team_id: UUID,
     data: TeamMemberCreate,
     member_service: TeamMemberService = Depends(team_member_service_getter),
 ):
     """Добавить студента в команду с указанием роли и группы."""
-    return await member_service.add_student_to_team(team_id, data.student_id, data.role, data.study_group)
+    return await member_service.add_student_to_team(
+        team_id, data.student_id, data.role, data.study_group
+    )
 
 
-@router.patch("/{team_id}/students/{student_id}", response_model=TeamMember, summary="Обновить студента в команде")
+@router.patch(
+    "/{team_id}/students/{student_id}",
+    response_model=TeamMember,
+    summary="Обновить студента в команде",
+)
 async def update_team_member(
     team_id: UUID,
     student_id: UUID,
@@ -73,10 +87,14 @@ async def update_team_member(
     service: TeamMemberService = Depends(team_member_service_getter),
 ):
     """Обновить роль и группу студента в команде."""
-    return await service.update_student_role_and_group(team_id, student_id, data.role, data.study_group)
+    return await service.update_student_role_and_group(
+        team_id, student_id, data.role, data.study_group
+    )
 
 
-@router.delete("/{team_id}/students/{student_id}", summary="Удалить студента из команды")
+@router.delete(
+    "/{team_id}/students/{student_id}", summary="Удалить студента из команды"
+)
 async def remove_student_from_team(
     team_id: UUID,
     student_id: UUID,

@@ -4,7 +4,12 @@ from typing import List, Optional
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
-from app.schemas.project_team import ProjectTeam, ProjectTeamCreate, ProjectTeamUpdate, ProjectTeamWithInfo
+from app.schemas.project_team import (
+    ProjectTeam,
+    ProjectTeamCreate,
+    ProjectTeamUpdate,
+    ProjectTeamWithInfo,
+)
 from app.infrastructure.database.models.projects.project_team import ProjectTeamModel
 from app.infrastructure.database.repositories.project_team_repository import (
     ProjectTeamRepository,
@@ -158,10 +163,13 @@ class ProjectTeamService:
         return self._to_schema(project_team)
 
     async def get_team_projects(
-        self, team_id: UUID, project_team_status: Optional[ProjectTeamStatus] = None
+        self,
+        team_id: UUID,
+        project_team_status: Optional[ProjectTeamStatus] = None,
+        eager_loads: list[str] | None = None,
     ) -> List[ProjectTeam]:
         """Get all projects of team."""
-        team = await self._team_repo.get_by_id(team_id)
+        team = await self._team_repo.get_by_id(team_id, eager_loads)
         if not team:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -173,9 +181,7 @@ class ProjectTeamService:
         )
         return [self._to_schema(project_team) for project_team in team_projects]
 
-    async def get_current_team_project(
-        self, team_id: UUID
-    ) -> Optional[ProjectTeam]:
+    async def get_current_team_project(self, team_id: UUID) -> Optional[ProjectTeam]:
         """Get current active project of team."""
         team = await self._team_repo.get_by_id(team_id)
         if not team:

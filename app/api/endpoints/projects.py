@@ -1,9 +1,12 @@
-from typing import Optional
 from datetime import datetime
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, HTTPException, Response, status
-from app.schemas.project import ProjectSummaryResponse, ProjectCreateMinimal, ProjectUpdate
+from fastapi import APIRouter, Depends, HTTPException, Response, status
+from app.schemas.project import (
+    ProjectSummaryResponse,
+    ProjectCreateMinimal,
+    ProjectUpdate,
+)
 from app.schemas.project_team import ProjectTeamCreate
 from app.services.projects_service import (
     project_service_getter,
@@ -13,16 +16,17 @@ from app.services.project_team_service import (
     ProjectTeamService,
     project_team_service_getter,
 )
-from app.common.enums import Semester
-from app.schemas.project import Project
+from app.common.enums import Semester, ProjectTeamStatus
+from app.schemas.project import Project, ProjectRead
 from app.schemas.project_team import ProjectTeam
-
+from app.api.filters import ProjectFilter
 
 router = APIRouter(
     prefix="/projects",
     tags=["projects"],
     responses={404: {"description": "Project not found"}},
 )
+
 
 @router.post("/", response_model=Project, summary="Создать новый проект (минимально)")
 async def create_project_minimal(
@@ -68,18 +72,22 @@ async def delete_project(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Проект с ID {project_id} не найден для удаления",
         )
-    return Response(f"successfully deleted project with id {project_id}", status.HTTP_200_OK)
+    return Response(
+        f"successfully deleted project with id {project_id}", status.HTTP_200_OK
+    )
 
 
-@router.get("/", response_model=ProjectSummaryResponse, summary="Сводка проектов для главной страницы")
+@router.get(
+    "/",
+    response_model=ProjectSummaryResponse,
+    summary="Сводка проектов для главной страницы",
+)
 async def get_projects_summary(
-    year: Optional[int] = Query(None, description="Год проекта"),
-    semester: Optional[Semester] = Query(None, description="Семестр проекта"),
-    team_id: Optional[UUID] = Query(None, description="ID команды для фильтрации проектов"),
+    filters: ProjectFilter = Depends(),
     service: ProjectService = Depends(project_service_getter),
 ):
     """Получить сводку проектов с количеством команд и участников, с фильтрами по году, семестру и команде."""
-    return await service.get_projects_summary(year, semester, team_id)
+    return await service.get_projects_summary(**filters.model_dump(exclude_none=True))
 
 
 @router.get("/{project_id}", response_model=Project, summary="Получить проект по ID")
@@ -88,7 +96,10 @@ async def get_project(
     service: ProjectService = Depends(project_service_getter),
 ):
     """Получить детальную информацию о проекте."""
-    project = await service.get_by_id(project_id)
+    project = await service.get_by_id(
+        project_id,
+        ["project_teams", "project_teams.team", "project_teams.team.members"],
+    )
     if project is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -97,7 +108,45 @@ async def get_project(
     return project
 
 
-@router.post("/{project_id}/teams", response_model=ProjectTeam, summary="Добавить команду к проекту")
+@router.get(
+    "/{team_id}/available_projects",
+    response_model=list[ProjectRead],
+    summary="Получить доступные для записи проекты для команды",
+)
+async def get_available_projects(
+    team_id: UUID,
+    project_team_service: ProjectTeamService = Depends(project_team_service_getter),
+    project_service: ProjectService = Depends(project_service_getter),
+):
+    unavailable_projects = await project_team_service.get_team_projects(
+        team_id, ProjectTeamStatus.PENDING
+    )
+    unavailable_ids = [project_team.project_id for project_team in unavailable_projects]
+    available_projects = await project_service.get_projects_with_excluded_ids(
+        unavailable_ids
+    )
+    return available_projects
+
+
+@router.get(
+    "/{team_id}/project_teams",
+    response_model=list[ProjectTeam],
+    summary="Получить отправленные заявки на проект для команды",
+)
+async def get_team_projects(
+    team_id: UUID,
+    status: ProjectTeamStatus,
+    project_team_service: ProjectTeamService = Depends(project_team_service_getter),
+):
+    result = await project_team_service.get_team_projects(team_id, status, ["members"])
+    return result
+
+
+@router.post(
+    "/{project_id}/teams",
+    response_model=ProjectTeam,
+    summary="Добавить команду к проекту",
+)
 async def assign_team_to_project(
     project_id: UUID,
     data: ProjectTeamCreate,
@@ -123,5 +172,3 @@ async def remove_team_from_project(
     if not deleted:
         raise HTTPException(status_code=404, detail="Связь не найдена")
     return Response(status_code=status.HTTP_204_NO_CONTENT)
-
-

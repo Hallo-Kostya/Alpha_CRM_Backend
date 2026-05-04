@@ -7,18 +7,20 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, field_validator
 
 from app.common.enums import ProjectTeamStatus, Semester
+from app.schemas.team import Team
 
 
 class ProjectTeam(BaseModel):
     """Project team model with all fields."""
+
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
-    
+
     project_id: UUID
-    team_id: UUID
+    team: Team
     assigned_at: datetime
     status: ProjectTeamStatus
 
-    @field_validator("project_id", "team_id", mode="before")
+    @field_validator("project_id", mode="before")
     @classmethod
     def validate_uuid(cls, v: Any) -> UUID:
         if isinstance(v, UUID):

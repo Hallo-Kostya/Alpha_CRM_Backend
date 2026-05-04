@@ -1,6 +1,12 @@
 from uuid import UUID
 from fastapi import Depends
-from app.schemas.team import TeamCreate, TeamUpdate, TeamSummary, TeamMemberSummary, TeamSummaryResponse
+from app.schemas.team import (
+    TeamCreate,
+    TeamUpdate,
+    TeamSummary,
+    TeamMemberSummary,
+    TeamSummaryResponse,
+)
 from app.schemas.team import Team
 from app.infrastructure.database.models import TeamModel
 from app.infrastructure.database.repositories.team_repository import (
@@ -47,35 +53,36 @@ class TeamService:
         await self._repo.delete(obj)
         return True
 
-    async def get_by_id(self, team_id: UUID) -> Team | None:
+    async def get_by_id(
+        self, team_id: UUID, eager_loads: list[str] | None = None
+    ) -> Team | None:
         """Get team by ID."""
-        obj = await self._repo.get_by_id(team_id)
+        obj = await self._repo.get_by_id(team_id, eager_loads)
         if not obj:
             return None
         return self._to_schema(obj)
 
-    async def get_teams_summary(self, project_id=None) -> TeamSummaryResponse:
+    async def get_teams_summary(
+        self, project_id=None, **filters
+    ) -> TeamSummaryResponse:
         """Get teams summary with members as Pydantic models."""
-        raw_teams = await self._repo.get_teams_summary(project_id)
-        
+        raw_teams = await self._repo.get_teams_summary(project_id, **filters)
+
         teams = []
         for raw_team in raw_teams:
             members = [
-                TeamMemberSummary(
-                    id=UUID(member["id"]),
-                    full_name=member["full_name"]
-                )
+                TeamMemberSummary(id=UUID(member["id"]), full_name=member["full_name"])
                 for member in raw_team["members"]
             ]
-            
+
             team_summary = TeamSummary(
                 id=UUID(raw_team["id"]),
                 name=raw_team["name"],
                 members_count=raw_team["members_count"],
-                members=members
+                members=members,
             )
             teams.append(team_summary)
-        
+
         return TeamSummaryResponse(total=len(teams), teams=teams)
 
 

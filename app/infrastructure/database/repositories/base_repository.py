@@ -26,11 +26,25 @@ class BaseRepository(RepositoryInterface[T], Generic[T]):
         await self.session.refresh(obj)
         return obj
 
-    async def get_by_id(self, obj_id: UUID, eager_loads: list[str] = None) -> T | None:
+    async def get_by_id(
+        self, obj_id: UUID, eager_loads: list[str] | None = None
+    ) -> T | None:
         query = select(self.model).where(self.model.id == obj_id)
         if eager_loads:
-            for load in eager_loads:
-                query = query.options(selectinload(getattr(self.model, load)))
+            for load_path in eager_loads:
+                parts = load_path.split(".")
+
+                loader = selectinload(getattr(self.model, parts[0]))
+                current_model = getattr(self.model, parts[0]).property.entity.class_
+
+                if len(parts) >= 2:
+                    for part in parts[1:]:
+                        loader = loader.selectinload(getattr(current_model, part))
+                        current_model = getattr(
+                            current_model, part
+                        ).property.entity.class_
+
+            query = query.options(loader)
         result = await self.session.execute(query)
         obj = result.scalar_one_or_none()
         return obj
@@ -49,7 +63,7 @@ class BaseRepository(RepositoryInterface[T], Generic[T]):
     async def get_list(
         self,
         filters: Optional[dict[str, Any]] = None,
-        range_filters: Optional[dict[str, tuple[Any, Any]]] = None,  # {"meeting_date": (start, end)}
+        range_filters: Optional[dict[str, tuple[Any, Any]]] = None,
         order_by: Optional[str] = None,
         limit: Optional[int] = None,
         offset: Optional[int] = None,

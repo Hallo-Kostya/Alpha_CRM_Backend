@@ -33,11 +33,12 @@ class RepositoryInterface(ABC, Generic[T]):
         Удалить объект из бд
         """
         pass
-    
+
     @abstractmethod
     async def get_list(
         self,
         filters: Optional[dict[str, Any]] = None,
+        range_filters: Optional[dict[str, tuple[Any, Any]]] = None,
         order_by: Optional[str] = None,
         limit: Optional[int] = None,
         offset: Optional[int] = None,

@@ -6,14 +6,17 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.common.fields import NameField
+from app.schemas.team_member import TeamMember
 
 
 class Team(BaseModel):
     """Team model with all fields."""
+
     model_config = ConfigDict(from_attributes=True)
-    
+
     id: UUID
     name: str
+    members: list[TeamMember]
     group_link: Optional[str] = None
 
 

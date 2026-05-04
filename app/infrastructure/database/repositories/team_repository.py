@@ -7,7 +7,7 @@ from app.infrastructure.database.models import TeamModel
 from app.core.database import db_helper
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, join
+from sqlalchemy import select, func
 from app.infrastructure.database.models.teams.team_member import TeamMemberModel
 from app.infrastructure.database.models.persons.student import StudentModel
 
@@ -16,26 +16,33 @@ class TeamRepository(BaseRepository[TeamModel]):
     def __init__(self, session: AsyncSession):
         super().__init__(TeamModel, session)
 
-    async def get_teams_summary(self, project_id=None):
+    async def get_teams_summary(self, project_id=None, **filters):
         query = (
             select(
                 TeamModel.id,
                 TeamModel.name,
                 StudentModel.id.label("student_id"),
                 func.concat(
-                    StudentModel.first_name, ' ',
+                    StudentModel.first_name,
+                    " ",
                     StudentModel.last_name,
-                    func.coalesce(func.concat(' ', StudentModel.patronymic), '')
+                    func.coalesce(func.concat(" ", StudentModel.patronymic), ""),
                 ).label("full_name"),
             )
+            .filter_by(**filters)
             .select_from(TeamModel)
             .outerjoin(TeamMemberModel, TeamModel.id == TeamMemberModel.team_id)
             .outerjoin(StudentModel, TeamMemberModel.student_id == StudentModel.id)
         )
 
         if project_id:
-            from app.infrastructure.database.models.projects.project_team import ProjectTeamModel
-            query = query.join(ProjectTeamModel, TeamModel.id == ProjectTeamModel.team_id)
+            from app.infrastructure.database.models.projects.project_team import (
+                ProjectTeamModel,
+            )
+
+            query = query.join(
+                ProjectTeamModel, TeamModel.id == ProjectTeamModel.team_id
+            )
             query = query.where(ProjectTeamModel.project_id == project_id)
 
         result = await self.session.execute(query)
@@ -51,14 +58,15 @@ class TeamRepository(BaseRepository[TeamModel]):
                     "members": [],
                 }
             if row.student_id:
-                teams[row.id]["members"].append({
-                    "id": str(row.student_id),
-                    "full_name": row.full_name.strip(),
-                })
+                teams[row.id]["members"].append(
+                    {
+                        "id": str(row.student_id),
+                        "full_name": row.full_name.strip(),
+                    }
+                )
 
         return [
-            {**team, "members_count": len(team["members"])}
-            for team in teams.values()
+            {**team, "members_count": len(team["members"])} for team in teams.values()
         ]
 
 

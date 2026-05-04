@@ -7,13 +7,15 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.common.enums import ProjectStatus, Semester
-from app.common.fields import NameField, LongText, MediumText
+from app.common.fields import NameField
+from app.schemas.project_team import ProjectTeam
 
 
 class Project(BaseModel):
     """Project read/response model with all fields."""
+
     model_config = ConfigDict(from_attributes=True)
-    
+
     id: UUID
     name: str
     description: Optional[str] = None
@@ -23,7 +25,8 @@ class Project(BaseModel):
     year: int
     semester: Semester
     status: ProjectStatus
-    
+    project_teams: list[ProjectTeam]
+
     @staticmethod
     def get_current_semester() -> Semester:
         """Determine current semester by month."""
@@ -32,7 +35,7 @@ class Project(BaseModel):
             return Semester.SPRING
         else:
             return Semester.AUTUMN
-    
+
     @classmethod
     def compute_status(cls, year: int, semester: Semester) -> ProjectStatus:
         """Compute project status based on year/semester relative to current date."""
@@ -71,7 +74,9 @@ class ProjectCreateMinimal(BaseModel):
         description="Год проведения (по умолчанию текущий)",
     )
     semester: Optional[Semester] = Field(
-        default_factory=lambda: Semester.SPRING if datetime.now().month < 7 else Semester.AUTUMN,
+        default_factory=lambda: Semester.SPRING
+        if datetime.now().month < 7
+        else Semester.AUTUMN,
         description="Семестр (по умолчанию определяется по текущей дате)",
     )
     status: Optional[ProjectStatus] = None

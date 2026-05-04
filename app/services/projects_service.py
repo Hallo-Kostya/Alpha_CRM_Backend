@@ -5,14 +5,13 @@ from app.schemas.project import (
     ProjectSummary,
     ProjectSummaryResponse,
 )
-from app.schemas.project import Project
+from app.schemas.project import Project, ProjectRead
 from app.infrastructure.database.models import ProjectModel
 from app.infrastructure.database.repositories.project_repository import (
     ProjectRepository,
     project_repository_getter,
 )
 from app.common.enums import Semester, ProjectStatus
-from typing import Optional
 from datetime import datetime
 from uuid import UUID
 
@@ -46,19 +45,19 @@ class ProjectService:
         """Create new project."""
         # Fill in default values for year/semester/status if missing
         now = datetime.now()
-        
-        if  new_obj.year is None:
+
+        if new_obj.year is None:
             new_obj.year = now.year
         if new_obj.semester is None:
             new_obj.semester = Semester.SPRING if now.month < 7 else Semester.AUTUMN
-        
+
         # Compute status if not provided
         if new_obj.status is None:
             try:
                 new_obj.status = self.compute_status(new_obj.year, new_obj.semester)
             except Exception:
                 pass
-        
+
         orm_obj = self._to_orm(new_obj)
         created_obj = await self.project_repo.create(orm_obj)
         return self._to_schema(created_obj)
@@ -81,18 +80,28 @@ class ProjectService:
         await self.project_repo.delete(obj)
         return True
 
-    async def get_by_id(self, project_id: UUID) -> Project | None:
+    async def get_by_id(
+        self, project_id: UUID, eager_loads: list[str] | None = None
+    ) -> Project | None:
         """Get project by ID."""
-        obj = await self.project_repo.get_by_id(project_id)
+        obj = await self.project_repo.get_by_id(project_id, eager_loads)
         if not obj:
             return None
         return self._to_schema(obj)
 
-    async def get_projects_summary(self, year: Optional[int] = None, semester: Optional[Semester] = None, team_id: Optional[UUID] = None) -> ProjectSummaryResponse:
+    async def get_projects_summary(self, **filters) -> ProjectSummaryResponse:
         """Get projects summary."""
-        total, items = await self.project_repo.get_projects_summary(year, semester, team_id)
+        total, items = await self.project_repo.get_projects_summary(**filters)
         summaries = [ProjectSummary(**item) for item in items]
         return ProjectSummaryResponse(total=total, projects=summaries)
+
+    async def get_projects_with_excluded_ids(
+        self, excluded_ids: list[UUID]
+    ) -> list[ProjectRead]:
+        result = await self.project_repo.get_projects_with_excluded_ids(
+            excluded_ids, ProjectStatus.PLANNED
+        )
+        return [ProjectRead.model_validate(project) for project in result]
 
 
 def project_service_getter(

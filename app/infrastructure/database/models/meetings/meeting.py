@@ -8,27 +8,38 @@ from app.infrastructure.database.models.entity_base import BaseEntity
 from app.common.enums import MeetingStatus
 
 if TYPE_CHECKING:
-    from app.infrastructure.database.models.artifacts.artifact_link import ArtifactLinkModel
+    from app.infrastructure.database.models.artifacts.artifact_link import (
+        ArtifactLinkModel,
+    )
     from app.infrastructure.database.models.meetings.attendance import AttendanceModel
-    from app.infrastructure.database.models.meetings.meeting_task import MeetingTaskModel
+    from app.infrastructure.database.models.meetings.meeting_task import (
+        MeetingTaskModel,
+    )
     from app.infrastructure.database.models.teams.team import TeamModel
 
 
 class MeetingModel(BaseEntity):
     """Модель встречи"""
+
     __tablename__ = "meetings"
 
     # Название встречи
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     # Описание встречи
     resume: Mapped[str | None] = mapped_column(String(2000), nullable=True)
-    # Дата встречи
+    # Дата начала встречи
     date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    # # Дата конца встречи
+    # date_to: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     # Статус встречи
     status: Mapped[MeetingStatus] = mapped_column(
-        SQLEnum(MeetingStatus, native_enum=False, values_callable=lambda x: [e.value for e in MeetingStatus]),
+        SQLEnum(
+            MeetingStatus,
+            native_enum=False,
+            values_callable=lambda x: [e.value for e in MeetingStatus],
+        ),
         nullable=False,
-        default=MeetingStatus.SCHEDULED.value
+        default=MeetingStatus.SCHEDULED.value,
     )
     # Предыдущая встреча
     previous_meeting_id: Mapped[UUID | None] = mapped_column(
@@ -77,7 +88,7 @@ class MeetingModel(BaseEntity):
         back_populates="meeting",
         cascade="all, delete-orphan",
     )
-    
+
     # Артефакты встречи
     artifact_links: Mapped[list["ArtifactLinkModel"]] = relationship(
         "ArtifactLinkModel",
@@ -85,4 +96,3 @@ class MeetingModel(BaseEntity):
         back_populates="meeting",
         cascade="all, delete-orphan",
     )
-
