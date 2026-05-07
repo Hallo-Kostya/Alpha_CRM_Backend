@@ -140,7 +140,7 @@ class TestDeleteMeeting:
 
 class TestMeetingTasks:
     async def test_add_task_to_meeting(self, auth_client: AsyncClient):
-        team = await create_team(auth_client)
+        team = await create_team(auth_client) 
         meeting = await create_meeting(auth_client, team["id"])
 
         resp = await auth_client.post(
@@ -149,8 +149,7 @@ class TestMeetingTasks:
         )
         assert resp.status_code == 201
         body = resp.json()
-        assert body["meeting_id"] == meeting["id"]
-        assert "task_id" in body
+        assert "id" in body
         assert body["is_completed"] is False
 
     async def test_add_task_to_nonexistent_meeting(self, auth_client: AsyncClient):
@@ -167,7 +166,7 @@ class TestMeetingTasks:
             f"{MEETINGS_BASE}/{meeting['id']}/tasks",
             json={"description": f"Задача_{uid()}"},
         )
-        task_id = task_resp.json()["task_id"]
+        task_id = task_resp.json()["id"]
 
         resp = await auth_client.delete(f"{MEETINGS_BASE}/{meeting['id']}/tasks/{task_id}")
         assert resp.status_code == 204
@@ -271,7 +270,7 @@ class TestMoveTask:
             f"{MEETINGS_BASE}/{meeting1['id']}/tasks",
             json={"description": f"Задача_{uid()}"},
         )
-        task_id = task_resp.json()["task_id"]
+        task_id = task_resp.json()["id"]
 
         resp = await auth_client.post(f"{TASKS_BASE}/{task_id}/move-to-next-meeting")
         assert resp.status_code in (200, 404)

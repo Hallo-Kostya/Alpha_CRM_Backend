@@ -19,7 +19,7 @@ router = APIRouter(
     prefix="/meetings",
     tags=["meetings"],
     responses={404: {"description": "Meeting not found"}},
-    # dependencies=[Depends(get_current_curator)],
+    dependencies=[Depends(get_current_curator)],
 )
 
 
@@ -104,10 +104,9 @@ async def add_task_to_meeting(
     
     # Add task to meeting
     await task_service.add_to_meeting(task.id, meeting_id)
-    
+
     return TaskResponse(
-        meeting_id=meeting_id,
-        task_id=task.id,
+        id=task.id,
         description=task.description,
         is_completed=task.is_completed
     )
