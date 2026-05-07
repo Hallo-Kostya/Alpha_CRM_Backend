@@ -12,11 +12,11 @@ router = APIRouter(
     prefix="/tasks",
     tags=["tasks"],
     responses={404: {"description": "Task not found"}},
-    dependencies=[Depends(get_current_curator)],
+    # dependencies=[Depends(get_current_curator)],
 )
 
 
-@router.post("/", response_model=Task, summary="Создать задачу")
+@router.post("/", response_model=Task, summary="Создать задачу", status_code=status.HTTP_201_CREATED)
 async def create_task(
     data: TaskCreate,
     service: TaskService = Depends(task_service_getter),

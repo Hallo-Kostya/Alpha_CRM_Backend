@@ -19,11 +19,11 @@ router = APIRouter(
     prefix="/meetings",
     tags=["meetings"],
     responses={404: {"description": "Meeting not found"}},
-    dependencies=[Depends(get_current_curator)],
+    # dependencies=[Depends(get_current_curator)],
 )
 
 
-@router.post("/", response_model=Meeting, summary="Создать встречу")
+@router.post("/", response_model=Meeting, summary="Создать встречу",status_code=status.HTTP_201_CREATED)
 async def create_meeting(
     data: MeetingCreate,
     service: MeetingService = Depends(meeting_service_getter),
@@ -83,7 +83,7 @@ async def delete_meeting(
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-@router.post("/{meeting_id}/tasks", response_model=TaskResponse, summary="Добавить задачу к встрече")
+@router.post("/{meeting_id}/tasks", response_model=TaskResponse, summary="Добавить задачу к встрече", status_code=status.HTTP_201_CREATED)
 async def add_task_to_meeting(
     meeting_id: UUID,
     task_data: TaskCreate,
@@ -113,7 +113,7 @@ async def add_task_to_meeting(
     )
 
 
-@router.delete("/{meeting_id}/tasks/{task_id}", summary="Убрать задачу со встречи")
+@router.delete("/{meeting_id}/tasks/{task_id}", summary="Убрать задачу со встречи", status_code=status.HTTP_204_NO_CONTENT)
 async def remove_task_from_meeting(
     meeting_id: UUID,
     task_id: UUID,

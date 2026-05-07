@@ -79,7 +79,7 @@ class TestListMeetings:
 
         resp = await auth_client.get(MEETINGS_BASE + "/", params={"team_id": team["id"]})
         assert resp.status_code == 200
-        meetings = resp.json()
+        meetings = resp.json()["items"]
         # Все встречи должны принадлежать этой команде
         for m in meetings:
             assert m["team_id"] == team["id"]

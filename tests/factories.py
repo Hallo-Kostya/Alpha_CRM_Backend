@@ -32,7 +32,7 @@ async def create_curator(client: AsyncClient, **overrides) -> dict:
         **overrides,
     }
     resp = await client.post("/api/auth/register", json=payload)
-    assert resp.status_code == 201, resp.text
+    assert resp.status_code == 201
     return resp.json()
 
 
@@ -49,7 +49,7 @@ async def create_student(client: AsyncClient, **overrides) -> dict:
         **overrides,
     }
     resp = await client.post("/api/students/", json=payload)
-    assert resp.status_code == 201, resp.text
+    assert resp.status_code == 201
     return resp.json()
 
 
@@ -64,7 +64,7 @@ async def create_team(client: AsyncClient, **overrides) -> dict:
         **overrides,
     }
     resp = await client.post("/api/teams/", json=payload)
-    assert resp.status_code == 201, resp.text
+    assert resp.status_code == 201
     return resp.json()
 
 
@@ -79,7 +79,7 @@ async def create_project(client: AsyncClient, **overrides) -> dict:
         **overrides,
     }
     resp = await client.post("/api/projects/", json=payload)
-    assert resp.status_code == 201, resp.text
+    assert resp.status_code == 201
     return resp.json()
 
 
@@ -100,7 +100,7 @@ async def create_meeting(
         **overrides,
     }
     resp = await client.post("/api/meetings/", json=payload)
-    assert resp.status_code == 201, resp.text
+    assert resp.status_code == 201
     return resp.json()
 
 
@@ -114,5 +114,5 @@ async def create_task(client: AsyncClient, **overrides) -> dict:
         **overrides,
     }
     resp = await client.post("/api/tasks/", json=payload)
-    assert resp.status_code == 201, resp.text
+    assert resp.status_code == 201
     return resp.json()

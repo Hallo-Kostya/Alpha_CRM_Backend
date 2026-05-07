@@ -18,7 +18,7 @@ router = APIRouter(
 )
 
 
-@router.post("/", response_model=Student, summary="Создать студента")
+@router.post("/", response_model=Student, summary="Создать студента", status_code=status.HTTP_201_CREATED)
 async def create_student(
     data: StudentCreate,
     service: StudentService = Depends(student_service_getter),
@@ -26,7 +26,7 @@ async def create_student(
     """Создать нового студента с ФИО, email и Telegram."""
     return await service.create(data)
 
-@router.get("/", response_model=StudentDetailedResponse, summary="Список студентов")
+@router.get("/", response_model=StudentDetailedResponse, summary="Список студентов", status_code=status.HTTP_200_OK)
 async def list_students_summary(
     team_id: Optional[UUID] = None,
     project_id: Optional[UUID] = None,
@@ -57,7 +57,11 @@ async def update_student(
     service: StudentService = Depends(student_service_getter),
 ):
     """Обновить данные студента: ФИО, email, Telegram."""
-    return await service.update(student_id, data)
+    updated = await service.update(student_id, data)
+    if updated is None:
+        raise HTTPException(status_code=404, detail="Student not found")
+    return updated
+
 
 
 @router.delete("/{student_id}", summary="Удалить студента")

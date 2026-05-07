@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from types_aiobotocore_s3 import S3Client
+from app.infrastructure.s3_storage.client import S3Client
 import uvicorn
 from app.admin.auth import AdminAuth
 from app.api.routes import routers as v2_routers
@@ -19,28 +19,10 @@ from app.admin.setup import (
     ProjectAdmin, MeetingAdmin, TaskAdmin
 )
 
-main_app = FastAPI()
-
 from contextlib import asynccontextmanager
 
 @asynccontextmanager
-async def lifespan(app):
-    s3 = S3Client(
-        bucket_name=settings.s3.curator_bucket.name,
-        region_name=settings.s3.region,
-    )
-
-    await s3.ensure_bucket_exists(
-        policy=settings.s3.curator_bucket.policy
-    )
-
-    yield
-    
-
-from contextlib import asynccontextmanager
-
-@asynccontextmanager
-async def lifespan(app):
+async def lifespan(app: FastAPI):
 
     db_helper.init(
         url=str(settings.db.url),
@@ -50,9 +32,38 @@ async def lifespan(app):
         max_overflow=settings.db.max_overflow,
     )
 
+    s3_client = S3Client(
+        bucket_name=settings.s3.curator_bucket.name,
+        region_name=settings.s3.region,
+    )
+
+    await s3_client.ensure_bucket_exists(
+        policy=settings.s3.curator_bucket.policy
+    )
+    
+    authentication_backend = AdminAuth(secret_key=settings.hash.access_secret)
+    admin = Admin(
+        main_app,
+        engine=db_helper.engine, 
+        title="Alpha CRM Admin", 
+        # authentication_backend=authentication_backend
+    )
+
+    # Регистрируем модели
+    admin.add_view(CuratorAdmin)
+    admin.add_view(StudentAdmin)
+    admin.add_view(TeamAdmin)
+    admin.add_view(ProjectAdmin)
+    admin.add_view(MeetingAdmin)
+    admin.add_view(TaskAdmin)
+
     yield
 
     await db_helper.dispose()
+    
+main_app = FastAPI(
+    lifespan=lifespan,
+)
 
 main_app.add_middleware(
     CORSMiddleware,
@@ -72,22 +83,6 @@ main_app.add_middleware(
 
 main_app.include_router(v2_routers, prefix="/api")
 main_app.add_middleware(PrometheusMiddleware)
-
-authentication_backend = AdminAuth(secret_key=settings.hash.access_secret)
-admin = Admin(
-    main_app,
-    db_helper.engine, 
-    title="Alpha CRM Admin", 
-    # authentication_backend=authentication_backend
-)
-
-# Регистрируем модели
-admin.add_view(CuratorAdmin)
-admin.add_view(StudentAdmin)
-admin.add_view(TeamAdmin)
-admin.add_view(ProjectAdmin)
-admin.add_view(MeetingAdmin)
-admin.add_view(TaskAdmin)
 
 Team.model_rebuild(force=True)
 Project.model_rebuild(force=True)

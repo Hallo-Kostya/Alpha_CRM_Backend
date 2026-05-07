@@ -25,7 +25,7 @@ router = APIRouter(
 )
 
 
-@router.post("/", response_model=Team, summary="Создать команду")
+@router.post("/", response_model=Team, summary="Создать команду", status_code=status.HTTP_201_CREATED)
 async def create_team(
     data: TeamCreate,
     service: TeamService = Depends(team_service_getter),
@@ -57,7 +57,7 @@ async def get_team(
     return team
 
 
-@router.post("/{team_id}/students", response_model=TeamMember, summary="Добавить студента в команду")
+@router.post("/{team_id}/students", response_model=TeamMember, summary="Добавить студента в команду", status_code=status.HTTP_201_CREATED)
 async def add_student_to_team(
     team_id: UUID,
     data: TeamMemberCreate,

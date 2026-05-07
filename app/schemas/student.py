@@ -65,8 +65,8 @@ class StudentDetailed(BaseModel):
     first_name: str
     last_name: str
     patronymic: Optional[str] = None
-    email: str
-    tg_link: str
+    email: Optional[str] = None
+    tg_link: Optional[str] = None
     role: Optional[str] = None
     study_group: Optional[str] = None
 

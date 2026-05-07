@@ -44,22 +44,13 @@ class ProjectService:
 
     async def create(self, new_obj: ProjectCreate) -> Project:
         """Create new project."""
-        # Fill in default values for year/semester/status if missing
         now = datetime.now()
-        
-        if  new_obj.year is None:
-            new_obj.year = now.year
-        if new_obj.semester is None:
-            new_obj.semester = Semester.SPRING if now.month < 7 else Semester.AUTUMN
-        
-        # Compute status if not provided
-        if new_obj.status is None:
-            try:
-                new_obj.status = self.compute_status(new_obj.year, new_obj.semester)
-            except Exception:
-                pass
-        
         orm_obj = self._to_orm(new_obj)
+        if orm_obj.year is None:
+            orm_obj.year = now.year
+        if orm_obj.semester is None:
+            orm_obj.semester = Semester.SPRING if now.month < 7 else Semester.AUTUMN
+        orm_obj.status = self.compute_status(orm_obj.year, orm_obj.semester)
         created_obj = await self.project_repo.create(orm_obj)
         return self._to_schema(created_obj)
 

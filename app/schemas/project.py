@@ -57,24 +57,24 @@ class ProjectCreate(BaseModel):
     goal: Optional[str] = Field(None, examples=["Цель проекта"])
     requirements: Optional[str] = Field(None, examples=["Требования к проекту"])
     eval_criteria: Optional[str] = Field(None, examples=["Критерии оценки проекта"])
-    year: int
-    semester: Semester
-    status: ProjectStatus = ProjectStatus.PLANNED
+    year: Optional[int] = Field(None, examples=["2026"])
+    semester: Optional[Semester] = Field(None, examples=["SPRING"])
+    status: Optional[ProjectStatus] = Field(None, examples=["PLANNED"])
 
 
 class ProjectCreateMinimal(BaseModel):
     name: NameField = Field(..., examples=["Название проекта"])
     description: Optional[str] = Field(None, examples=["Описание проекта"])
     year: Optional[int] = Field(
-        default_factory=lambda: datetime.now().year,
+        None,
         examples=["2026"],
         description="Год проведения (по умолчанию текущий)",
     )
     semester: Optional[Semester] = Field(
-        default_factory=lambda: Semester.SPRING if datetime.now().month < 7 else Semester.AUTUMN,
+        None,
+        examples=["SPRING"],
         description="Семестр (по умолчанию определяется по текущей дате)",
     )
-    status: Optional[ProjectStatus] = None
 
 
 class ProjectUpdate(BaseModel):
@@ -83,7 +83,7 @@ class ProjectUpdate(BaseModel):
     goal: Optional[str] = Field(None, examples=["Цель проекта"])
     requirements: Optional[str] = Field(None, examples=["Требования к проекту"])
     eval_criteria: Optional[str] = Field(None, examples=["Критерии оценки проекта"])
-    year: Optional[int] = None
+    year: Optional[int] = Field(None, examples=["2026"])
     semester: Optional[Semester] = None
     status: Optional[ProjectStatus] = None
 
