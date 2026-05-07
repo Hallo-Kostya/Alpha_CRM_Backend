@@ -1,233 +1,208 @@
-"""Pytest configuration and shared fixtures."""
+"""
+Integration test configuration.
+
+Поднимает реальные Postgres + MinIO через testcontainers,
+применяет миграции Alembic, создаёт AsyncClient для FastAPI.
+
+Требования (добавь в dev-зависимости):
+    pytest
+    pytest-asyncio
+    httpx
+    testcontainers[postgres,minio]
+    anyio
+"""
+from __future__ import annotations
+
+import asyncio
+import os
+from typing import AsyncGenerator, Generator
+
 import pytest
-from unittest.mock import AsyncMock, MagicMock
-from uuid import UUID, uuid4
-from datetime import datetime, timezone
+import pytest_asyncio
+from httpx import ASGITransport, AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+from testcontainers.minio import MinioContainer
+from testcontainers.postgres import PostgresContainer
 
-from fastapi import FastAPI
-from httpx import AsyncClient, ASGITransport
+# ---------------------------------------------------------------------------
+# Настройка event loop — один loop на всю сессию
+# ---------------------------------------------------------------------------
 
-from app.main import main_app
-from app.common.enums import (
-    MeetingStatus, ProjectStatus, Semester, ProjectTeamStatus
-)
-
-
-# =============================================================================
-# UUID Fixtures
-# =============================================================================
-@pytest.fixture
-def any_uuid() -> UUID:
-    return uuid4()
+@pytest.fixture(scope="session")
+def event_loop():
+    """Один event loop на всю тестовую сессию."""
+    loop = asyncio.new_event_loop()
+    yield loop
+    loop.close()
 
 
-# Константа для фиксированного UUID (не фикстура!)
-FIXED_UUID = UUID("12345678-1234-5678-1234-567812345678")
+# ---------------------------------------------------------------------------
+# Postgres
+# ---------------------------------------------------------------------------
+
+@pytest.fixture(scope="session")
+def postgres_container() -> Generator[PostgresContainer, None, None]:
+    with PostgresContainer("postgres:16-alpine") as pg:
+        yield pg
 
 
-# =============================================================================
-# Mock Service Fixtures
-# =============================================================================
-# @pytest.fixture
-# def mock_auth_service():
-#     """Mocked AuthService."""
-#     service = AsyncMock()
-#     service.create_token_pair.return_value = (
-#         MagicMock(token="access_token_123", expires_at=datetime.now(timezone.utc)),
-#         MagicMock(token="refresh_token_456", expires_at=datetime.now(timezone.utc)),
-#     )
-#     service.verify_password.return_value = True
-#     service.get_hashed_pass.return_value = "hashed_password"
-#     service.get_curator_id_from_access.return_value = FIXED_UUID
-#     service.get_curator_id_from_refresh.return_value = FIXED_UUID
-#     service.get_hash_for_string.return_value = "hashed_token"
-#     service.revoke_token_pair.return_value = None
-#     return service
+@pytest.fixture(scope="session")
+def db_url(postgres_container: PostgresContainer) -> str:
+    """Async DSN для SQLAlchemy (asyncpg)."""
+    sync_url = postgres_container.get_connection_url()
+    if "+asyncpg" in sync_url:
+        return sync_url
+    return sync_url.split("://")[0].split("+")[0] + "+asyncpg://" + sync_url.split("://", 1)[1]
 
 
-@pytest.fixture
-def mock_curator_service():
-    """Mocked CuratorService."""
-    service = AsyncMock()
-    return service
+# ---------------------------------------------------------------------------
+# MinIO
+# ---------------------------------------------------------------------------
+
+@pytest.fixture(scope="session")
+def minio_container() -> Generator[MinioContainer, None, None]:
+    with MinioContainer("minio/minio:latest") as minio:
+        yield minio
 
 
-@pytest.fixture
-def mock_student_service():
-    """Mocked StudentService."""
-    service = AsyncMock()
-    return service
-
-
-@pytest.fixture
-def mock_team_service():
-    """Mocked TeamService."""
-    service = AsyncMock()
-    return service
-
-
-@pytest.fixture
-def mock_team_member_service():
-    """Mocked TeamMemberService."""
-    service = AsyncMock()
-    return service
-
-
-@pytest.fixture
-def mock_project_service():
-    """Mocked ProjectService."""
-    service = AsyncMock()
-    service.compute_status.return_value = ProjectStatus.IN_PROGRESS
-    return service
-
-
-@pytest.fixture
-def mock_project_team_service():
-    """Mocked ProjectTeamService."""
-    service = AsyncMock()
-    return service
-
-
-@pytest.fixture
-def mock_meeting_service():
-    """Mocked MeetingService."""
-    service = AsyncMock()
-    return service
-
-
-@pytest.fixture
-def mock_task_service():
-    """Mocked TaskService."""
-    service = AsyncMock()
-    return service
-
-
-@pytest.fixture
-def mock_search_service():
-    """Mocked SearchService."""
-    service = AsyncMock()
-    return service
-
-
-# =============================================================================
-# HTTP Client Fixture
-# =============================================================================
-@pytest.fixture
-async def async_client(
-    mock_auth_service,
-    mock_curator_service,
-    mock_student_service,
-    mock_team_service,
-    mock_team_member_service,
-    mock_project_service,
-    mock_project_team_service,
-    mock_meeting_service,
-    mock_task_service,
-    mock_search_service,
-) -> AsyncClient:
-    """Async HTTP client with mocked dependencies."""
-
-    # Override dependencies
-    from app.services.auth_service import auth_service_getter
-    from app.services.curator_service import curator_service_getter
-    from app.services.students_service import student_service_getter
-    from app.services.team_service import team_service_getter
-    from app.services.team_member_service import team_member_service_getter
-    from app.services.projects_service import project_service_getter
-    from app.services.project_team_service import project_team_service_getter
-    from app.services.meeting_service import meeting_service_getter
-    from app.services.task_service import task_service_getter
-    from app.services.search_service import search_service_getter
-
-    main_app.dependency_overrides[auth_service_getter] = lambda: mock_auth_service
-    main_app.dependency_overrides[curator_service_getter] = lambda: mock_curator_service
-    main_app.dependency_overrides[student_service_getter] = lambda: mock_student_service
-    main_app.dependency_overrides[team_service_getter] = lambda: mock_team_service
-    main_app.dependency_overrides[team_member_service_getter] = lambda: mock_team_member_service
-    main_app.dependency_overrides[project_service_getter] = lambda: mock_project_service
-    main_app.dependency_overrides[project_team_service_getter] = lambda: mock_project_team_service
-    main_app.dependency_overrides[meeting_service_getter] = lambda: mock_meeting_service
-    main_app.dependency_overrides[task_service_getter] = lambda: mock_task_service
-    main_app.dependency_overrides[search_service_getter] = lambda: mock_search_service
-
-    transport = ASGITransport(app=main_app)
-    async with AsyncClient(transport=transport, base_url="http://test") as client:
-        yield client
-
-    main_app.dependency_overrides.clear()
-
-
-# =============================================================================
-# Data Factory Fixtures
-# =============================================================================
-@pytest.fixture
-def curator_data(any_uuid):
+@pytest.fixture(scope="session")
+def minio_env(minio_container: MinioContainer) -> dict:
+    """Переменные окружения для S3-клиента."""
+    host = minio_container.get_container_host_ip()
+    port = minio_container.get_exposed_port(9000)
     return {
-        "id": str(any_uuid),
-        "first_name": "Иван",
-        "last_name": "Иванов",
-        "patronymic": "Иванович",
-        "email": "ivan@example.com",
-        "tg_link": "https://t.me/ivan",
-        "avatar_s3_path": None,
-        "teams": [],
+        "S3_ENDPOINT": f"http://{host}:{port}",
+        "S3_ACCESS_KEY": minio_container.access_key,
+        "S3_SECRET_KEY": minio_container.secret_key,
+        "S3_BUCKET": "test-bucket",
     }
 
 
-@pytest.fixture
-def student_data(any_uuid):
-    return {
-        "id": str(any_uuid),
-        "first_name": "Петр",
-        "last_name": "Петров",
-        "patronymic": "Петрович",
-        "email": "petr@example.com",
-        "tg_link": "https://t.me/petr",
-    }
+# ---------------------------------------------------------------------------
+# Выставляем env ДО любого импорта app (settings читает os.environ при старте)
+# ---------------------------------------------------------------------------
+
+@pytest.fixture(scope="session", autouse=True)
+def set_test_env(db_url: str, minio_env: dict):
+    """Выставляет все переменные окружения до импорта app."""
+    os.environ["DATABASE_URL"] = db_url
+    for k, v in minio_env.items():
+        os.environ[k] = v
+    os.environ.setdefault("ACCESS_SECRET", "test-access-secret-32-chars-long!!")
+    os.environ.setdefault("REFRESH_SECRET", "test-refresh-secret-32-chars-long!")
+    os.environ.setdefault("ALGORITHM", "HS256")
 
 
-@pytest.fixture
-def team_data(any_uuid):
-    return {
-        "id": str(any_uuid),
-        "name": "DreamTeam",
-        "group_link": "https://t.me/dreamteam",
-    }
+# ---------------------------------------------------------------------------
+# Создаём таблицы через SQLAlchemy metadata — минуя Alembic env.py полностью
+# ---------------------------------------------------------------------------
+
+@pytest_asyncio.fixture(scope="session", autouse=True)
+async def create_tables(set_test_env, db_url: str):
+    """
+    Создаёт все таблицы из метаданных моделей.
+    Это надёжнее чем запускать Alembic в тестах — env.py не лезет в .env файл.
+
+    !! Замени импорт Base на правильный путь своего проекта !!
+    """
+    from app.infrastructure.database.base import Base
+
+    engine = create_async_engine(db_url, echo=False)
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    yield
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
+    await engine.dispose()
 
 
-@pytest.fixture
-def project_data(any_uuid):
-    return {
-        "id": str(any_uuid),
-        "name": "AI Project",
-        "description": "Cool AI project",
-        "goal": "Build AI",
-        "requirements": "Python, ML",
-        "eval_criteria": "Accuracy > 90%",
-        "year": 2026,
-        "semester": "SPRING",
-        "status": "IN_PROGRESS",
-    }
+# ---------------------------------------------------------------------------
+# SQLAlchemy session (для прямых INSERT в тестах)
+# ---------------------------------------------------------------------------
+
+@pytest_asyncio.fixture(scope="session")
+async def engine(db_url: str):
+    engine = create_async_engine(db_url, echo=False)
+    yield engine
+    await engine.dispose()
 
 
-@pytest.fixture
-def meeting_data(any_uuid):
-    return {
-        "id": str(any_uuid),
-        "name": "Sprint Planning",
-        "resume": "Plan the sprint",
-        "date": "2026-05-10T10:00:00+00:00",
-        "status": "SCHEDULED",
-        "team_id": str(any_uuid),
-        "previous_meeting_id": None,
-        "next_meeting_id": None,
-    }
+@pytest_asyncio.fixture()
+async def db_session(engine) -> AsyncGenerator[AsyncSession, None]:
+    """Сессия с откатом транзакции после каждого теста (изоляция)."""
+    async with engine.begin() as conn:
+        async_session = async_sessionmaker(
+            bind=conn, expire_on_commit=False, class_=AsyncSession
+        )
+        async with async_session() as session:
+            yield session
+            await session.rollback()
 
 
-@pytest.fixture
-def task_data(any_uuid):
-    return {
-        "id": str(any_uuid),
-        "description": "Implement feature X",
-        "is_completed": False,
-    }
+# ---------------------------------------------------------------------------
+# FastAPI app + override зависимостей
+# ---------------------------------------------------------------------------
+
+@pytest.fixture(scope="session")
+def app(create_tables):
+    """Импортирует FastAPI app после создания таблиц и выставления env."""
+    from app.main import main_app as fastapi_app
+    return fastapi_app
+
+
+# ---------------------------------------------------------------------------
+# HTTP-клиент (неавторизованный)
+# ---------------------------------------------------------------------------
+
+@pytest_asyncio.fixture()
+async def client(app) -> AsyncGenerator[AsyncClient, None]:
+    async with AsyncClient(
+        transport=ASGITransport(app=app),
+        base_url="http://test",
+    ) as c:
+        yield c
+
+
+# ---------------------------------------------------------------------------
+# Авторизованный куратор + клиент
+# ---------------------------------------------------------------------------
+
+CURATOR_EMAIL = "test_curator@example.com"
+CURATOR_PASSWORD = "testpassword123"
+CURATOR_DATA = {
+    "email": CURATOR_EMAIL,
+    "password": CURATOR_PASSWORD,
+    "first_name": "Тест",
+    "last_name": "Куратор",
+    "patronymic": None,
+}
+
+
+@pytest_asyncio.fixture(scope="session")
+async def curator_tokens(app) -> dict:
+    """Регистрирует куратора один раз, возвращает токены."""
+    async with AsyncClient(
+        transport=ASGITransport(app=app),
+        base_url="http://test",
+    ) as c:
+        resp = await c.post("/api/v1/auth/register", json=CURATOR_DATA)
+        # Если уже зарегистрирован — логинимся
+        if resp.status_code == 409:
+            resp = await c.post(
+                "/api/v1/auth/login",
+                json={"email": CURATOR_EMAIL, "password": CURATOR_PASSWORD},
+            )
+        assert resp.status_code in (200, 201), resp.text
+        return resp.json()
+
+
+@pytest_asyncio.fixture()
+async def auth_client(app, curator_tokens) -> AsyncGenerator[AsyncClient, None]:
+    """AsyncClient с Bearer-токеном куратора."""
+    headers = {"Authorization": f"Bearer {curator_tokens['access_token']}"}
+    async with AsyncClient(
+        transport=ASGITransport(app=app),
+        base_url="http://test",
+        headers=headers,
+    ) as c:
+        yield c
