@@ -44,3 +44,5 @@ class TeamMemberModel(BaseEntity):
         "StudentModel",
         back_populates="team_links",
     )
+    def __str__(self) -> str:
+        return f"{self.id}: {self.student_id} - {self.role}, команда: {self.team_id}"

@@ -1,6 +1,6 @@
 from typing import Any, Generic, Optional, Type, TypeVar, Sequence
 from uuid import UUID
-from sqlalchemy import func, select
+from sqlalchemy import String, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from app.common.repository_interface import (
@@ -31,20 +31,24 @@ class BaseRepository(RepositoryInterface[T], Generic[T]):
     ) -> T | None:
         query = select(self.model).where(self.model.id == obj_id)
         if eager_loads:
+            options = []
+
             for load_path in eager_loads:
                 parts = load_path.split(".")
 
-                loader = selectinload(getattr(self.model, parts[0]))
-                current_model = getattr(self.model, parts[0]).property.entity.class_
+                attr = getattr(self.model, parts[0])
+                loader = selectinload(attr)
 
-                if len(parts) >= 2:
-                    for part in parts[1:]:
-                        loader = loader.selectinload(getattr(current_model, part))
-                        current_model = getattr(
-                            current_model, part
-                        ).property.entity.class_
+                current_model = attr.property.entity.class_
 
-            query = query.options(loader)
+                for part in parts[1:]:
+                    attr = getattr(current_model, part)
+                    loader = loader.selectinload(attr)
+                    current_model = attr.property.entity.class_
+
+                options.append(loader)
+
+            query = query.options(*options)
         result = await self.session.execute(query)
         obj = result.scalar_one_or_none()
         return obj
@@ -67,14 +71,36 @@ class BaseRepository(RepositoryInterface[T], Generic[T]):
         order_by: Optional[str] = None,
         limit: Optional[int] = None,
         offset: Optional[int] = None,
+        eager_loads: list[str] | None = None
     ) -> tuple[int, Sequence[T]]:
         query = select(self.model)
+        if eager_loads:
+            options = []
 
+            for load_path in eager_loads:
+                parts = load_path.split(".")
+
+                attr = getattr(self.model, parts[0])
+                loader = selectinload(attr)
+
+                current_model = attr.property.entity.class_
+
+                for part in parts[1:]:
+                    attr = getattr(current_model, part)
+                    loader = loader.selectinload(attr)
+                    current_model = attr.property.entity.class_
+
+                options.append(loader)
+
+            query = query.options(*options)
         if filters:
             for field, value in filters.items():
                 column = getattr(self.model, field, None)
                 if column is not None and value is not None:
-                    query = query.where(column == value)
+                    if isinstance(column.type, String):
+                        query = query.where(func.lower(column) == value.lower())
+                    else:
+                        query = query.where(column == value)
 
         if range_filters:
             for field, (from_val, to_val) in range_filters.items():

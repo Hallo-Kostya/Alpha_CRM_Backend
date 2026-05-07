@@ -14,6 +14,7 @@ from app.infrastructure.database.models.projects import (
     MilestoneModel,
     EvaluationModel,
     ProjectTeamModel,
+    ProjectApplicationModel,
 )
 from app.infrastructure.database.models.meetings import (
     MeetingModel,
@@ -44,6 +45,7 @@ __all__ = [
     "MilestoneModel",
     "EvaluationModel",
     "ProjectTeamModel",
+    "ProjectApplicationModel",
     # Meetings
     "MeetingModel",
     "TaskModel",

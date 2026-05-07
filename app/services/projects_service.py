@@ -1,3 +1,5 @@
+from typing import Any
+
 from fastapi import Depends
 from app.schemas.project import (
     ProjectCreate,
@@ -96,10 +98,10 @@ class ProjectService:
         return ProjectSummaryResponse(total=total, projects=summaries)
 
     async def get_projects_with_excluded_ids(
-        self, excluded_ids: list[UUID]
+        self, excluded_ids: list[UUID], filters: dict[str, Any],
     ) -> list[ProjectRead]:
         result = await self.project_repo.get_projects_with_excluded_ids(
-            excluded_ids, ProjectStatus.PLANNED
+            excluded_ids, filters
         )
         return [ProjectRead.model_validate(project) for project in result]
 

@@ -108,40 +108,6 @@ async def get_project(
     return project
 
 
-@router.get(
-    "/{team_id}/available_projects",
-    response_model=list[ProjectRead],
-    summary="Получить доступные для записи проекты для команды",
-)
-async def get_available_projects(
-    team_id: UUID,
-    project_team_service: ProjectTeamService = Depends(project_team_service_getter),
-    project_service: ProjectService = Depends(project_service_getter),
-):
-    unavailable_projects = await project_team_service.get_team_projects(
-        team_id, ProjectTeamStatus.PENDING
-    )
-    unavailable_ids = [project_team.project_id for project_team in unavailable_projects]
-    available_projects = await project_service.get_projects_with_excluded_ids(
-        unavailable_ids
-    )
-    return available_projects
-
-
-@router.get(
-    "/{team_id}/project_teams",
-    response_model=list[ProjectTeam],
-    summary="Получить отправленные заявки на проект для команды",
-)
-async def get_team_projects(
-    team_id: UUID,
-    status: ProjectTeamStatus,
-    project_team_service: ProjectTeamService = Depends(project_team_service_getter),
-):
-    result = await project_team_service.get_team_projects(team_id, status, ["members"])
-    return result
-
-
 @router.post(
     "/{project_id}/teams",
     response_model=ProjectTeam,

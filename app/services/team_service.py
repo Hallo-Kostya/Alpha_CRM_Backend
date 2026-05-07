@@ -7,7 +7,7 @@ from app.schemas.team import (
     TeamMemberSummary,
     TeamSummaryResponse,
 )
-from app.schemas.team import Team
+from app.schemas.team import Team, TeamDetail
 from app.infrastructure.database.models import TeamModel
 from app.infrastructure.database.repositories.team_repository import (
     TeamRepository,
@@ -33,7 +33,7 @@ class TeamService:
         """Create new team."""
         orm_obj = self._to_orm(team)
         created_obj = await self._repo.create(orm_obj)
-        return self._to_schema(created_obj)
+        return Team(id=created_obj.id, name=created_obj.name, members=[], group_link=created_obj.group_link)
 
     async def update(self, team_id: UUID, new_data: TeamUpdate) -> Team | None:
         """Update team."""
@@ -61,6 +61,12 @@ class TeamService:
         if not obj:
             return None
         return self._to_schema(obj)
+    
+    async def get_list(self, project_id=None, **filters) -> list[TeamDetail]:
+        if project_id:
+            filters["project_id"] = project_id
+        _, objs = await self._repo.get_list(filters, eager_loads=["members", "members.student"])
+        return [TeamDetail.model_validate(obj, from_attributes=True) for obj in objs]
 
     async def get_teams_summary(
         self, project_id=None, **filters

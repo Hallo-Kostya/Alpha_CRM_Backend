@@ -39,3 +39,6 @@ class BaseEntity(Base):
         nullable=True,
         index=True,
     )
+
+    def __str__(self) -> str:
+        return self.id

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from app.api.dependencies import get_current_curator
-from app.schemas.curator import CuratorPOST, CuratorPostBase, Curator
+from app.schemas.curator import CuratorPOST, CuratorPostBase, Curator, CuratorLogin
 from app.schemas.auth import TokenPairResponse
 from app.services.curator_service import CuratorService, curator_service_getter
 from app.services.auth_service import AuthService, auth_service_getter
@@ -22,16 +22,16 @@ async def register(
             detail="Email already registered",
         )
     access, refresh = result
-    return TokenPairResponse(access_token=access.token, refresh_token=refresh.token)
+    return TokenPairResponse(access_token=access, refresh_token=refresh)
 
 
 @router.post("/login", response_model=TokenPairResponse)
 async def login(
-    data: CuratorPostBase,
+    data: CuratorLogin,
     service: CuratorService = Depends(curator_service_getter),
 ):
     """Login curator and return token pair."""
-    curator = await service.get_by_email(data.email)
+    curator = await service.get_by_email(data.email, True)
     if curator is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -44,7 +44,7 @@ async def login(
             detail="Invalid email or password",
         )
     access, refresh = result
-    return TokenPairResponse(access_token=access.token, refresh_token=refresh.token)
+    return TokenPairResponse(access_token=access, refresh_token=refresh)
 
 
 @router.post("/refresh", response_model=TokenPairResponse)
@@ -57,7 +57,7 @@ async def refresh(
         curator_id = auth_service.get_curator_id_from_refresh(refresh_token)
         pair = await auth_service.refresh_token_pair(refresh_token, curator_id)
         access, refresh = pair
-        return TokenPairResponse(access_token=access.token, refresh_token=refresh.token)
+        return TokenPairResponse(access_token=access, refresh_token=refresh)
     except ValueError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

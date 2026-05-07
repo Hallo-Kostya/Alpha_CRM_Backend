@@ -19,6 +19,7 @@ class ProjectTeam(BaseModel):
     team: Team
     assigned_at: datetime
     status: ProjectTeamStatus
+    final_score: float
 
     @field_validator("project_id", mode="before")
     @classmethod
@@ -38,6 +39,7 @@ class ProjectTeamCreate(BaseModel):
 
 class ProjectTeamUpdate(BaseModel):
     status: Optional[ProjectTeamStatus] = None
+    final_score: Optional[float] = None
 
 
 class ProjectTeamResponse(BaseModel):
@@ -45,6 +47,7 @@ class ProjectTeamResponse(BaseModel):
     team_id: UUID
     assigned_at: datetime
     status: ProjectTeamStatus
+    final_score: float
 
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
 
@@ -68,6 +71,7 @@ class ProjectTeamWithInfo(BaseModel):
     team_name: str
     project_year: int
     project_semester: Semester
+    final_score: float
 
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
 

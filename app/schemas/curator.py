@@ -49,6 +49,11 @@ class CuratorUpdate(BaseModel):
     avatar_s3_path: Optional[str] = None
 
 
+class CuratorLogin(BaseModel):
+    email: EmailStr
+    password: str = Field(min_length=8)
+
+
 # Aliases for backward compatibility
 CuratorPostBase = CuratorCreate  # Since CuratorCreate has email and password
 CuratorPOST = CuratorCreate

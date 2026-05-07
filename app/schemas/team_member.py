@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Optional
 from uuid import UUID
-
+from app.schemas.student import StudentRead
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -12,6 +12,16 @@ class TeamMember(BaseModel):
     
     team_id: UUID
     student_id: UUID
+    role: Optional[str] = None
+    study_group: Optional[str] = None
+
+
+class TeamMemberDetail(BaseModel):
+    """Team member model with all fields."""
+    model_config = ConfigDict(from_attributes=True)
+    
+    team_id: UUID
+    student: StudentRead
     role: Optional[str] = None
     study_group: Optional[str] = None
 

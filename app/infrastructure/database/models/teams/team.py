@@ -1,5 +1,5 @@
 from typing import TYPE_CHECKING
-from sqlalchemy import String, ForeignKey
+from sqlalchemy import String, ForeignKey, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID
 
@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from app.infrastructure.database.models.projects.project_team import ProjectTeamModel
     from app.infrastructure.database.models.teams.curator_team import CuratorTeamModel
     from app.infrastructure.database.models.teams.team_member import TeamMemberModel
+    from app.infrastructure.database.models.projects.project_application import ProjectApplicationModel
 
 
 class TeamModel(BaseEntity):
@@ -29,6 +30,7 @@ class TeamModel(BaseEntity):
         "TeamMemberModel",
         back_populates="team",
         cascade="all, delete-orphan",
+        lazy="selectin",
     )
     
     # Собрания, связанные с командой
@@ -52,7 +54,7 @@ class TeamModel(BaseEntity):
         back_populates="teams",
         viewonly=True,
     )
-    
+
     # Связи с кураторами через промежуточную таблицу curator_teams (M2M, модель связей)
     curator_team_links: Mapped[list["CuratorTeamModel"]] = relationship(
         "CuratorTeamModel",
@@ -67,4 +69,14 @@ class TeamModel(BaseEntity):
         back_populates="teams",
         viewonly=True,
     )
+
+    # Заявки команды на проекты
+    team_applications: Mapped[list["ProjectApplicationModel"]] = relationship(
+        "ProjectApplicationModel",
+        back_populates="team",
+        cascade="all, delete-orphan",
+    )
+
+    def __str__(self) -> str:
+        return f"{self.id}: Команда {self.name}"
 

@@ -1,9 +1,8 @@
 from fastapi import Depends, UploadFile
-from app.schemas.curator import CuratorPOST, CuratorPATCH, CuratorPostBase
+from app.schemas.curator import CuratorPOST, CuratorPATCH, CuratorLogin, Curator
 from app.services.auth_service import AuthService, auth_service_getter
 from app.core.config import settings
 from app.infrastructure.database.models import CuratorModel
-from app.schemas.curator import Curator
 from app.schemas.auth import AuthToken
 from app.infrastructure.database.repositories.curator_repository import (
     CuratorRepository,
@@ -90,9 +89,11 @@ class CuratorService:
         total, items = await self._repo.get_list(eager_loads=['teams'], **filter_attrs)
         return [self._to_schema(item) for item in items]
 
-    async def get_by_email(self, email: str) -> Curator | None:
-        total, curators = await self._repo.get_list(email=email)
+    async def get_by_email(self, email: str, raw: bool = False) -> Curator | CuratorModel | None:
+        total, curators = await self._repo.get_list({"email": email})
         if curators:
+            if raw:
+                return curators[0]
             return self._to_schema(curators[0])
         return None
 
@@ -108,7 +109,7 @@ class CuratorService:
 
     async def login_curator(
         self,
-        curator_data: CuratorPostBase,
+        curator_data: CuratorLogin,
         existing_curator: CuratorModel,
     ) -> tuple[AuthToken, AuthToken] | None:
         is_password_correct = self.auth_service.verify_password(

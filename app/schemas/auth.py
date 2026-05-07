@@ -25,6 +25,6 @@ class AuthToken(BaseModel):
         self.is_revoked = True
         
 class TokenPairResponse(BaseModel):
-    access_token: str
-    refresh_token: str
+    access_token: AuthToken
+    refresh_token: AuthToken
     token_type: str = "bearer"

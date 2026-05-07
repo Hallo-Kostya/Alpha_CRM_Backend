@@ -29,6 +29,13 @@ class ProjectTeamStatus(str, Enum):
     WITHDRAWN = "WITHDRAWN"  # Team withdrawn from project
     PENDING = "PENDING"      # Pending confirmation
 
+class ProjectApplicationStatus(str, Enum):
+    """Status of team participation in project."""
+    NEW = "NEW"  # новая заявка
+    DECLINED = "DECLINED"  # Заявка отклонена
+    ACCEPTED = "ACCEPTED"  # Заявка принята
+    INTERVIEW = "INTERVIEW"  # Команда на стадии интервью
+
 
 class MeetingStatus(StrAutoEnum):
     """Meeting status."""

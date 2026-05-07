@@ -11,7 +11,7 @@ from app.services.team_member_service import (
     TeamMemberService,
     team_member_service_getter,
 )
-from app.schemas.team import Team
+from app.schemas.team import Team, TeamDetail
 from app.schemas.team_member import TeamMember
 from app.api.filters import TeamFilter
 
@@ -32,14 +32,25 @@ async def create_team(
     return await service.create(data)
 
 
-@router.get("/", response_model=TeamSummaryResponse, summary="Список команд")
-async def list_teams(
+@router.get("/", response_model=TeamSummaryResponse, summary="Краткий список команд")
+async def summarize_teams(
     project_id: UUID = Query(None, description="ID проекта для фильтрации команд"),
     service: TeamService = Depends(team_service_getter),
     filters: TeamFilter = Depends(),
 ):
     """Получить список команд с фильтром по проекту. Включает ID, имя, количество участников и список участников."""
     return await service.get_teams_summary(
+        project_id, **filters.model_dump(exclude_none=True)
+    )
+
+@router.get("/detailed_list", response_model=list[TeamDetail], summary="Детализированный список команд")
+async def list_teams(
+    project_id: UUID = Query(None, description="ID проекта для фильтрации команд"),
+    service: TeamService = Depends(team_service_getter),
+    filters: TeamFilter = Depends(),
+) -> list[TeamDetail]:
+    """Получить список команд с фильтром по проекту. Включает ID, имя, количество участников и список участников."""
+    return await service.get_list(
         project_id, **filters.model_dump(exclude_none=True)
     )
 

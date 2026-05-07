@@ -25,4 +25,3 @@ class StudentModel(PersonModel):
         back_populates="student",
         cascade="all, delete-orphan",
     )
-

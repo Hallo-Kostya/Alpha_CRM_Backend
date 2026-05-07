@@ -6,7 +6,7 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.common.fields import NameField
-from app.schemas.team_member import TeamMember
+from app.schemas.team_member import TeamMember, TeamMemberDetail
 
 
 class Team(BaseModel):
@@ -16,7 +16,17 @@ class Team(BaseModel):
 
     id: UUID
     name: str
-    members: list[TeamMember]
+    members: list[TeamMember] = Field(default_factory=list)
+    group_link: Optional[str] = None
+
+
+class TeamDetail(BaseModel):
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    name: str
+    members: list[TeamMemberDetail] = Field(default_factory=list)
     group_link: Optional[str] = None
 
 
@@ -47,7 +57,7 @@ class TeamSummary(BaseModel):
     id: UUID
     name: str
     members_count: int
-    members: list[TeamMemberSummary]
+    members: list[TeamMemberSummary] = Field(default_factory=list)
 
 
 class TeamSummaryResponse(BaseModel):

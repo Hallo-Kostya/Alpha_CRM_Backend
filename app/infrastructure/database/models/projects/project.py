@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from app.infrastructure.database.models.projects.milestone import MilestoneModel
     from app.infrastructure.database.models.projects.project_team import ProjectTeamModel
     from app.infrastructure.database.models.teams.team import TeamModel
+    from app.infrastructure.database.models.projects.project_application import ProjectApplicationModel
 
 
 class ProjectModel(BaseEntity):
@@ -76,4 +77,14 @@ class ProjectModel(BaseEntity):
         back_populates="project",
         cascade="all, delete-orphan",
     )
+
+    # Заявки на проект
+    project_applications: Mapped[list["ProjectApplicationModel"]] = relationship(
+        "ProjectApplicationModel",
+        back_populates="project",
+        cascade="all, delete-orphan",
+    )
+
+    def __str__(self) -> str:
+        return f"{self.id}: {self.name} - {self.year} - {self.semester}"
 
