@@ -6,7 +6,7 @@ from tests.factories import create_team, create_student, uid
 
 pytestmark = pytest.mark.asyncio
 
-BASE = "/api/v1/teams"
+BASE = "/api/teams"
 
 
 class TestCreateTeam:

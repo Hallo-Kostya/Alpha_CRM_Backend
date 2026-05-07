@@ -7,8 +7,8 @@ from tests.factories import create_team, create_meeting, create_task, uid
 
 pytestmark = pytest.mark.asyncio
 
-MEETINGS_BASE = "/api/v1/meetings"
-TASKS_BASE = "/api/v1/tasks"
+MEETINGS_BASE = "/api/meetings"
+TASKS_BASE = "/api/tasks"
 
 
 def future_date(days: int = 1) -> str:

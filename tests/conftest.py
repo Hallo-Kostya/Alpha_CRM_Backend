@@ -1,40 +1,22 @@
-"""
-Integration test configuration.
-
-Поднимает реальные Postgres + MinIO через testcontainers,
-применяет миграции Alembic, создаёт AsyncClient для FastAPI.
-
-Требования (добавь в dev-зависимости):
-    pytest
-    pytest-asyncio
-    httpx
-    testcontainers[postgres,minio]
-    anyio
-"""
 from __future__ import annotations
 
 import asyncio
 import os
+import sys
 from typing import AsyncGenerator, Generator
 
 import pytest
 import pytest_asyncio
+from sqlalchemy import NullPool
+
+if sys.platform.startswith("win"):
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from testcontainers.minio import MinioContainer
 from testcontainers.postgres import PostgresContainer
-
-# ---------------------------------------------------------------------------
-# Настройка event loop — один loop на всю сессию
-# ---------------------------------------------------------------------------
-
-@pytest.fixture(scope="session")
-def event_loop():
-    """Один event loop на всю тестовую сессию."""
-    loop = asyncio.new_event_loop()
-    yield loop
-    loop.close()
-
+from app.core.database import db_helper
 
 # ---------------------------------------------------------------------------
 # Postgres
@@ -47,14 +29,24 @@ def postgres_container() -> Generator[PostgresContainer, None, None]:
 
 
 @pytest.fixture(scope="session")
-def db_url(postgres_container: PostgresContainer) -> str:
-    """Async DSN для SQLAlchemy (asyncpg)."""
-    sync_url = postgres_container.get_connection_url()
-    if "+asyncpg" in sync_url:
-        return sync_url
-    return sync_url.split("://")[0].split("+")[0] + "+asyncpg://" + sync_url.split("://", 1)[1]
+def db_env(postgres_container: PostgresContainer) -> str:
+    user = postgres_container.username
+    password = postgres_container.password
+    host = postgres_container.get_container_host_ip()
+    port = postgres_container.get_exposed_port(5432)
+    db = postgres_container.dbname
+    return {
+        "DB__USER": user,
+        "DB__PASSWORD": password,
+        "DB__HOST": host,
+        "DB__PORT": str(port),
+        "DB__NAME": db,
+    }
 
-
+@pytest.fixture(scope="session")
+def db_url(db_env: dict) -> str:
+    """Построить URL для SQLAlchemy из переменных окружения."""
+    return f"postgresql+asyncpg://{db_env['DB__USER']}:{db_env['DB__PASSWORD']}@{db_env['DB__HOST']}:{db_env['DB__PORT']}/{db_env['DB__NAME']}"
 # ---------------------------------------------------------------------------
 # MinIO
 # ---------------------------------------------------------------------------
@@ -83,14 +75,15 @@ def minio_env(minio_container: MinioContainer) -> dict:
 # ---------------------------------------------------------------------------
 
 @pytest.fixture(scope="session", autouse=True)
-def set_test_env(db_url: str, minio_env: dict):
+def set_test_env(db_env: dict, minio_env: dict):
     """Выставляет все переменные окружения до импорта app."""
-    os.environ["DATABASE_URL"] = db_url
+    for k, v in db_env.items():
+        os.environ[k] = v
     for k, v in minio_env.items():
         os.environ[k] = v
-    os.environ.setdefault("ACCESS_SECRET", "test-access-secret-32-chars-long!!")
-    os.environ.setdefault("REFRESH_SECRET", "test-refresh-secret-32-chars-long!")
-    os.environ.setdefault("ALGORITHM", "HS256")
+    os.environ.setdefault("HASH__ACCESS_SECRET", "test-access-secret-32-chars-long!!")
+    os.environ.setdefault("HASH__REFRESH_SECRET", "test-refresh-secret-32-chars-long!")
+    os.environ.setdefault("HASH__ALGORITHM", "HS256")
 
 
 # ---------------------------------------------------------------------------
@@ -99,20 +92,21 @@ def set_test_env(db_url: str, minio_env: dict):
 
 @pytest_asyncio.fixture(scope="session", autouse=True)
 async def create_tables(set_test_env, db_url: str):
-    """
-    Создаёт все таблицы из метаданных моделей.
-    Это надёжнее чем запускать Alembic в тестах — env.py не лезет в .env файл.
-
-    !! Замени импорт Base на правильный путь своего проекта !!
-    """
     from app.infrastructure.database.base import Base
+    import app.infrastructure.database.models
 
-    engine = create_async_engine(db_url, echo=False)
+    engine = create_async_engine(db_url, 
+                                 echo=False, 
+                                 poolclass=NullPool,)
+    
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        
     yield
+    
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
+        
     await engine.dispose()
 
 
@@ -120,23 +114,17 @@ async def create_tables(set_test_env, db_url: str):
 # SQLAlchemy session (для прямых INSERT в тестах)
 # ---------------------------------------------------------------------------
 
-@pytest_asyncio.fixture(scope="session")
-async def engine(db_url: str):
-    engine = create_async_engine(db_url, echo=False)
-    yield engine
-    await engine.dispose()
-
-
 @pytest_asyncio.fixture()
-async def db_session(engine) -> AsyncGenerator[AsyncSession, None]:
-    """Сессия с откатом транзакции после каждого теста (изоляция)."""
-    async with engine.begin() as conn:
-        async_session = async_sessionmaker(
-            bind=conn, expire_on_commit=False, class_=AsyncSession
-        )
-        async with async_session() as session:
-            yield session
-            await session.rollback()
+async def db_session():
+    async_session = async_sessionmaker(
+        bind=db_helper.engine,
+        expire_on_commit=False,
+        class_=AsyncSession,
+    )
+
+    async with async_session() as session:
+        yield session
+        await session.rollback()
 
 
 # ---------------------------------------------------------------------------
@@ -144,8 +132,15 @@ async def db_session(engine) -> AsyncGenerator[AsyncSession, None]:
 # ---------------------------------------------------------------------------
 
 @pytest.fixture(scope="session")
-def app(create_tables):
+def app(create_tables, db_url):
     """Импортирует FastAPI app после создания таблиц и выставления env."""
+
+    db_helper.init(
+        url=db_url,
+        echo=False,
+        is_test=True,
+    )
+    
     from app.main import main_app as fastapi_app
     return fastapi_app
 
@@ -185,11 +180,11 @@ async def curator_tokens(app) -> dict:
         transport=ASGITransport(app=app),
         base_url="http://test",
     ) as c:
-        resp = await c.post("/api/v1/auth/register", json=CURATOR_DATA)
+        resp = await c.post("/api/auth/register", json=CURATOR_DATA)
         # Если уже зарегистрирован — логинимся
         if resp.status_code == 409:
             resp = await c.post(
-                "/api/v1/auth/login",
+                "/api/auth/login",
                 json={"email": CURATOR_EMAIL, "password": CURATOR_PASSWORD},
             )
         assert resp.status_code in (200, 201), resp.text

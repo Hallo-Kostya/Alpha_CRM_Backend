@@ -7,7 +7,7 @@ from tests.factories import create_project, create_team, create_meeting, uid
 
 pytestmark = pytest.mark.asyncio
 
-BASE = "/api/v1/artifacts"
+BASE = "/api/artifacts"
 
 
 async def create_link_artifact(client: AsyncClient, **overrides) -> dict:

@@ -5,7 +5,7 @@ from tests.factories import create_student, uid
 
 pytestmark = pytest.mark.asyncio
 
-BASE = "/api/v1/students"
+BASE = "/api/students"
 
 
 class TestCreateStudent:

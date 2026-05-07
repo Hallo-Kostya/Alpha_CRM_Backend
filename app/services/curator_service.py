@@ -23,12 +23,6 @@ class CuratorService:
     ):
         self._repo = curator_repo
         self.auth_service = auth_service
-        self.s3_client = S3Client(
-            bucket_name=settings.s3.curator_bucket.name,
-            region_name=settings.s3.region,
-        )
-        self.s3_client.ensure_bucket_exists(policy=settings.s3.curator_bucket.policy)
-        
 
     def _to_orm(self, scheme) -> CuratorModel:
         data = {

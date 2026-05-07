@@ -5,7 +5,7 @@ from tests.factories import create_student, create_team, create_project
 
 pytestmark = pytest.mark.asyncio
 
-BASE = "/api/v1/search"
+BASE = "/api/search"
 
 
 class TestSearch:

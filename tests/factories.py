@@ -31,7 +31,7 @@ async def create_curator(client: AsyncClient, **overrides) -> dict:
         "last_name": "Тестов",
         **overrides,
     }
-    resp = await client.post("/api/v1/auth/register", json=payload)
+    resp = await client.post("/api/auth/register", json=payload)
     assert resp.status_code == 201, resp.text
     return resp.json()
 
@@ -48,7 +48,7 @@ async def create_student(client: AsyncClient, **overrides) -> dict:
         "tg_link": f"@student_{uid()}",
         **overrides,
     }
-    resp = await client.post("/api/v1/students/", json=payload)
+    resp = await client.post("/api/students/", json=payload)
     assert resp.status_code == 201, resp.text
     return resp.json()
 
@@ -63,7 +63,7 @@ async def create_team(client: AsyncClient, **overrides) -> dict:
         "group_link": None,
         **overrides,
     }
-    resp = await client.post("/api/v1/teams/", json=payload)
+    resp = await client.post("/api/teams/", json=payload)
     assert resp.status_code == 201, resp.text
     return resp.json()
 
@@ -78,7 +78,7 @@ async def create_project(client: AsyncClient, **overrides) -> dict:
         "description": "Тестовое описание",
         **overrides,
     }
-    resp = await client.post("/api/v1/projects/", json=payload)
+    resp = await client.post("/api/projects/", json=payload)
     assert resp.status_code == 201, resp.text
     return resp.json()
 
@@ -99,7 +99,7 @@ async def create_meeting(
         "status": "SCHEDULED",
         **overrides,
     }
-    resp = await client.post("/api/v1/meetings/", json=payload)
+    resp = await client.post("/api/meetings/", json=payload)
     assert resp.status_code == 201, resp.text
     return resp.json()
 
@@ -113,6 +113,6 @@ async def create_task(client: AsyncClient, **overrides) -> dict:
         "description": f"Задача {uid()}",
         **overrides,
     }
-    resp = await client.post("/api/v1/tasks/", json=payload)
+    resp = await client.post("/api/tasks/", json=payload)
     assert resp.status_code == 201, resp.text
     return resp.json()

@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from types_aiobotocore_s3 import S3Client
 import uvicorn
 from app.admin.auth import AdminAuth
 from app.api.routes import routers as v2_routers
@@ -19,6 +20,39 @@ from app.admin.setup import (
 )
 
 main_app = FastAPI()
+
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def lifespan(app):
+    s3 = S3Client(
+        bucket_name=settings.s3.curator_bucket.name,
+        region_name=settings.s3.region,
+    )
+
+    await s3.ensure_bucket_exists(
+        policy=settings.s3.curator_bucket.policy
+    )
+
+    yield
+    
+
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def lifespan(app):
+
+    db_helper.init(
+        url=str(settings.db.url),
+        echo=settings.db.echo,
+        echo_pool=settings.db.echo_pool,
+        pool_size=settings.db.pool_size,
+        max_overflow=settings.db.max_overflow,
+    )
+
+    yield
+
+    await db_helper.dispose()
 
 main_app.add_middleware(
     CORSMiddleware,

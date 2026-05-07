@@ -1,4 +1,3 @@
-"""Тесты /api/v1/projects/*"""
 import uuid
 from datetime import datetime
 import pytest
@@ -7,7 +6,7 @@ from tests.factories import create_project, create_team, uid
 
 pytestmark = pytest.mark.asyncio
 
-BASE = "/api/v1/projects"
+BASE = "/api/projects"
 
 
 def current_year() -> int:

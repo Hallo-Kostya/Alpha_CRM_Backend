@@ -1,23 +1,34 @@
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
-from app.core.config import settings
-
+from sqlalchemy.pool import NullPool
 
 class DatabaseHelper:
-    def __init__(
+    def __init__(self):
+        self.engine = None
+        self.async_session_factory = None
+
+    def init(
         self,
         url: str,
         echo: bool = False,
         echo_pool: bool = False,
         pool_size: int = 5,
         max_overflow: int = 10,
+        is_test: bool = False,
     ):
-        self.engine = create_async_engine(
-            url=url,
-            echo=echo,
-            echo_pool=echo_pool,
-            pool_size=pool_size,
-            max_overflow=max_overflow,
-        )
+
+        engine_kwargs = {
+            "url": url,
+            "echo": echo,
+            "echo_pool": echo_pool,
+        }
+
+        if is_test:
+            engine_kwargs["poolclass"] = NullPool
+        else:
+            engine_kwargs["pool_size"] = pool_size
+            engine_kwargs["max_overflow"] = max_overflow
+
+        self.engine = create_async_engine(**engine_kwargs)
 
         self.async_session_factory = async_sessionmaker(
             bind=self.engine,
@@ -27,17 +38,11 @@ class DatabaseHelper:
         )
 
     async def dispose(self):
-        await self.engine.dispose()
+        if self.engine:
+            await self.engine.dispose()
 
     async def session_getter(self):
         async with self.async_session_factory() as session:
             yield session
 
-
-db_helper = DatabaseHelper(
-    url=str(settings.db.url),
-    echo=settings.db.echo,
-    echo_pool=settings.db.echo_pool,
-    pool_size=settings.db.pool_size,
-    max_overflow=settings.db.max_overflow,
-)
+db_helper = DatabaseHelper()
