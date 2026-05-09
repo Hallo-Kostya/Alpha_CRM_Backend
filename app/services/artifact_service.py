@@ -4,7 +4,6 @@ from typing import List, Optional
 from uuid import UUID
 from fastapi import Depends, HTTPException, UploadFile, status
 
-from app.infrastructure.s3_storage.client import S3Client
 from app.infrastructure.database.models.artifacts.artifact import ArtifactModel
 from app.infrastructure.database.models.artifacts.artifact_link import ArtifactLinkModel
 from app.infrastructure.database.repositories.artifact_repository import (
@@ -14,16 +13,13 @@ from app.infrastructure.database.repositories.artifact_repository import (
 from app.core.config import settings
 from app.common.enums import ArtifactType
 from app.schemas.artifacts import ArtifactCreate, ArtifactFileUpload, ArtifactResponse, ArtifactUpdate
+from app.services.storage_service import StorageService
 
 
 class ArtifactService:
-    def __init__(self, artifact_repo: ArtifactRepository):
+    def __init__(self, artifact_repo: ArtifactRepository, storage_service: StorageService):
         self._repo = artifact_repo
-        self._s3 = S3Client(
-            bucket_name=settings.s3.artifacts_bucket.name,
-            region_name=settings.s3.region,
-        )
-        self._s3.ensure_bucket_exists(policy=settings.s3.artifacts_bucket.policy)
+        self.storage_service = storage_service
 
     def _to_schema(self, orm_model: ArtifactModel) -> dict:
         """Преобразуем ORM в словарь для Pydantic"""

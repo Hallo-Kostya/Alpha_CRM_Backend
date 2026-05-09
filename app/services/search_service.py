@@ -11,7 +11,7 @@ from app.infrastructure.database.models.teams.team import TeamModel
 from app.infrastructure.database.repositories.project_repository import ProjectRepository, project_repository_getter
 from app.infrastructure.database.repositories.team_repository import TeamRepository, team_repository_getter
 from app.infrastructure.database.repositories.student_repository import StudentRepository, student_repository_getter
-from app.core.database import db_helper
+from app.infrastructure.database.database import db_helper
 
 class SearchService:
     def __init__(

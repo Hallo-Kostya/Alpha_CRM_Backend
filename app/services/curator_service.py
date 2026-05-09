@@ -9,10 +9,11 @@ from app.infrastructure.database.repositories.curator_repository import (
     CuratorRepository,
     curator_repository_getter,
 )
-from app.infrastructure.s3_storage.client import S3Client
-from uuid import UUID
+from uuid import UUID, uuid4
 from sqlalchemy.exc import IntegrityError
 from typing import List
+
+from app.services.storage_service import StorageService, storage_service_getter
 
 
 class CuratorService:
@@ -20,9 +21,11 @@ class CuratorService:
         self,
         curator_repo: CuratorRepository,
         auth_service: AuthService,
+        storage_service: StorageService,
     ):
         self._repo = curator_repo
         self.auth_service = auth_service
+        self.storage_service = storage_service
 
     def _to_orm(self, scheme) -> CuratorModel:
         data = {
@@ -61,16 +64,13 @@ class CuratorService:
         obj = await self._repo.get_by_id(curator_id)
         if not obj:
             return False
-        
-        # Delete avatar from S3 if exists
+
         if obj.avatar_s3_path:
             try:
-                # URL: http://localhost:9000/curators/avatars/uuid/filename.jpg
-                # Extract key: avatars/uuid/filename.jpg
                 key = obj.avatar_s3_path.split(f"{settings.s3.curator_bucket.name}/", 1)[1]
-                await self.s3_client.delete_object(key)
+                await self.storage_service.delete_curator_img(key)
             except Exception:
-                pass  # Log but don't fail
+                pass
         
         await self._repo.delete(obj)
         return True
@@ -101,7 +101,7 @@ class CuratorService:
         except IntegrityError:
             return None
 
-    # app/services/curator_service.py
+
     async def login_curator(
         self,
         curator_data: CuratorPostBase,
@@ -120,36 +120,52 @@ class CuratorService:
         
         auth_tokens = await self.auth_service.create_token_pair(existing_curator.id)
         return auth_tokens
+    
     async def logout_curator(self, refresh_token: str) -> None:
         await self.auth_service.revoke_token_pair(refresh_token)
+
+    async def _build_avatar_path(curator_id: UUID, file_name: str) -> str:
+        return await f"avatars/{curator_id}/{file_name}"
 
     async def upload_avatar(
         self,
         file: UploadFile,
         curator_id: UUID,
-    ) -> Curator | None:
-        """Upload curator avatar to S3."""
-        content = await file.read()
-        avatar_file_path = build_avatar_path(
-            curator_id, file.filename if file.filename else "default.jpg"
+        old_key: str | None = None,
+    ) -> Curator:
+
+        key = await self.storage_service.upload_curator_img(
+            file=file,
+            key_prefix=f"avatars/{curator_id}"
         )
-        
-        url = await self.s3_client.put_object(
-            key=avatar_file_path,
-            body=content,
-            content_type=file.content_type or "image/jpeg",
+
+        data_to_update = CuratorPATCH(
+            avatar_s3_path=key
         )
-        
-        data_to_update = CuratorPATCH(avatar_s3_path=url)
-        return await self.update(curator_id, data_to_update)
+
+        try:
+            updated_curator = await self.update(
+                curator_id,
+                data_to_update,
+            )
+
+        except Exception:
+            await self.storage_service.delete_curator_img(key)
+            raise
+
+        if old_key:
+            try:
+                await self.storage_service.delete_curator_img(old_key)
+
+            except Exception as e:
+                pass
+
+        return updated_curator
 
 
 def curator_service_getter(
     curator_repository: CuratorRepository = Depends(curator_repository_getter),
     auth_service: AuthService = Depends(auth_service_getter),
+    storage_service: StorageService = Depends(storage_service_getter),
 ) -> CuratorService:
-    return CuratorService(curator_repository, auth_service)
-
-
-def build_avatar_path(curator_id: UUID, file_name: str) -> str:
-    return f"avatars/{curator_id}/{file_name}"
+    return CuratorService(curator_repository, auth_service, storage_service)

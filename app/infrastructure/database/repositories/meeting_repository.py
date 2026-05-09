@@ -8,7 +8,7 @@ from sqlalchemy.orm import selectinload
 
 from app.infrastructure.database.repositories.base_repository import BaseRepository
 from app.infrastructure.database.models.meetings.meeting import MeetingModel
-from app.core.database import db_helper
+from app.infrastructure.database.database import db_helper
 
 
 class MeetingRepository(BaseRepository[MeetingModel]):

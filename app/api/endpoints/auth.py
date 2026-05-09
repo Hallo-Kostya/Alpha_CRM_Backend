@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
 from app.api.dependencies import get_current_curator
 from app.schemas.curator import CuratorPOST, CuratorPostBase, Curator
 from app.schemas.auth import TokenPairResponse
@@ -82,3 +82,13 @@ async def me(
 ):
     """Get current curator profile."""
     return Curator.model_validate(current_curator, from_attributes=True)
+
+
+@router.post("/me/avatar", response_model=Curator)
+async def add_avatar_to_curator(
+    file: UploadFile,
+    curator_service: CuratorService = Depends(curator_service_getter),
+    current_curator: CuratorModel = Depends(get_current_curator),
+) -> Curator | None:
+    """Upload avatar and update curator profile."""
+    return await curator_service.upload_avatar(file, curator_id=current_curator.id)

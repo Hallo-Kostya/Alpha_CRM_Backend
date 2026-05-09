@@ -1,9 +1,9 @@
 from fastapi import FastAPI
-from app.infrastructure.s3_storage.client import S3Client
 import uvicorn
 from app.admin.auth import AdminAuth
 from app.api.routes import routers as v2_routers
-from app.core.database import db_helper
+from app.infrastructure.database.database import db_helper
+from app.infrastructure.s3_storage.init import init_s3
 from app.schemas.curator import Curator
 from app.schemas.team import Team
 from app.schemas.project import Project
@@ -31,15 +31,8 @@ async def lifespan(app: FastAPI):
         pool_size=settings.db.pool_size,
         max_overflow=settings.db.max_overflow,
     )
-
-    s3_client = S3Client(
-        bucket_name=settings.s3.curator_bucket.name,
-        region_name=settings.s3.region,
-    )
-
-    await s3_client.ensure_bucket_exists(
-        policy=settings.s3.curator_bucket.policy
-    )
+    
+    await init_s3()
     
     authentication_backend = AdminAuth(secret_key=settings.hash.access_secret)
     admin = Admin(

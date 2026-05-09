@@ -16,7 +16,7 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from testcontainers.minio import MinioContainer
 from testcontainers.postgres import PostgresContainer
-from app.core.database import db_helper
+from app.infrastructure.database.database import db_helper
 
 # ---------------------------------------------------------------------------
 # Postgres

@@ -4,7 +4,7 @@ from app.infrastructure.database.repositories.base_repository import (
     BaseRepository,
 )
 from app.infrastructure.database.models import TeamModel
-from app.core.database import db_helper
+from app.infrastructure.database.database import db_helper
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, join

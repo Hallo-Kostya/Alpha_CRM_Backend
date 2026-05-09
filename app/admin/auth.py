@@ -2,7 +2,7 @@ from sqladmin.authentication import AuthenticationBackend
 from starlette.requests import Request
 from app.services.auth_service import AuthService
 from app.infrastructure.database.repositories.curator_repository import CuratorRepository
-from app.core.database import db_helper
+from app.infrastructure.database.database import db_helper
 
 
 class AdminAuth(AuthenticationBackend):

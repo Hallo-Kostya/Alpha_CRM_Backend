@@ -5,7 +5,7 @@ from sqlalchemy import select, delete
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Depends
-from app.core.database import db_helper
+from app.infrastructure.database.database import db_helper
 
 from app.infrastructure.database.models.artifacts.artifact import ArtifactModel
 from app.infrastructure.database.models.artifacts.artifact_link import ArtifactLinkModel

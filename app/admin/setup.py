@@ -3,7 +3,7 @@ from app.infrastructure.database.models import (
     CuratorModel, StudentModel, TeamModel, 
     ProjectModel, MeetingModel, TaskModel
 )
-from app.core.database import db_helper
+from app.infrastructure.database.database import db_helper
 
 
 class CuratorAdmin(ModelView, model=CuratorModel):
