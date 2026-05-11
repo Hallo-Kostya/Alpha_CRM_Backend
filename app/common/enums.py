@@ -55,6 +55,7 @@ class ArtifactEntityType(StrAutoEnum):
     """Entity type that can have artifacts."""
     TEAM = auto()
     MEETING = auto()
+    PROJECT = auto()
 
 
 class AttendanceEntityType(StrAutoEnum):

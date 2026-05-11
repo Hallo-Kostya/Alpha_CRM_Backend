@@ -1,8 +1,8 @@
 """init base
 
-Revision ID: 272f739779ce
+Revision ID: 9a3489bce8a6
 Revises: 
-Create Date: 2026-05-03 20:08:32.793997
+Create Date: 2026-05-11 23:36:30.580904
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '272f739779ce'
+revision: str = '9a3489bce8a6'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -25,7 +25,10 @@ def upgrade() -> None:
     sa.Column('name', sa.String(length=255), nullable=False),
     sa.Column('description', sa.String(length=2000), nullable=True),
     sa.Column('type', sa.Enum('FILE', 'VIDEO', 'LINK', name='artifacttype', native_enum=False), nullable=False),
-    sa.Column('url', sa.String(length=512), nullable=False),
+    sa.Column('checksum', sa.String(), nullable=False),
+    sa.Column('size', sa.BigInteger(), nullable=False),
+    sa.Column('content_type', sa.String(), nullable=False),
+    sa.Column('s3_key', sa.String(), nullable=False),
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('created_by', sa.UUID(), nullable=True),
@@ -33,6 +36,7 @@ def upgrade() -> None:
     sa.Column('updated_by', sa.UUID(), nullable=True),
     sa.PrimaryKeyConstraint('id', name=op.f('pk_artifacts'))
     )
+    op.create_index(op.f('ix_artifacts_checksum'), 'artifacts', ['checksum'], unique=False)
     op.create_index(op.f('ix_artifacts_created_by'), 'artifacts', ['created_by'], unique=False)
     op.create_index(op.f('ix_artifacts_updated_by'), 'artifacts', ['updated_by'], unique=False)
     op.create_table('curators',
@@ -110,6 +114,18 @@ def upgrade() -> None:
     )
     op.create_index(op.f('ix_teams_created_by'), 'teams', ['created_by'], unique=False)
     op.create_index(op.f('ix_teams_updated_by'), 'teams', ['updated_by'], unique=False)
+    op.create_table('artifact_links',
+    sa.Column('id', sa.UUID(), nullable=False),
+    sa.Column('artifact_id', sa.UUID(), nullable=False),
+    sa.Column('entity_type', sa.String(), nullable=False),
+    sa.Column('entity_id', sa.UUID(), nullable=False),
+    sa.ForeignKeyConstraint(['artifact_id'], ['artifacts.id'], name=op.f('fk_artifact_links_artifact_id_artifacts'), ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_artifact_links')),
+    sa.UniqueConstraint('artifact_id', 'entity_type', 'entity_id', name='uq_artifact_link_unique')
+    )
+    op.create_index(op.f('ix_artifact_links_artifact_id'), 'artifact_links', ['artifact_id'], unique=False)
+    op.create_index(op.f('ix_artifact_links_entity_id'), 'artifact_links', ['entity_id'], unique=False)
+    op.create_index(op.f('ix_artifact_links_entity_type'), 'artifact_links', ['entity_type'], unique=False)
     op.create_table('auth_sessions',
     sa.Column('curator_id', sa.UUID(), nullable=False),
     sa.Column('token_hash', sa.String(length=255), nullable=False),
@@ -239,22 +255,6 @@ def upgrade() -> None:
     )
     op.create_index(op.f('ix_team_members_created_by'), 'team_members', ['created_by'], unique=False)
     op.create_index(op.f('ix_team_members_updated_by'), 'team_members', ['updated_by'], unique=False)
-    op.create_table('artifact_links',
-    sa.Column('id', sa.UUID(), nullable=False),
-    sa.Column('artifact_id', sa.UUID(), nullable=False),
-    sa.Column('project_id', sa.UUID(), nullable=True),
-    sa.Column('meeting_id', sa.UUID(), nullable=True),
-    sa.CheckConstraint('(project_id IS NOT NULL AND meeting_id IS NULL) OR (project_id IS NULL AND meeting_id IS NOT NULL)', name=op.f('ck_artifact_links_ck_artifact_links_one_fk')),
-    sa.ForeignKeyConstraint(['artifact_id'], ['artifacts.id'], name=op.f('fk_artifact_links_artifact_id_artifacts'), ondelete='CASCADE'),
-    sa.ForeignKeyConstraint(['meeting_id'], ['meetings.id'], name=op.f('fk_artifact_links_meeting_id_meetings'), ondelete='CASCADE'),
-    sa.ForeignKeyConstraint(['project_id'], ['projects.id'], name=op.f('fk_artifact_links_project_id_projects'), ondelete='CASCADE'),
-    sa.PrimaryKeyConstraint('id', name=op.f('pk_artifact_links')),
-    sa.UniqueConstraint('artifact_id', 'meeting_id', name='uq_artifact_links_artifact_meeting'),
-    sa.UniqueConstraint('artifact_id', 'project_id', name='uq_artifact_links_artifact_project')
-    )
-    op.create_index(op.f('ix_artifact_links_artifact_id'), 'artifact_links', ['artifact_id'], unique=False)
-    op.create_index(op.f('ix_artifact_links_meeting_id'), 'artifact_links', ['meeting_id'], unique=False)
-    op.create_index(op.f('ix_artifact_links_project_id'), 'artifact_links', ['project_id'], unique=False)
     op.create_table('attendances',
     sa.Column('meeting_id', sa.UUID(), nullable=False),
     sa.Column('student_id', sa.UUID(), nullable=True),
@@ -307,10 +307,6 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_attendances_curator_id'), table_name='attendances')
     op.drop_index(op.f('ix_attendances_created_by'), table_name='attendances')
     op.drop_table('attendances')
-    op.drop_index(op.f('ix_artifact_links_project_id'), table_name='artifact_links')
-    op.drop_index(op.f('ix_artifact_links_meeting_id'), table_name='artifact_links')
-    op.drop_index(op.f('ix_artifact_links_artifact_id'), table_name='artifact_links')
-    op.drop_table('artifact_links')
     op.drop_index(op.f('ix_team_members_updated_by'), table_name='team_members')
     op.drop_index(op.f('ix_team_members_created_by'), table_name='team_members')
     op.drop_table('team_members')
@@ -335,6 +331,10 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_auth_sessions_token_hash'), table_name='auth_sessions')
     op.drop_index(op.f('ix_auth_sessions_created_by'), table_name='auth_sessions')
     op.drop_table('auth_sessions')
+    op.drop_index(op.f('ix_artifact_links_entity_type'), table_name='artifact_links')
+    op.drop_index(op.f('ix_artifact_links_entity_id'), table_name='artifact_links')
+    op.drop_index(op.f('ix_artifact_links_artifact_id'), table_name='artifact_links')
+    op.drop_table('artifact_links')
     op.drop_index(op.f('ix_teams_updated_by'), table_name='teams')
     op.drop_index(op.f('ix_teams_created_by'), table_name='teams')
     op.drop_table('teams')
@@ -352,5 +352,6 @@ def downgrade() -> None:
     op.drop_table('curators')
     op.drop_index(op.f('ix_artifacts_updated_by'), table_name='artifacts')
     op.drop_index(op.f('ix_artifacts_created_by'), table_name='artifacts')
+    op.drop_index(op.f('ix_artifacts_checksum'), table_name='artifacts')
     op.drop_table('artifacts')
     # ### end Alembic commands ###

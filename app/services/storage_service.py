@@ -1,3 +1,4 @@
+from io import BytesIO
 from uuid import uuid4
 
 from fastapi import UploadFile
@@ -32,25 +33,20 @@ class StorageService:
 
     async def upload_artifacts(
         self,
-        file: UploadFile,
-        key_prefix: str,
-    ) -> str:
-
-        ext = file.filename.split(".")[-1]
-
-        key = f"{key_prefix}/{uuid4()}.{ext}"
+        content: bytes,
+        key: str,
+        content_type: str,
+    ) -> None:
 
         async with get_s3_client() as s3:
             await s3.upload_fileobj(
-                file.file,
+                BytesIO(content),
                 settings.s3.artifacts_bucket.name,
                 key,
                 ExtraArgs={
-                    "ContentType": file.content_type,
+                    "ContentType": content_type,
                 }
             )
-
-        return key
 
     async def generate_private_url(
         self,

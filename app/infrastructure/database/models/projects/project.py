@@ -68,12 +68,3 @@ class ProjectModel(BaseEntity):
         back_populates="projects",
         viewonly=True,
     )
-    
-    # Артефакты проекта
-    artifact_links: Mapped[list["ArtifactLinkModel"]] = relationship(
-        "ArtifactLinkModel",
-        foreign_keys="ArtifactLinkModel.project_id",
-        back_populates="project",
-        cascade="all, delete-orphan",
-    )
-

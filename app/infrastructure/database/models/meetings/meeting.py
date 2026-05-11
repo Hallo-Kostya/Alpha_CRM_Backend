@@ -77,12 +77,3 @@ class MeetingModel(BaseEntity):
         back_populates="meeting",
         cascade="all, delete-orphan",
     )
-    
-    # Артефакты встречи
-    artifact_links: Mapped[list["ArtifactLinkModel"]] = relationship(
-        "ArtifactLinkModel",
-        foreign_keys="ArtifactLinkModel.meeting_id",
-        back_populates="meeting",
-        cascade="all, delete-orphan",
-    )
-

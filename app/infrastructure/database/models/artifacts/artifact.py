@@ -1,5 +1,5 @@
 from typing import TYPE_CHECKING
-from sqlalchemy import String, Enum as SQLEnum
+from sqlalchemy import BigInteger, Index, String, Enum as SQLEnum, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.infrastructure.database.models.entity_base import BaseEntity
@@ -23,9 +23,21 @@ class ArtifactModel(BaseEntity):
         values_callable=lambda x: [e.value for e in ArtifactType]),
         nullable=False,
     )
-    # URL артефакта
-    url: Mapped[str] = mapped_column(String(512), nullable=False)
-    # Связь с ссылкой на артефакт
+    checksum: Mapped[str] = mapped_column(String, index=True, nullable=False)
+    size: Mapped[str] = mapped_column(BigInteger, nullable=False)
+    content_type: Mapped[str] = mapped_column(String, nullable=False)
+    s3_key: Mapped[str] = mapped_column(String, nullable=False)
+    UniqueConstraint(
+        "artifact_id",
+        "entity_type",
+        "entity_id",
+        name="uq_artifact_link"
+    )
+    Index(
+        "ix_artifact_entity",
+        "entity_type",
+        "entity_id"
+    )
     artifact_links: Mapped[list["ArtifactLinkModel"]] = relationship(
         "ArtifactLinkModel",
         back_populates="artifact",

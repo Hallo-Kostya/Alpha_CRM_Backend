@@ -15,7 +15,7 @@ from app.core.middleware import PrometheusMiddleware
 
 from sqladmin import Admin
 from app.admin.setup import (
-    CuratorAdmin, StudentAdmin, TeamAdmin,
+    ArtifactAdmin, ArtifactLinkAdmin, CuratorAdmin, StudentAdmin, TeamAdmin,
     ProjectAdmin, MeetingAdmin, TaskAdmin
 )
 
@@ -49,6 +49,8 @@ async def lifespan(app: FastAPI):
     admin.add_view(ProjectAdmin)
     admin.add_view(MeetingAdmin)
     admin.add_view(TaskAdmin)
+    admin.add_view(ArtifactAdmin)
+    admin.add_view(ArtifactLinkAdmin)
 
     yield
 
