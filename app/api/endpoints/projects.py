@@ -4,7 +4,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, HTTPException, Response, status
 from app.api.dependencies import get_current_curator
-from app.schemas.project import ProjectSummaryResponse, ProjectCreateMinimal, ProjectUpdate
+from app.schemas.project import ProjectCreate, ProjectSummaryResponse, ProjectCreateMinimal, ProjectUpdate
 from app.schemas.project_team import ProjectTeamCreate
 from app.services.projects_service import (
     project_service_getter,
@@ -33,7 +33,7 @@ router = APIRouter(
     status_code=status.HTTP_201_CREATED,
 )
 async def create_project_minimal(
-    data: ProjectCreateMinimal,
+    data: ProjectCreate,
     service: ProjectService = Depends(project_service_getter),
 ):
     return await service.create(data)
