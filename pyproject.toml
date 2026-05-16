@@ -34,7 +34,8 @@ dependencies = [
     "sqladmin (>=0.25.0,<0.26.0)",
     "itsdangerous (>=2.2.0,<3.0.0)",
     "anyio[trio] (>=4.13.0,<5.0.0)",
-    "bcrypt (==3.2.0)"
+    "bcrypt (==3.2.0)",
+    "openai (>=2.36.0,<3.0.0)"
 ]
 
 

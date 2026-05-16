@@ -111,6 +111,10 @@ class DatabaseConfig(BaseModel):
         )
 
 
+class AIClientConfig(BaseModel):
+    api_key: str = ""
+    base_url: str = "https://openrouter.ai/api/v1"
+    
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=BASE_DIR / ".env",
@@ -124,6 +128,7 @@ class Settings(BaseSettings):
     hash: HashConfig = HashConfig()
     s3: S3Config = S3Config()
     frontend: FrontendConfig = FrontendConfig()
+    ai: AIClientConfig = AIClientConfig()
 
 
 settings = Settings()  # type: ignore

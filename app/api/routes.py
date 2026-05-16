@@ -10,6 +10,7 @@ from app.api.endpoints.tasks import router as tasks_router
 from app.api.endpoints.search import router as search_router
 from app.api.endpoints.auth import router as auth_router
 from app.api.endpoints.artifact import router as artifacts_router
+from app.api.endpoints.ai import router as ai_router
 
 routers = APIRouter()
 
@@ -22,6 +23,7 @@ router_list = [
     search_router,
     auth_router,
     artifacts_router,
+    ai_router,
 ]
 
 for router in router_list:
