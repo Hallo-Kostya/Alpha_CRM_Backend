@@ -17,3 +17,12 @@ async def search_entities(
 ):
     """Ищет по проектам, командам и студентам. Возвращает карточки для фронта."""
     return await service.search_entities(q, limit)
+
+@router.get("/students", summary="Поиск по студентам")
+async def search_students(
+    q: str = Query(..., description="Имя, фамилия или email студента"),
+    limit: int = Query(20, description="Максимум результатов"),
+    service: SearchService = Depends(search_service_getter),
+):
+    """Поиск только по студентам. Возвращает расширенные карточки с email и группой."""
+    return await service.search_students(q, limit)
