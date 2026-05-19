@@ -3,7 +3,8 @@
 from fastapi import APIRouter, Depends
 
 from app.api.dependencies import get_current_curator
-from app.services.ai_service import AIService, RequestData, ai_service_getter
+from app.schemas.project import ProjectCreate
+from app.services.ai_service import AIService, ai_service_getter
 
 
 router = APIRouter(
@@ -14,5 +15,5 @@ router = APIRouter(
 )
 
 @router.post("/auto-fill-data")
-async def auto_fill(data: RequestData, service: AIService = Depends(ai_service_getter)):
+async def auto_fill(data: ProjectCreate, service: AIService = Depends(ai_service_getter)):
     return await service.auto_fill(data)
