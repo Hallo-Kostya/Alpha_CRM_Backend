@@ -18,10 +18,8 @@ if TYPE_CHECKING:
     from app.infrastructure.database.models.teams.team import TeamModel
 
 
-class MeetingModel(BaseEntity):
-    """Модель встречи"""
-
-    __tablename__ = "meetings"
+class BaseMeetingModel(BaseEntity):
+    __abstract__ = True
 
     # Название встречи
     name: Mapped[str] = mapped_column(String(255), nullable=False)
@@ -29,8 +27,6 @@ class MeetingModel(BaseEntity):
     resume: Mapped[str | None] = mapped_column(String(2000), nullable=True)
     # Дата начала встречи
     date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    # # Дата конца встречи
-    # date_to: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     # Статус встречи
     status: Mapped[MeetingStatus] = mapped_column(
         SQLEnum(
@@ -41,6 +37,16 @@ class MeetingModel(BaseEntity):
         nullable=False,
         default=MeetingStatus.SCHEDULED.value,
     )
+
+    def __str__(self) -> str:
+        return f"Встреча: {self.name}, статус: {self.status}, дата: {self.date}"
+
+
+class MeetingModel(BaseMeetingModel):
+    """Модель встречи"""
+
+    __tablename__ = "meetings"
+
     # Предыдущая встреча
     previous_meeting_id: Mapped[UUID | None] = mapped_column(
         UUID(as_uuid=True),

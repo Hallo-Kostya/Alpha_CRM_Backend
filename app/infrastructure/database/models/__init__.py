@@ -15,6 +15,9 @@ from app.infrastructure.database.models.projects import (
     EvaluationModel,
     ProjectTeamModel,
     ProjectApplicationModel,
+    ProjectApplicationMemberModel,
+    ProjectInterviewModel,
+    ArtifactInterviewModel,
 )
 from app.infrastructure.database.models.meetings import (
     MeetingModel,
@@ -28,7 +31,7 @@ from app.infrastructure.database.models.artifacts import (
 )
 from app.infrastructure.database.models.auth_tokens import (
     OAuthTokenModel,
-    RefreshTokenModel
+    RefreshTokenModel,
 )
 
 __all__ = [
@@ -45,7 +48,11 @@ __all__ = [
     "MilestoneModel",
     "EvaluationModel",
     "ProjectTeamModel",
+    # ProjectApplications
     "ProjectApplicationModel",
+    "ProjectApplicationMemberModel",
+    "ArtifactInterviewModel",
+    "ProjectInterviewModel",
     # Meetings
     "MeetingModel",
     "TaskModel",

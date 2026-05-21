@@ -1,5 +1,4 @@
-from sqladmin import Admin, ModelView
-from sqlalchemy.orm import selectinload, joinedload
+from sqladmin import ModelView
 from app.infrastructure.database.models import (
     CuratorModel,
     StudentModel,
@@ -10,7 +9,6 @@ from app.infrastructure.database.models import (
     TeamMemberModel,
     ProjectApplicationModel,
 )
-from app.core.database import db_helper
 
 
 class RulesMixin:
@@ -105,10 +103,9 @@ class TeamMemberAdmin(ModelView, RulesMixin, model=TeamMemberModel):
 class ProjectApplicationAdmin(ModelView, RulesMixin, model=ProjectApplicationModel):
     column_list = [
         ProjectApplicationModel.id,
-        ProjectApplicationModel.team,
         ProjectApplicationModel.project,
         ProjectApplicationModel.vk_sender_id,
         ProjectApplicationModel.status,
-        ProjectApplicationModel.meeting,
+        ProjectApplicationModel.interview,
         ProjectApplicationModel.mean_project_score,
     ]

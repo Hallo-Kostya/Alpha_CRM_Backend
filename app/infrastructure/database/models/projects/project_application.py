@@ -1,80 +1,142 @@
 from typing import TYPE_CHECKING
-from sqlalchemy import ForeignKey, UniqueConstraint, Integer, Float
+from sqlalchemy import ForeignKey, String, Integer, Float
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy import Enum as SQLEnum
-
+from app.infrastructure.database.base import Base
 from app.common.enums import ProjectApplicationStatus
 from app.infrastructure.database.models.entity_base import BaseEntity
-
+from app.infrastructure.database.models.meetings.meeting import BaseMeetingModel
 
 if TYPE_CHECKING:
     from app.infrastructure.database.models.projects.project import ProjectModel
-    from app.infrastructure.database.models.teams.team import TeamModel
-    from app.infrastructure.database.models.meetings import MeetingModel
+
+
+class ProjectApplicationMemberModel(BaseEntity):
+    __tablename__ = "project_application_members"
+
+    project_application_id: Mapped[UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("project_applications.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    fullname: Mapped[str] = mapped_column(String(255), nullable=False)
+    role: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    study_group: Mapped[str | None] = mapped_column(String(100), nullable=True)
+
+    project_application: Mapped["ProjectApplicationModel"] = relationship(
+        "ProjectApplicationModel",
+        back_populates="members",
+    )
+
+
+class ArtifactInterviewModel(Base):
+    """Модель связи артефакта с интервью"""
+
+    __tablename__ = "interview_artifacts"
+
+    # FK на артефакт
+    artifact_id: Mapped[UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("artifacts.id", ondelete="CASCADE"),
+        nullable=False,
+        primary_key=True,
+    )
+    # FK на интервью
+    interview_id: Mapped[UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("project_interviews.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+
+    interview: Mapped["ProjectInterviewModel"] = relationship(
+        "ProjectInterviewModel", back_populates="artifact_links"
+    )
+
+
+class ProjectInterviewModel(BaseMeetingModel):
+    __tablename__ = "project_interviews"
+
+    # FK на заявку
+    project_application_id: Mapped[UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("project_applications.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+
+    # Артефакты встречи
+    artifact_links: Mapped[list["ArtifactInterviewModel"]] = relationship(
+        "ArtifactInterviewModel",
+        back_populates="interview",
+        cascade="all, delete-orphan",
+    )
+
+    # Связь с заявкой
+    project_application: Mapped["ProjectApplicationModel"] = relationship(
+        "ProjectApplicationModel",
+        back_populates="interview",
+    )
 
 
 class ProjectApplicationModel(BaseEntity):
     """Модель заявки на исполнение проекта"""
+
     __tablename__ = "project_applications"
-    
+
     # ID проекта
     project_id: Mapped[UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("projects.id", ondelete="CASCADE"),
-        nullable=False,  # NOT NULL вместо primary_key
+        nullable=False,
     )
-    # ID команды
-    team_id: Mapped[UUID] = mapped_column(
-        UUID(as_uuid=True),
-        ForeignKey("teams.id", ondelete="CASCADE"),
-        nullable=False,  # NOT NULL вместо primary_key
-    )
-    # ID встречи (интервью)
-    meeting_id: Mapped[UUID] = mapped_column(
-        UUID(as_uuid=True),
-        ForeignKey("meetings.id", ondelete="CASCADE"),
-        nullable=True,
-        default=None
-    )
-    
-    # ID отправителя заявки из вк
-    vk_sender_id: Mapped[int | None] = mapped_column(Integer, default=None, nullable=True)
 
+    # Описание заявки
+    description: Mapped[str] = mapped_column(String(2000), nullable=True)
+
+    # Название команды
+    team_name: Mapped[str] = mapped_column(String(255), nullable=False)
+
+    # Участники команды
+    members: Mapped[list["ProjectApplicationMemberModel"]] = relationship(
+        "ProjectApplicationMemberModel",
+        back_populates="project_application",
+        cascade="all, delete-orphan",
+    )
+
+    # ID отправителя заявки из вк
+    vk_sender_id: Mapped[int | None] = mapped_column(
+        Integer, default=None, nullable=True
+    )
+
+    # Статус заявки
     status: Mapped[ProjectApplicationStatus] = mapped_column(
         SQLEnum(  # Используем SQLEnum вместо StrEnum
-            ProjectApplicationStatus, 
-            native_enum=False, 
-            values_callable=lambda x: [e.value for e in ProjectApplicationStatus]
+            ProjectApplicationStatus,
+            native_enum=False,
+            values_callable=lambda x: [e.value for e in ProjectApplicationStatus],
         ),
         nullable=False,
-        default=ProjectApplicationStatus.NEW
+        default=ProjectApplicationStatus.NEW,
     )
-    
-    __table_args__ = (
-        UniqueConstraint("project_id", "team_id", name="uq_project_applications_team"),
-        # Обеспечиваем уникальность пары project_id + team_id
-    )
-    
+
     # Связь с проектом
     project: Mapped["ProjectModel"] = relationship(
         "ProjectModel",
         back_populates="project_applications",
     )
-    
-    # Связь с командой
-    team: Mapped["TeamModel"] = relationship(
-        "TeamModel",
-        back_populates="team_applications",
-    )
 
-    # Связь с интервью 
-    meeting: Mapped["MeetingModel"] = relationship(
-        "MeetingModel"
+    # Связь с интервью
+    interview: Mapped["ProjectInterviewModel"] = relationship(
+        "ProjectInterviewModel",
+        back_populates="project_application",
+        cascade="all, delete-orphan",
+        single_parent=True,
     )
 
     # последний результат команды
-    mean_project_score: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
+    mean_project_score: Mapped[float] = mapped_column(
+        Float, default=0.0, nullable=False
+    )
 
     def __str__(self) -> str:
-        return f"{self.id}: Заявка на {self.project_id} от {self.team_id}, отправитель из вк: {self.vk_sender_id}"
+        return f"Команда: {self.team_name}, проект: {self.project_id}"

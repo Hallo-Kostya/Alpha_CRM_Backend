@@ -10,15 +10,16 @@ from app.common.fields import NameField
 
 class Student(BaseModel):
     """Student model with all fields."""
+
     model_config = ConfigDict(from_attributes=True)
-    
+
     id: UUID
     first_name: str
     last_name: str
+    email: str
     patronymic: Optional[str] = None
-    email: Optional[str] = None
     tg_link: Optional[str] = None
-    
+
     def full_name(self) -> str:
         """Get full name."""
         if self.patronymic:
@@ -30,7 +31,7 @@ class StudentCreate(BaseModel):
     first_name: NameField = Field(..., examples=["Имя студента"])
     last_name: NameField = Field(..., examples=["Фамилия студента"])
     patronymic: Optional[NameField] = Field(None, examples=["Отчество студента"])
-    email: Optional[str] = None
+    email: str
     tg_link: Optional[str] = None
 
 
@@ -48,8 +49,8 @@ class StudentRead(BaseModel):
     id: UUID
     first_name: str
     last_name: str
+    email: str
     patronymic: Optional[str] = None
-    email: Optional[str] = None
     tg_link: Optional[str] = None
 
 
@@ -64,8 +65,8 @@ class StudentDetailed(BaseModel):
     id: UUID
     first_name: str
     last_name: str
+    email: str
     patronymic: Optional[str] = None
-    email: Optional[str] = None
     tg_link: Optional[str] = None
     role: Optional[str] = None
     study_group: Optional[str] = None
