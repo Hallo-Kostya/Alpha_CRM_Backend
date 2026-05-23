@@ -1,18 +1,16 @@
 # app/api/v1/artifacts.py
-from typing import List, Optional
 from uuid import UUID
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, status, Response
+from fastapi import APIRouter, Depends, UploadFile
 
 from app.api.dependencies import get_current_curator
 from app.common.enums import ArtifactEntityType
-from app.schemas.artifacts import ArtifactCreate, ArtifactFileUpload, ArtifactResponse, ArtifactUpdate
 from app.services.artifact_service import ArtifactService, artifact_service_getter
 
 router = APIRouter(
     prefix="/artifacts",
     tags=["artifacts"],
     responses={404: {"description": "Artifact not found"}},
-    dependencies=[Depends(get_current_curator)]
+    dependencies=[Depends(get_current_curator)],
 )
 
 
@@ -28,7 +26,7 @@ async def get_artifacts(
     )
 
 
-@router.post("/{project_id}/artifacts")
+@router.post("/project/{project_id}/artifacts")
 async def upload_project_artifact(
     project_id: UUID,
     file: UploadFile,
@@ -39,9 +37,9 @@ async def upload_project_artifact(
         entity_type=ArtifactEntityType.PROJECT,
         entity_id=project_id,
     )
-    
 
-@router.post("/{meeting_id}/artifacts")
+
+@router.post("/meeting/{meeting_id}/artifacts")
 async def upload_meeting_artifact(
     meeting_id: UUID,
     file: UploadFile,
@@ -52,7 +50,20 @@ async def upload_meeting_artifact(
         entity_type=ArtifactEntityType.MEETING,
         entity_id=meeting_id,
     )
-    
+
+
+@router.post("/intervew/{interview_id}/artifacts")
+async def upload_interview_artifact(
+    interview_id: UUID,
+    file: UploadFile,
+    service: ArtifactService = Depends(artifact_service_getter),
+):
+    return await service.create_and_attach(
+        file=file,
+        entity_type=ArtifactEntityType.INTERVIEW,
+        entity_id=interview_id,
+    )
+
 
 @router.delete("/{artifact_id}/links")
 async def detach_artifact(

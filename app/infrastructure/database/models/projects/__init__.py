@@ -6,7 +6,6 @@ from app.infrastructure.database.models.projects.project_application import (
     ProjectApplicationModel,
     ProjectApplicationMemberModel,
     ProjectInterviewModel,
-    ArtifactInterviewModel,
 )
 
 __all__ = [
@@ -17,5 +16,4 @@ __all__ = [
     "ProjectApplicationModel",
     "ProjectApplicationMemberModel",
     "ProjectInterviewModel",
-    "ArtifactInterviewModel",
 ]

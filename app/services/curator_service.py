@@ -1,5 +1,5 @@
 from fastapi import Depends, UploadFile
-from app.schemas.curator import CuratorPOST, CuratorPATCH, Curator
+from app.schemas.curator import CuratorPOST, CuratorPATCH, Curator, CuratorPostBase
 from app.services.auth_service import AuthService, auth_service_getter
 from app.core.config import settings
 from app.infrastructure.database.models import CuratorModel
@@ -89,8 +89,6 @@ class CuratorService:
     async def get_by_email(self, email: str) -> Curator | None:
         total, curators = await self._repo.get_list(filters={"email": email})
         if curators:
-            if raw:
-                return curators[0]
             return self._to_schema(curators[0])
         return None
 
@@ -128,8 +126,8 @@ class CuratorService:
     async def logout_curator(self, refresh_token: str) -> None:
         await self.auth_service.revoke_token_pair(refresh_token)
 
-    async def _build_avatar_path(curator_id: UUID, file_name: str) -> str:
-        return await f"avatars/{curator_id}/{file_name}"
+    def _build_avatar_path(self, curator_id: UUID, file_name: str) -> str:
+        return f"avatars/{curator_id}/{file_name}"
 
     async def upload_avatar(
         self,

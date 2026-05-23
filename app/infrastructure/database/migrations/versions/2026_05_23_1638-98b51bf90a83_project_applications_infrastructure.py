@@ -1,8 +1,8 @@
 """project applications infrastructure
 
-Revision ID: 9357ac967fc7
-Revises: 74459f8b88a7
-Create Date: 2026-05-21 19:41:51.496618
+Revision ID: 98b51bf90a83
+Revises: 9a3489bce8a6
+Create Date: 2026-05-23 16:38:49.795717
 
 """
 
@@ -13,8 +13,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = "9357ac967fc7"
-down_revision: Union[str, Sequence[str], None] = "74459f8b88a7"
+revision: str = "98b51bf90a83"
+down_revision: Union[str, Sequence[str], None] = "9a3489bce8a6"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
@@ -174,24 +174,6 @@ def upgrade() -> None:
         ["updated_by"],
         unique=False,
     )
-    op.create_table(
-        "interview_artifacts",
-        sa.Column("artifact_id", sa.UUID(), nullable=False),
-        sa.Column("interview_id", sa.UUID(), nullable=False),
-        sa.ForeignKeyConstraint(
-            ["artifact_id"],
-            ["artifacts.id"],
-            name=op.f("fk_interview_artifacts_artifact_id_artifacts"),
-            ondelete="CASCADE",
-        ),
-        sa.ForeignKeyConstraint(
-            ["interview_id"],
-            ["project_interviews.id"],
-            name=op.f("fk_interview_artifacts_interview_id_project_interviews"),
-            ondelete="CASCADE",
-        ),
-        sa.PrimaryKeyConstraint("artifact_id", name=op.f("pk_interview_artifacts")),
-    )
     op.add_column("project_teams", sa.Column("final_score", sa.Float(), nullable=False))
     op.alter_column(
         "students", "email", existing_type=sa.VARCHAR(length=255), nullable=False
@@ -208,7 +190,6 @@ def downgrade() -> None:
         "students", "email", existing_type=sa.VARCHAR(length=255), nullable=True
     )
     op.drop_column("project_teams", "final_score")
-    op.drop_table("interview_artifacts")
     op.drop_index(
         op.f("ix_project_interviews_updated_by"), table_name="project_interviews"
     )

@@ -13,7 +13,7 @@ from app.schemas.project_application import (
     ProjectApplicationGETLimited,
     ProjectApplicationPOST,
 )
-from app.core.database import db_helper
+from app.infrastructure.database.database import db_helper
 from app.api.filters import ProjectApplicationFilter, ProjectFilter
 from sqlalchemy.ext.asyncio.session import AsyncSession
 from app.common.enums import ProjectStatus

@@ -39,15 +39,18 @@ class CuratorBucketConfig(BaseModel):
     @property
     def policy(self) -> dict:
         return {
-            'Version': '2012-10-17',
-            'Statement': [{
-                'Sid': 'AddPerm',
-                'Effect': 'Allow',
-                'Principal': '*',
-                'Action': ['s3:GetObject'],
-                'Resource': f'arn:aws:s3:::{self.name}/*'
-            }]
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Sid": "AddPerm",
+                    "Effect": "Allow",
+                    "Principal": "*",
+                    "Action": ["s3:GetObject"],
+                    "Resource": f"arn:aws:s3:::{self.name}/*",
+                }
+            ],
         }
+
 
 class ArtifactsBucketConfig(BaseModel):
     name: str = "artifacts"
@@ -55,15 +58,18 @@ class ArtifactsBucketConfig(BaseModel):
     @property
     def policy(self) -> dict:
         return {
-            'Version': '2012-10-17',
-            'Statement': [{
-                'Sid': 'AddPerm',
-                'Effect': 'Allow',
-                'Principal': '*',
-                'Action': ['s3:GetObject'],
-                'Resource': f'arn:aws:s3:::{self.name}/*'
-            }]
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Sid": "AddPerm",
+                    "Effect": "Allow",
+                    "Principal": "*",
+                    "Action": ["s3:GetObject"],
+                    "Resource": f"arn:aws:s3:::{self.name}/*",
+                }
+            ],
         }
+
 
 class FrontendConfig(BaseModel):
     host: str = "http://localhost:3000"
@@ -114,7 +120,8 @@ class DatabaseConfig(BaseModel):
 class AIClientConfig(BaseModel):
     api_key: str = ""
     base_url: str = "https://openrouter.ai/api/v1"
-    
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=BASE_DIR / ".env",

@@ -23,8 +23,6 @@ from app.admin.setup import (
     ProjectAdmin,
     MeetingAdmin,
     TaskAdmin,
-    TeamMemberAdmin,
-    ProjectApplicationAdmin,
 )
 
 from contextlib import asynccontextmanager
@@ -101,8 +99,6 @@ admin.add_view(TeamAdmin)
 admin.add_view(ProjectAdmin)
 admin.add_view(MeetingAdmin)
 admin.add_view(TaskAdmin)
-admin.add_view(TeamMemberAdmin)
-admin.add_view(ProjectApplicationAdmin)
 
 Team.model_rebuild(force=True)
 Project.model_rebuild(force=True)
