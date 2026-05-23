@@ -11,7 +11,7 @@ from app.infrastructure.database.models.teams.team import TeamModel
 from app.infrastructure.database.repositories.project_repository import ProjectRepository, project_repository_getter
 from app.infrastructure.database.repositories.team_repository import TeamRepository, team_repository_getter
 from app.infrastructure.database.repositories.student_repository import StudentRepository, student_repository_getter
-from app.core.database import db_helper
+from app.infrastructure.database.database import db_helper
 
 class SearchService:
     def __init__(
@@ -68,6 +68,26 @@ class SearchService:
         results.sort(key=lambda x: 0 if query.lower() in x["name"].lower() else 1)
         
         return results[:limit * 3]  # Общий лимит
+    
+    async def search_students(self, query: str, limit: int = 20) -> List[Dict[str, Any]]:
+        student_query = select(
+            StudentModel.id,
+            StudentModel.first_name,
+            StudentModel.last_name,
+            StudentModel.email,
+        ).where(
+            or_(
+                StudentModel.first_name.ilike(f"%{query}%"),
+                StudentModel.last_name.ilike(f"%{query}%"),
+                StudentModel.email.ilike(f"%{query}%"),
+                func.concat(
+                    StudentModel.first_name, " ", StudentModel.last_name
+                ).ilike(f"%{query}%"),
+            )
+        ).order_by(StudentModel.last_name, StudentModel.first_name).limit(limit)
+
+        results = await self.student_repo.session.execute(student_query)
+        return [row._asdict() for row in results]
 
 def search_service_getter(
     project_repo: ProjectRepository = Depends(project_repository_getter),

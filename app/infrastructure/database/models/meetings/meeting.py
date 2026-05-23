@@ -8,9 +8,6 @@ from app.infrastructure.database.models.entity_base import BaseEntity
 from app.common.enums import MeetingStatus
 
 if TYPE_CHECKING:
-    from app.infrastructure.database.models.artifacts.artifact_link import (
-        ArtifactLinkModel,
-    )
     from app.infrastructure.database.models.meetings.attendance import AttendanceModel
     from app.infrastructure.database.models.meetings.meeting_task import (
         MeetingTaskModel,
@@ -91,14 +88,6 @@ class MeetingModel(BaseMeetingModel):
     # Связь с задачами на встрече
     meeting_tasks: Mapped[list["MeetingTaskModel"]] = relationship(
         "MeetingTaskModel",
-        back_populates="meeting",
-        cascade="all, delete-orphan",
-    )
-
-    # Артефакты встречи
-    artifact_links: Mapped[list["ArtifactLinkModel"]] = relationship(
-        "ArtifactLinkModel",
-        foreign_keys="ArtifactLinkModel.meeting_id",
         back_populates="meeting",
         cascade="all, delete-orphan",
     )

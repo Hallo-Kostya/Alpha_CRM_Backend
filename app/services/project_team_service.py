@@ -148,8 +148,8 @@ class ProjectTeamService:
 
         # Instead of delete, change status to WITHDRAWN for history
         project_team.status = ProjectTeamStatus.WITHDRAWN
-        await self._repo.session.commit()
-        await self._repo.session.refresh(project_team)
+        await self._project_team_repo.session.commit()
+        await self._project_team_repo.session.refresh(project_team)
 
         return True
 

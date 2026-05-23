@@ -1,4 +1,5 @@
 from sqladmin import ModelView
+
 from app.infrastructure.database.models import (
     CuratorModel,
     StudentModel,
@@ -6,20 +7,12 @@ from app.infrastructure.database.models import (
     ProjectModel,
     MeetingModel,
     TaskModel,
-    TeamMemberModel,
-    ProjectApplicationModel,
 )
+from app.infrastructure.database.models.artifacts.artifact import ArtifactModel
+from app.infrastructure.database.models.artifacts.artifact_link import ArtifactLinkModel
 
 
-class RulesMixin:
-    can_create = True
-    can_edit = True
-    can_delete = True
-    can_view_details = True
-
-
-class CuratorAdmin(ModelView, RulesMixin, model=CuratorModel):
-    # Колонки в списке
+class CuratorAdmin(ModelView, model=CuratorModel):
     column_list = [
         CuratorModel.id,
         CuratorModel.email,
@@ -27,17 +20,19 @@ class CuratorAdmin(ModelView, RulesMixin, model=CuratorModel):
         CuratorModel.last_name,
     ]
 
-    # Поиск по полям
     column_searchable_list = [
         CuratorModel.email,
         CuratorModel.first_name,
         CuratorModel.last_name,
     ]
 
-    # Сортировка
     column_sortable_list = [CuratorModel.created_at]
 
-    # Поля в форме создания/редактирования
+    can_create = True
+    can_edit = True
+    can_delete = True
+    can_view_details = True
+
     form_columns = [
         "email",
         "first_name",
@@ -55,6 +50,7 @@ class StudentAdmin(ModelView, RulesMixin, model=StudentModel):
         StudentModel.last_name,
         StudentModel.email,
     ]
+
     column_searchable_list = [
         StudentModel.first_name,
         StudentModel.last_name,
@@ -62,14 +58,16 @@ class StudentAdmin(ModelView, RulesMixin, model=StudentModel):
     ]
 
 
-class TeamAdmin(ModelView, RulesMixin, model=TeamModel):
-    column_list = [
-        TeamModel.id,
+class TeamAdmin(ModelView, model=TeamModel):
+    column_list = [TeamModel.id, TeamModel.name]
+
+    column_details_list = [
         TeamModel.name,
+        TeamModel.group_link,
     ]
 
 
-class ProjectAdmin(ModelView, RulesMixin, model=ProjectModel):
+class ProjectAdmin(ModelView, model=ProjectModel):
     column_list = [
         ProjectModel.id,
         ProjectModel.name,
@@ -78,7 +76,7 @@ class ProjectAdmin(ModelView, RulesMixin, model=ProjectModel):
     ]
 
 
-class MeetingAdmin(ModelView, RulesMixin, model=MeetingModel):
+class MeetingAdmin(ModelView, model=MeetingModel):
     column_list = [
         MeetingModel.id,
         MeetingModel.name,
@@ -87,25 +85,64 @@ class MeetingAdmin(ModelView, RulesMixin, model=MeetingModel):
     ]
 
 
-class TaskAdmin(ModelView, RulesMixin, model=TaskModel):
-    column_list = [TaskModel.id, TaskModel.description, TaskModel.is_completed]
-
-
-class TeamMemberAdmin(ModelView, RulesMixin, model=TeamMemberModel):
+class TaskAdmin(ModelView, model=TaskModel):
     column_list = [
-        TeamMemberModel.id,
-        TeamMemberModel.team,
-        TeamMemberModel.student,
-        TeamMemberModel.role,
+        TaskModel.id,
+        TaskModel.description,
+        TaskModel.is_completed,
     ]
 
 
-class ProjectApplicationAdmin(ModelView, RulesMixin, model=ProjectApplicationModel):
+class ArtifactAdmin(ModelView, model=ArtifactModel):
+    name = "Artifact"
+    name_plural = "Artifacts"
+
     column_list = [
-        ProjectApplicationModel.id,
-        ProjectApplicationModel.project,
-        ProjectApplicationModel.vk_sender_id,
-        ProjectApplicationModel.status,
-        ProjectApplicationModel.interview,
-        ProjectApplicationModel.mean_project_score,
+        ArtifactModel.id,
+        ArtifactModel.name,
+        ArtifactModel.type,
+        ArtifactModel.size,
+        ArtifactModel.content_type,
+        ArtifactModel.created_at,
     ]
+
+    column_searchable_list = [
+        ArtifactModel.name,
+        ArtifactModel.content_type,
+        ArtifactModel.checksum,
+    ]
+
+    column_sortable_list = [
+        ArtifactModel.created_at,
+        ArtifactModel.size,
+    ]
+
+    can_create = False
+    can_edit = False
+
+    can_view_details = True
+
+    form_excluded_columns = [
+        "artifact_links",
+    ]
+
+
+class ArtifactLinkAdmin(ModelView, model=ArtifactLinkModel):
+    name = "Artifact Link"
+    name_plural = "Artifact Links"
+
+    column_list = [
+        ArtifactLinkModel.id,
+        ArtifactLinkModel.artifact_id,
+        ArtifactLinkModel.entity_type,
+        ArtifactLinkModel.entity_id,
+    ]
+
+    column_searchable_list = [
+        ArtifactLinkModel.entity_type,
+    ]
+
+    can_create = False
+    can_edit = False
+
+    can_view_details = True

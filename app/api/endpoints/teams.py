@@ -1,6 +1,7 @@
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status, Query
+from app.api.dependencies import get_current_curator
 from app.schemas.team import TeamCreate, TeamUpdate, TeamSummaryResponse
 from app.schemas.team_member import TeamMemberCreate, TeamMemberUpdate
 from app.services.team_service import (
@@ -20,10 +21,16 @@ router = APIRouter(
     prefix="/teams",
     tags=["teams"],
     responses={404: {"description": "Team not found"}},
+    dependencies=[Depends(get_current_curator)],
 )
 
 
-@router.post("/", response_model=Team, summary="Создать команду")
+@router.post(
+    "/",
+    response_model=Team,
+    summary="Создать команду",
+    status_code=status.HTTP_201_CREATED,
+)
 async def create_team(
     data: TeamCreate,
     service: TeamService = Depends(team_service_getter),
@@ -43,16 +50,19 @@ async def summarize_teams(
         project_id, **filters.model_dump(exclude_none=True)
     )
 
-@router.get("/detailed_list", response_model=list[TeamDetail], summary="Детализированный список команд")
+
+@router.get(
+    "/detailed_list",
+    response_model=list[TeamDetail],
+    summary="Детализированный список команд",
+)
 async def list_teams(
     project_id: UUID = Query(None, description="ID проекта для фильтрации команд"),
     service: TeamService = Depends(team_service_getter),
     filters: TeamFilter = Depends(),
 ) -> list[TeamDetail]:
     """Получить список команд с фильтром по проекту. Включает ID, имя, количество участников и список участников."""
-    return await service.get_list(
-        project_id, **filters.model_dump(exclude_none=True)
-    )
+    return await service.get_list(project_id, **filters.model_dump(exclude_none=True))
 
 
 @router.get("/{team_id}", response_model=Team, summary="Получить команду по ID")
@@ -74,6 +84,7 @@ async def get_team(
     "/{team_id}/students",
     response_model=TeamMember,
     summary="Добавить студента в команду",
+    status_code=status.HTTP_201_CREATED,
 )
 async def add_student_to_team(
     team_id: UUID,

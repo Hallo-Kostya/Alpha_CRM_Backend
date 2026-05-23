@@ -1,12 +1,8 @@
-from datetime import datetime
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
-from app.schemas.project import (
-    ProjectSummaryResponse,
-    ProjectCreateMinimal,
-    ProjectUpdate,
-)
+from app.api.dependencies import get_current_curator
+from app.schemas.project import ProjectCreate, ProjectSummaryResponse, ProjectUpdate
 from app.schemas.project_team import ProjectTeamCreate
 from app.services.projects_service import (
     project_service_getter,
@@ -16,8 +12,7 @@ from app.services.project_team_service import (
     ProjectTeamService,
     project_team_service_getter,
 )
-from app.common.enums import Semester, ProjectTeamStatus
-from app.schemas.project import Project, ProjectRead
+from app.schemas.project import Project
 from app.schemas.project_team import ProjectTeam
 from app.api.filters import ProjectFilter
 
@@ -25,25 +20,20 @@ router = APIRouter(
     prefix="/projects",
     tags=["projects"],
     responses={404: {"description": "Project not found"}},
+    dependencies=[Depends(get_current_curator)],
 )
 
 
-@router.post("/", response_model=Project, summary="Создать новый проект (минимально)")
+@router.post(
+    "/",
+    response_model=Project,
+    summary="Создать новый проект",
+    status_code=status.HTTP_201_CREATED,
+)
 async def create_project_minimal(
-    data: ProjectCreateMinimal,
+    data: ProjectCreate,
     service: ProjectService = Depends(project_service_getter),
 ):
-    """Создать проект с базовыми полями. Год, семестр и статус заполняются автоматически по текущей дате, если не указаны."""
-    # Авто-заполнение года/семестра
-    if data.year is None:
-        data.year = datetime.now().year
-    if data.semester is None:
-        month = datetime.now().month
-        data.semester = Semester.SPRING if month < 7 else Semester.AUTUMN
-
-    # статус вычисляется на основе даты, если не передан
-    if data.status is None:
-        data.status = service.compute_status(data.year, data.semester)
     return await service.create(data)
 
 
@@ -112,6 +102,7 @@ async def get_project(
     "/{project_id}/teams",
     response_model=ProjectTeam,
     summary="Добавить команду к проекту",
+    status_code=status.HTTP_201_CREATED,
 )
 async def assign_team_to_project(
     project_id: UUID,
@@ -127,7 +118,11 @@ async def assign_team_to_project(
     return await team_service.assign_team_to_project(project_id, data)
 
 
-@router.delete("/{project_id}/teams/{team_id}", summary="Удалить команду из проекта")
+@router.delete(
+    "/{project_id}/teams/{team_id}",
+    summary="Удалить команду из проекта",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
 async def remove_team_from_project(
     project_id: UUID,
     team_id: UUID,

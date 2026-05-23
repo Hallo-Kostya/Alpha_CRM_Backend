@@ -2,6 +2,7 @@
 from uuid import UUID
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Response, status, Query
+from app.api.dependencies import get_current_curator
 from app.schemas.meeting import MeetingCreate, MeetingUpdate, Meeting
 from app.schemas.task import TaskCreate, TaskResponse
 from app.infrastructure.database.models.meetings.meeting_task import MeetingTaskModel
@@ -18,10 +19,11 @@ router = APIRouter(
     prefix="/meetings",
     tags=["meetings"],
     responses={404: {"description": "Meeting not found"}},
+    dependencies=[Depends(get_current_curator)],
 )
 
 
-@router.post("/", response_model=Meeting, summary="Создать встречу")
+@router.post("/", response_model=Meeting, summary="Создать встречу",status_code=status.HTTP_201_CREATED)
 async def create_meeting(
     data: MeetingCreate,
     service: MeetingService = Depends(meeting_service_getter),
@@ -81,7 +83,7 @@ async def delete_meeting(
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-@router.post("/{meeting_id}/tasks", response_model=TaskResponse, summary="Добавить задачу к встрече")
+@router.post("/{meeting_id}/tasks", response_model=TaskResponse, summary="Добавить задачу к встрече", status_code=status.HTTP_201_CREATED)
 async def add_task_to_meeting(
     meeting_id: UUID,
     task_data: TaskCreate,
@@ -102,16 +104,15 @@ async def add_task_to_meeting(
     
     # Add task to meeting
     await task_service.add_to_meeting(task.id, meeting_id)
-    
+
     return TaskResponse(
-        meeting_id=meeting_id,
-        task_id=task.id,
+        id=task.id,
         description=task.description,
         is_completed=task.is_completed
     )
 
 
-@router.delete("/{meeting_id}/tasks/{task_id}", summary="Убрать задачу со встречи")
+@router.delete("/{meeting_id}/tasks/{task_id}", summary="Убрать задачу со встречи", status_code=status.HTTP_204_NO_CONTENT)
 async def remove_task_from_meeting(
     meeting_id: UUID,
     task_id: UUID,

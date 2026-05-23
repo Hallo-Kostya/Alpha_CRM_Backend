@@ -6,7 +6,7 @@ from fastapi import Depends
 
 from app.infrastructure.database.repositories.base_repository import BaseRepository
 from app.infrastructure.database.models.teams.team_member import TeamMemberModel
-from app.core.database import db_helper
+from app.infrastructure.database.database import db_helper
 
 
 class TeamMemberRepository(BaseRepository[TeamMemberModel]):

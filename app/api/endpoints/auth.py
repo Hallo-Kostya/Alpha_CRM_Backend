@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from app.api.dependencies import get_current_curator
-from app.schemas.curator import CuratorPOST, CuratorPostBase, Curator, CuratorLogin
+from app.schemas.curator import CuratorPOST, Curator, CuratorLogin
 from app.schemas.auth import TokenPairResponse
 from app.services.curator_service import CuratorService, curator_service_getter
 from app.services.auth_service import AuthService, auth_service_getter
@@ -9,7 +9,9 @@ from app.infrastructure.database.models import CuratorModel
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
-@router.post("/register", response_model=TokenPairResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/register", response_model=TokenPairResponse, status_code=status.HTTP_201_CREATED
+)
 async def register(
     data: CuratorPOST,
     service: CuratorService = Depends(curator_service_getter),
@@ -88,4 +90,5 @@ async def me(
 ):
     """Get current curator profile."""
     from app.schemas.curator import Curator
+
     return Curator.model_validate(current_curator, from_attributes=True)

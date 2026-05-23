@@ -1,6 +1,7 @@
 from typing import List, Optional
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Response, status, Query
+from app.api.dependencies import get_current_curator
 from app.schemas.task import TaskCreate, TaskUpdate, Task
 from app.services.task_service import (
     TaskService,
@@ -11,10 +12,11 @@ router = APIRouter(
     prefix="/tasks",
     tags=["tasks"],
     responses={404: {"description": "Task not found"}},
+    dependencies=[Depends(get_current_curator)],
 )
 
 
-@router.post("/", response_model=Task, summary="Создать задачу")
+@router.post("/", response_model=Task, summary="Создать задачу", status_code=status.HTTP_201_CREATED)
 async def create_task(
     data: TaskCreate,
     service: TaskService = Depends(task_service_getter),
