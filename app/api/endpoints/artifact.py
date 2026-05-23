@@ -52,7 +52,20 @@ async def upload_meeting_artifact(
         entity_type=ArtifactEntityType.MEETING,
         entity_id=meeting_id,
     )
-    
+
+
+@router.post("/intervew/{interview_id}/artifacts")
+async def upload_interview_artifact(
+    interview_id: UUID,
+    file: UploadFile,
+    service: ArtifactService = Depends(artifact_service_getter),
+):
+    return await service.create_and_attach(
+        file=file,
+        entity_type=ArtifactEntityType.INTERVIEW,
+        entity_id=interview_id,
+    )
+
 
 @router.delete("/{artifact_id}/links")
 async def detach_artifact(

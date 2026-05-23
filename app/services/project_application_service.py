@@ -38,11 +38,9 @@ from app.infrastructure.database.repositories.project_applications import (
     ProjectApplicationRepository,
     ProjectApplicationMemberRepository,
     ProjectInterviewRepository,
-    ArtifactInterviewRepository,
     project_application_members_repository_getter,
     project_interview_repository_getter,
     project_applications_repository_getter,
-    artifact_interview_repository_getter,
 )
 from app.api.filters import ProjectApplicationFilter
 from app.common.enums import ProjectStatus
@@ -56,7 +54,6 @@ class ProjectApplicationService:
         project_application_repo: ProjectApplicationRepository,
         application_member_repo: ProjectApplicationMemberRepository,
         interview_repo: ProjectInterviewRepository,
-        artifacts_repo: ArtifactInterviewRepository,
         project_team_repo: ProjectTeamRepository,
         project_repo: ProjectRepository,
         team_repo: TeamRepository,
@@ -65,7 +62,6 @@ class ProjectApplicationService:
         self._project_application_repo = project_application_repo
         self._application_member_repo = application_member_repo
         self._interview_repo = interview_repo
-        self._artifacts_repo = artifacts_repo
         self._project_team_repo = project_team_repo
         self._project_repo = project_repo
         self._team_repo = team_repo
@@ -265,9 +261,6 @@ def project_application_service_getter(
     interviews_repo: ProjectInterviewRepository = Depends(
         project_interview_repository_getter
     ),
-    interview_artifacts_repo: ArtifactInterviewRepository = Depends(
-        artifact_interview_repository_getter
-    ),
     team_repo: TeamRepository = Depends(team_repository_getter),
     project_repo: ProjectRepository = Depends(project_repository_getter),
     project_application_repo: ProjectApplicationRepository = Depends(
@@ -279,7 +272,6 @@ def project_application_service_getter(
         project_application_repo,
         app_members_repo,
         interviews_repo,
-        interview_artifacts_repo,
         project_team_repo,
         project_repo,
         team_repo,

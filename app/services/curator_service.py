@@ -1,5 +1,5 @@
 from fastapi import Depends, UploadFile
-from app.schemas.curator import CuratorPOST, CuratorPATCH, Curator
+from app.schemas.curator import CuratorPOST, CuratorPATCH, Curator, CuratorPostBase
 from app.services.auth_service import AuthService, auth_service_getter
 from app.core.config import settings
 from app.infrastructure.database.models import CuratorModel
@@ -89,8 +89,6 @@ class CuratorService:
     async def get_by_email(self, email: str) -> Curator | None:
         total, curators = await self._repo.get_list(filters={"email": email})
         if curators:
-            if raw:
-                return curators[0]
             return self._to_schema(curators[0])
         return None
 
@@ -109,27 +107,25 @@ class CuratorService:
         curator_data: CuratorPostBase,
     ) -> tuple[AuthToken, AuthToken] | None:
         """Login curator by email and password."""
-        total, curators = await self._repo.get_list(
-            filters={"email": curator_data.email}
-        )
+        total, curators = await self._repo.get_list(filters={"email": curator_data.email})
         if not curators:
             return None
-
+        
         existing_curator = curators[0]
         is_password_correct = self.auth_service.verify_password(
             curator_data.password, existing_curator.hashed_password
         )
         if not is_password_correct:
             return None
-
+        
         auth_tokens = await self.auth_service.create_token_pair(existing_curator.id)
         return auth_tokens
 
     async def logout_curator(self, refresh_token: str) -> None:
         await self.auth_service.revoke_token_pair(refresh_token)
 
-    async def _build_avatar_path(curator_id: UUID, file_name: str) -> str:
-        return await f"avatars/{curator_id}/{file_name}"
+    def _build_avatar_path(self, curator_id: UUID, file_name: str) -> str:
+        return f"avatars/{curator_id}/{file_name}"
 
     async def upload_avatar(
         self,

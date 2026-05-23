@@ -3,7 +3,6 @@ from sqlalchemy import ForeignKey, String, Integer, Float
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy import Enum as SQLEnum
-from app.infrastructure.database.base import Base
 from app.common.enums import ProjectApplicationStatus
 from app.infrastructure.database.models.entity_base import BaseEntity
 from app.infrastructure.database.models.meetings.meeting import BaseMeetingModel
@@ -30,30 +29,6 @@ class ProjectApplicationMemberModel(BaseEntity):
     )
 
 
-class ArtifactInterviewModel(Base):
-    """Модель связи артефакта с интервью"""
-
-    __tablename__ = "interview_artifacts"
-
-    # FK на артефакт
-    artifact_id: Mapped[UUID] = mapped_column(
-        UUID(as_uuid=True),
-        ForeignKey("artifacts.id", ondelete="CASCADE"),
-        nullable=False,
-        primary_key=True,
-    )
-    # FK на интервью
-    interview_id: Mapped[UUID] = mapped_column(
-        UUID(as_uuid=True),
-        ForeignKey("project_interviews.id", ondelete="CASCADE"),
-        nullable=False,
-    )
-
-    interview: Mapped["ProjectInterviewModel"] = relationship(
-        "ProjectInterviewModel", back_populates="artifact_links"
-    )
-
-
 class ProjectInterviewModel(BaseMeetingModel):
     __tablename__ = "project_interviews"
 
@@ -62,13 +37,6 @@ class ProjectInterviewModel(BaseMeetingModel):
         UUID(as_uuid=True),
         ForeignKey("project_applications.id", ondelete="CASCADE"),
         nullable=False,
-    )
-
-    # Артефакты встречи
-    artifact_links: Mapped[list["ArtifactInterviewModel"]] = relationship(
-        "ArtifactInterviewModel",
-        back_populates="interview",
-        cascade="all, delete-orphan",
     )
 
     # Связь с заявкой

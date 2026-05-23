@@ -74,6 +74,7 @@ class ArtifactEntityType(StrAutoEnum):
     TEAM = auto()
     MEETING = auto()
     PROJECT = auto()
+    INTERVIEW = auto()
 
 
 class AttendanceEntityType(StrAutoEnum):

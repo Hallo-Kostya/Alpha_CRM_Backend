@@ -43,7 +43,7 @@ class CuratorAdmin(ModelView, model=CuratorModel):
     ]
 
 
-class StudentAdmin(ModelView, RulesMixin, model=StudentModel):
+class StudentAdmin(ModelView, model=StudentModel):
     column_list = [
         StudentModel.id,
         StudentModel.first_name,

@@ -17,7 +17,6 @@ from app.infrastructure.database.models.projects import (
     ProjectApplicationModel,
     ProjectApplicationMemberModel,
     ProjectInterviewModel,
-    ArtifactInterviewModel,
 )
 from app.infrastructure.database.models.meetings import (
     MeetingModel,
@@ -51,7 +50,6 @@ __all__ = [
     # ProjectApplications
     "ProjectApplicationModel",
     "ProjectApplicationMemberModel",
-    "ArtifactInterviewModel",
     "ProjectInterviewModel",
     # Meetings
     "MeetingModel",

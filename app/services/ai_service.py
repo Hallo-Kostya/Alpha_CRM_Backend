@@ -7,10 +7,10 @@ from openai import OpenAI
 from app.core.config import settings
 from app.schemas.project import ProjectCreate, Semester, ProjectStatus
 
-client = OpenAI(
-    base_url=settings.ai.base_url,
-    api_key=settings.ai.api_key
-)
+# client = OpenAI(
+#     base_url=settings.ai.base_url,
+#     api_key=settings.ai.api_key
+# )
 
 # ─────────────────────────────────────────────
 #  Few-shot примеры — добавляй сюда удачные кейсы
