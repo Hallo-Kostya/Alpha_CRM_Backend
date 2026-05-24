@@ -32,7 +32,7 @@ class ProjectInterviewGET(BaseModel):
 
 class ProjectApplicationPATCH(BaseModel):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
-    members: list[TeamMemberPATCH] | None = None
+    team_members: list[TeamMemberPATCH] | None = None
     team_name: str | None = None
     status: ProjectApplicationStatus | None = None
 
@@ -46,7 +46,7 @@ class ProjectApplicationGET(BaseModel):
     team_name: str
     status: ProjectApplicationStatus
     description: str | None = None
-    members: list[TeamMemberGET] = Field(default_factory=list)
+    team_members: list[TeamMemberGET] = Field(default_factory=list)
     interview: ProjectInterviewGET | None = None
     vk_sender_id: int | None = None
 
@@ -59,7 +59,7 @@ class ProjectApplicationGETLimited(BaseModel):
     project_id: UUID
     team_name: str
     status: ProjectApplicationStatus
-    members: list[TeamMemberGET] = Field(default_factory=list)
+    team_members: list[TeamMemberGET] = Field(default_factory=list)
     description: str | None = None
     interview_id: UUID | None = None
     vk_sender_id: int | None = None

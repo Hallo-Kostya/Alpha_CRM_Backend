@@ -1,5 +1,6 @@
 from uuid import UUID
 
+from app.common.enums import ProjectTeamStatus
 from app.infrastructure.database.repositories.base_repository import (
     BaseRepository,
 )
@@ -16,7 +17,15 @@ class TeamRepository(BaseRepository[TeamModel]):
     def __init__(self, session: AsyncSession):
         super().__init__(TeamModel, session)
 
-    async def get_teams_summary(self, project_id=None, **filters):
+    async def get_teams_summary(
+        self,
+        project_id=None,
+        project_statuses: list[ProjectTeamStatus] = [
+            ProjectTeamStatus.PENDING,
+            ProjectTeamStatus.ACTIVE,
+        ],
+        **filters,
+    ):
         query = (
             select(
                 TeamModel.id,
@@ -35,7 +44,7 @@ class TeamRepository(BaseRepository[TeamModel]):
             .outerjoin(StudentModel, TeamMemberModel.student_id == StudentModel.id)
         )
 
-        if project_id:
+        if project_id or project_statuses:
             from app.infrastructure.database.models.projects.project_team import (
                 ProjectTeamModel,
             )
@@ -43,7 +52,10 @@ class TeamRepository(BaseRepository[TeamModel]):
             query = query.join(
                 ProjectTeamModel, TeamModel.id == ProjectTeamModel.team_id
             )
-            query = query.where(ProjectTeamModel.project_id == project_id)
+            if project_statuses:
+                query = query.where(ProjectTeamModel.status.in_(project_statuses))
+            if project_id:
+                query = query.where(ProjectTeamModel.project_id == project_id)
 
         result = await self.session.execute(query)
         rows = result.all()

@@ -2,6 +2,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status, Query
 from app.api.dependencies import get_current_curator
+from app.common.enums import ProjectTeamStatus
 from app.schemas.team import TeamCreate, TeamUpdate, TeamSummaryResponse
 from app.schemas.team_member import TeamMemberCreate, TeamMemberUpdate
 from app.services.team_service import (
@@ -43,11 +44,16 @@ async def create_team(
 async def summarize_teams(
     project_id: UUID = Query(None, description="ID проекта для фильтрации команд"),
     service: TeamService = Depends(team_service_getter),
+    status: list[ProjectTeamStatus] = Query(
+        default_factory=lambda: [ProjectTeamStatus.ACTIVE, ProjectTeamStatus.PENDING]
+    ),
     filters: TeamFilter = Depends(),
 ):
     """Получить список команд с фильтром по проекту. Включает ID, имя, количество участников и список участников."""
     return await service.get_teams_summary(
-        project_id, **filters.model_dump(exclude_none=True)
+        status,
+        project_id,
+        **filters.model_dump(exclude_none=True),
     )
 
 

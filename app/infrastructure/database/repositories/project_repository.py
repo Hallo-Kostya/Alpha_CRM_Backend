@@ -15,6 +15,16 @@ from typing import Any, Tuple, List
 from sqlalchemy.dialects.postgresql import UUID
 
 
+FILTERS_MAP = {
+    "id": ProjectModel.id,
+    "name": ProjectModel.name,
+    "year": ProjectModel.year,
+    "semester": ProjectModel.semester,
+    "status": ProjectModel.status,
+    "team_id": ProjectTeamModel.team_id,
+}
+
+
 class ProjectRepository(BaseRepository[ProjectModel]):
     def __init__(self, session: AsyncSession):
         super().__init__(ProjectModel, session)
@@ -33,8 +43,18 @@ class ProjectRepository(BaseRepository[ProjectModel]):
             .outerjoin(ProjectTeamModel, ProjectModel.id == ProjectTeamModel.project_id)
             .outerjoin(TeamModel, ProjectTeamModel.team_id == TeamModel.id)
             .outerjoin(TeamMemberModel, TeamModel.id == TeamMemberModel.team_id)
-            .filter_by(**filters)
         )
+        # Filtering
+        conditions = []
+
+        for key, value in filters.items():
+            column = FILTERS_MAP.get(key)
+
+            if column:
+                conditions.append(column == value)
+
+        if conditions:
+            query = query.where(*conditions)
 
         # Group by project
         query = query.group_by(
