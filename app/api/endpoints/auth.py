@@ -33,13 +33,7 @@ async def login(
     service: CuratorService = Depends(curator_service_getter),
 ):
     """Login curator and return token pair."""
-    curator = await service.get_by_email(data.email, True)
-    if curator is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid email or password",
-        )
-    result = await service.login_curator(data, curator)
+    result = await service.login_curator(data)
     if result is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
