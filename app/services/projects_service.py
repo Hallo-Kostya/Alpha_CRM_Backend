@@ -51,7 +51,8 @@ class ProjectService:
             orm_obj.year = now.year
         if orm_obj.semester is None:
             orm_obj.semester = Semester.SPRING if now.month < 7 else Semester.AUTUMN
-        orm_obj.status = self.compute_status(orm_obj.year, orm_obj.semester)
+        if orm_obj.status is None:
+            orm_obj.status = self.compute_status(orm_obj.year, orm_obj.semester)
         created_obj = await self.project_repo.create(orm_obj)
         return self._to_schema(created_obj)
 
@@ -105,9 +106,11 @@ class ProjectService:
         excluded_ids: list[UUID],
         filters: dict[str, Any],
     ) -> list[ProjectRead]:
+        print(filters)
         result = await self.project_repo.get_projects_with_excluded_ids(
             excluded_ids, filters
         )
+        print(result)
         return [ProjectRead.model_validate(project) for project in result]
 
 

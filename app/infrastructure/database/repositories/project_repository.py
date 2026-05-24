@@ -29,11 +29,11 @@ class ProjectRepository(BaseRepository[ProjectModel]):
                 func.count(ProjectTeamModel.id.distinct()).label("teams_count"),
                 func.count(TeamMemberModel.id.distinct()).label("members_count"),
             )
-            .filter_by(**filters)
             .select_from(ProjectModel)
             .outerjoin(ProjectTeamModel, ProjectModel.id == ProjectTeamModel.project_id)
             .outerjoin(TeamModel, ProjectTeamModel.team_id == TeamModel.id)
             .outerjoin(TeamMemberModel, TeamModel.id == TeamMemberModel.team_id)
+            .filter_by(**filters)
         )
 
         # Group by project

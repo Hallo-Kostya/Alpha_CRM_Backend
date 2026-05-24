@@ -208,8 +208,7 @@ class ProjectApplicationService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Application with ID {application_id} is not found",
             )
-        data_to_update = new_data.model_dump(exclude_unset=True, exclude={"members"})
-        await self._project_application_repo.update(app_obj, data_to_update)
+
         if new_data.members:
             for member in new_data.members:
                 member_obj = await self._application_member_repo.get_by_id(member.id)
@@ -217,6 +216,8 @@ class ProjectApplicationService:
                 await self._application_member_repo.update(
                     member_obj, member_data_to_update
                 )
+        data_to_update = new_data.model_dump(exclude_unset=True)
+        await self._project_application_repo.update(app_obj, data_to_update)
         return ProjectApplicationGETLimited.model_validate(
             app_obj, from_attributes=True
         )
