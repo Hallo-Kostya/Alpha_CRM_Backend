@@ -86,9 +86,8 @@ async def get_project(
     service: ProjectService = Depends(project_service_getter),
 ):
     """Получить детальную информацию о проекте."""
-    project = await service.get_by_id(
+    project = await service.get_by_id_detailed(
         project_id,
-        ["project_teams", "project_teams.team", "project_teams.team.members"],
     )
     if project is None:
         raise HTTPException(

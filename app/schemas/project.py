@@ -25,7 +25,6 @@ class Project(BaseModel):
     year: int
     semester: Semester
     status: ProjectStatus
-    project_teams: list[ProjectTeam]
 
     @staticmethod
     def get_current_semester() -> Semester:
@@ -103,6 +102,23 @@ class ProjectRead(BaseModel):
     year: int
     semester: Semester
     status: ProjectStatus
+
+
+class ProjectReadDetailed(BaseModel):
+    """Project read/response model with all fields."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    name: str
+    description: Optional[str] = None
+    goal: Optional[str] = None
+    requirements: Optional[str] = None
+    eval_criteria: Optional[str] = None
+    year: int
+    semester: Semester
+    status: ProjectStatus
+    project_teams: list[ProjectTeam]
 
 
 class ProjectSummary(BaseModel):

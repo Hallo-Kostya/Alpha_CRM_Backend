@@ -7,7 +7,7 @@ from app.schemas.project import (
     ProjectSummary,
     ProjectSummaryResponse,
 )
-from app.schemas.project import Project, ProjectRead
+from app.schemas.project import Project, ProjectRead, ProjectReadDetailed
 from app.infrastructure.database.models import ProjectModel
 from app.infrastructure.database.repositories.project_repository import (
     ProjectRepository,
@@ -81,6 +81,18 @@ class ProjectService:
         if not obj:
             return None
         return self._to_schema(obj)
+
+    async def get_by_id_detailed(self, project_id: UUID) -> ProjectReadDetailed | None:
+        """Get project by ID, detailed."""
+        eager_loads = [
+            "project_teams",
+            "project_teams.team",
+            "project_teams.team.members",
+        ]
+        obj = await self.project_repo.get_by_id(project_id, eager_loads)
+        if not obj:
+            return None
+        return ProjectReadDetailed.model_validate(obj, from_attributes=True)
 
     async def get_projects_summary(self, **filters) -> ProjectSummaryResponse:
         """Get projects summary."""
