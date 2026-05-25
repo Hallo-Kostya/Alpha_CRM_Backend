@@ -1,13 +1,15 @@
 import json
 
 from fastapi import HTTPException
+from openai import OpenAI
 
 from app.schemas.project import ProjectCreate, Semester, ProjectStatus
+from app.core.config import settings
 
-# client = OpenAI(
-#     base_url=settings.ai.base_url,
-#     api_key=settings.ai.api_key
-# )
+client = OpenAI(
+    base_url=settings.ai.base_url,
+    api_key=settings.ai.api_key
+)
 
 # ─────────────────────────────────────────────
 #  Few-shot примеры — добавляй сюда удачные кейсы
@@ -223,6 +225,7 @@ FIELD_RULES = """
 ────────────────────────────────────────
 - Если уже задано и слишком короткое (1–2 слова) — расширь: добавь предметную область,
   технологию или ключевую аудиторию (не более 8 слов итого).
+- Не более 60 символов в итоге
 - Если уже задано и достаточно конкретно — оставь без изменений.
 - Название должно однозначно передавать суть: читатель понимает, что это за продукт,
   не читая описание.
