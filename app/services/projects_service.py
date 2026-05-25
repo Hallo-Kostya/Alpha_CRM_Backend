@@ -13,7 +13,7 @@ from app.infrastructure.database.repositories.project_repository import (
     ProjectRepository,
     project_repository_getter,
 )
-from app.common.enums import Semester, ProjectStatus
+from app.common.enums import ProjectTeamStatus, Semester, ProjectStatus
 from datetime import datetime
 from uuid import UUID
 
@@ -95,9 +95,11 @@ class ProjectService:
             return None
         return ProjectReadDetailed.model_validate(obj, from_attributes=True)
 
-    async def get_projects_summary(self, **filters) -> ProjectSummaryResponse:
+    async def get_projects_summary(
+        self, status: list[ProjectTeamStatus] | None = None, **filters
+    ) -> ProjectSummaryResponse:
         """Get projects summary."""
-        total, items = await self.project_repo.get_projects_summary(**filters)
+        total, items = await self.project_repo.get_projects_summary(status, **filters)
         summaries = [ProjectSummary(**item) for item in items]
         return ProjectSummaryResponse(total=total, projects=summaries)
 

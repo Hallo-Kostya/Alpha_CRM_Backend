@@ -1,7 +1,8 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from app.api.dependencies import get_current_curator
+from app.common.enums import ProjectTeamStatus
 from app.schemas.project import ProjectCreate, ProjectSummaryResponse, ProjectUpdate
 from app.schemas.project_team import ProjectTeamCreate
 from app.services.projects_service import (
@@ -74,10 +75,15 @@ async def delete_project(
 )
 async def get_projects_summary(
     filters: ProjectFilter = Depends(),
+    project_team_status: list[ProjectTeamStatus] = Query(
+        None, description="Проектные статусы команд"
+    ),
     service: ProjectService = Depends(project_service_getter),
 ):
     """Получить сводку проектов с количеством команд и участников, с фильтрами по году, семестру и команде."""
-    return await service.get_projects_summary(**filters.model_dump(exclude_none=True))
+    return await service.get_projects_summary(
+        project_team_status, **filters.model_dump(exclude_none=True)
+    )
 
 
 @router.get("/{project_id}", response_model=Project, summary="Получить проект по ID")

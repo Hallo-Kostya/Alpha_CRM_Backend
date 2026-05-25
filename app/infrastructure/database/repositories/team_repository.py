@@ -20,10 +20,7 @@ class TeamRepository(BaseRepository[TeamModel]):
     async def get_teams_summary(
         self,
         project_id=None,
-        project_statuses: list[ProjectTeamStatus] = [
-            ProjectTeamStatus.PENDING,
-            ProjectTeamStatus.ACTIVE,
-        ],
+        project_statuses: list[ProjectTeamStatus] | None = None,
         **filters,
     ):
         query = (

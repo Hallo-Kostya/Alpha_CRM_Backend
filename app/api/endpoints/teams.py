@@ -44,14 +44,14 @@ async def create_team(
 async def summarize_teams(
     project_id: UUID = Query(None, description="ID проекта для фильтрации команд"),
     service: TeamService = Depends(team_service_getter),
-    status: list[ProjectTeamStatus] = Query(
-        default_factory=lambda: [ProjectTeamStatus.ACTIVE, ProjectTeamStatus.PENDING]
+    project_team_status: list[ProjectTeamStatus] = Query(
+        None, description="Проектные статусы команд"
     ),
     filters: TeamFilter = Depends(),
 ):
     """Получить список команд с фильтром по проекту. Включает ID, имя, количество участников и список участников."""
     return await service.get_teams_summary(
-        status,
+        project_team_status,
         project_id,
         **filters.model_dump(exclude_none=True),
     )

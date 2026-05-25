@@ -28,6 +28,9 @@ class ProjectApplicationMemberModel(BaseEntity):
         back_populates="members",
     )
 
+    def __str__(self) -> str:
+        return f"{self.fullname}, {self.role}, {self.study_group}, Заявка #{self.project_application_id}"
+
 
 class ProjectInterviewModel(BaseMeetingModel):
     __tablename__ = "project_interviews"

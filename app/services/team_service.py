@@ -77,7 +77,7 @@ class TeamService:
         return [TeamDetail.model_validate(obj, from_attributes=True) for obj in objs]
 
     async def get_teams_summary(
-        self, status: list[ProjectTeamStatus], project_id=None, **filters
+        self, status: list[ProjectTeamStatus] | None = None, project_id=None, **filters
     ) -> TeamSummaryResponse:
         """Get teams summary with members as Pydantic models."""
         raw_teams = await self._repo.get_teams_summary(project_id, status, **filters)

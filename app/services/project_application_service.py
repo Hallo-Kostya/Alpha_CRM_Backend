@@ -209,7 +209,6 @@ class ProjectApplicationService:
                 detail=f"Application with ID {application_id} is not found",
             )
         existing_members = {m.id: m for m in app_obj.members}
-        print(new_data)
         if new_data.team_members:
             new_members = []
             for member in new_data.team_members:
@@ -218,14 +217,19 @@ class ProjectApplicationService:
                     member_obj = ProjectApplicationMemberModel(
                         **member.model_dump(exclude_unset=True)
                     )
+                    member_obj.project_application_id = app_obj.id
                 else:
                     member_data_to_update = member.model_dump(exclude_unset=True)
                     for key, value in member_data_to_update.items():
                         setattr(member_obj, key, value)
                 new_members.append(member_obj)
             app_obj.members = new_members
-        data_to_update = new_data.model_dump(exclude_unset=True, exclude={"members"})
-        await self._project_application_repo.update(app_obj, data_to_update)
+        data_to_update = new_data.model_dump(
+            exclude_unset=True, exclude={"team_members"}
+        )
+        new_obj = await self._project_application_repo.update(app_obj, data_to_update)
+        print(new_obj)
+        print([str(x) for x in new_obj.members])
         return ProjectApplicationGETLimited.model_validate(
             app_obj, from_attributes=True
         )

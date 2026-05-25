@@ -46,7 +46,7 @@ class ProjectApplicationGET(BaseModel):
     team_name: str
     status: ProjectApplicationStatus
     description: str | None = None
-    team_members: list[TeamMemberGET] = Field(default_factory=list)
+    members: list[TeamMemberGET] = Field(default_factory=list)
     interview: ProjectInterviewGET | None = None
     vk_sender_id: int | None = None
 
@@ -59,7 +59,7 @@ class ProjectApplicationGETLimited(BaseModel):
     project_id: UUID
     team_name: str
     status: ProjectApplicationStatus
-    team_members: list[TeamMemberGET] = Field(default_factory=list)
+    members: list[TeamMemberGET] = Field(default_factory=list)
     description: str | None = None
     interview_id: UUID | None = None
     vk_sender_id: int | None = None
@@ -79,7 +79,7 @@ class TeamMemberGET(BaseModel):
 
 
 class TeamMemberPATCH(BaseModel):
-    id: UUID
+    id: UUID | None = None
     fullname: str | None = None
     role: str | None = None
     study_group: str | None = None

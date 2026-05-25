@@ -1,3 +1,4 @@
+from app.common.enums import ProjectTeamStatus
 from app.infrastructure.database.repositories.base_repository import (
     BaseRepository,
 )
@@ -10,7 +11,7 @@ from app.infrastructure.database.models import (
 from app.infrastructure.database.database import db_helper
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
+from sqlalchemy import case, distinct, select, func
 from typing import Any, Tuple, List
 from sqlalchemy.dialects.postgresql import UUID
 
@@ -29,15 +30,31 @@ class ProjectRepository(BaseRepository[ProjectModel]):
     def __init__(self, session: AsyncSession):
         super().__init__(ProjectModel, session)
 
-    async def get_projects_summary(self, **filters) -> Tuple[int, List[dict]]:
+    async def get_projects_summary(
+        self, status: list[ProjectTeamStatus] | None = None, **filters
+    ) -> Tuple[int, List[dict]]:
         # Base query for projects
+        teams_count_expr = func.count(ProjectTeamModel.id.distinct())
+        members_count_expr = func.count(TeamMemberModel.id.distinct())
+        if status:  # filter project_team instances by its statuses
+            teams_count_expr = func.count(
+                distinct(
+                    case((ProjectTeamModel.status.in_(status), ProjectTeamModel.id))
+                )
+            )
+
+            members_count_expr = func.count(
+                distinct(
+                    case((ProjectTeamModel.status.in_(status), TeamMemberModel.id))
+                )
+            )
         query = (
             select(
                 ProjectModel.id,
                 ProjectModel.name,
                 ProjectModel.description,
-                func.count(ProjectTeamModel.id.distinct()).label("teams_count"),
-                func.count(TeamMemberModel.id.distinct()).label("members_count"),
+                teams_count_expr.label("teams_count"),
+                members_count_expr.label("members_count"),
             )
             .select_from(ProjectModel)
             .outerjoin(ProjectTeamModel, ProjectModel.id == ProjectTeamModel.project_id)
