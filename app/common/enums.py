@@ -38,10 +38,19 @@ class ProjectTeamStatus(str, Enum):
 class ProjectApplicationStatus(str, Enum):
     """Status of team participation in project."""
 
-    NEW = "NEW"  # новая заявка
-    DECLINED = "DECLINED"  # Заявка отклонена
-    ACCEPTED = "ACCEPTED"  # Заявка принята
-    INTERVIEW = "INTERVIEW"  # Команда на стадии интервью
+    SEEN = "SEEN"
+    UNSEEN = "UNSEEN"
+    ACCEPTED = "ACCEPTED"
+    DECLINED = "DECLINED"
+
+
+class ProjectInterviewStatus(str, Enum):
+    """Status of team participation in project."""
+
+    RATING = "RATING"  # Ждёт оценки
+    PENDING = "PENDING"  # На согласовании
+    ACCEPTED = "ACCEPTED"  # Согласовано
+    DECLINED = "DECLINED"  # Отказано
 
 
 class MeetingStatus(StrAutoEnum):

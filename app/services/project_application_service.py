@@ -228,10 +228,8 @@ class ProjectApplicationService:
             exclude_unset=True, exclude={"team_members"}
         )
         new_obj = await self._project_application_repo.update(app_obj, data_to_update)
-        print(new_obj)
-        print([str(x) for x in new_obj.members])
         return ProjectApplicationGETLimited.model_validate(
-            app_obj, from_attributes=True
+            new_obj, from_attributes=True
         )
 
     async def delete_application(self, application_id: UUID) -> Response:
@@ -254,7 +252,7 @@ class ProjectApplicationService:
         eager_loads: list[str] | None = None,
     ) -> list[ProjectApplicationGETLimited | ProjectApplicationGET]:
         _, applications = await self._project_application_repo.get_list(
-            filters=filters.model_dump(exclude_unset=True), eager_loads=eager_loads
+            filters=filters.model_dump(exclude_none=True), eager_loads=eager_loads
         )
         if detailed:
             return [self._to_schema(application) for application in applications]

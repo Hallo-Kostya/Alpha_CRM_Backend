@@ -1,6 +1,5 @@
 from typing import TYPE_CHECKING
-from sqlalchemy import String
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, relationship
 from app.infrastructure.database.models.persons.person import PersonModel
 
 if TYPE_CHECKING:
@@ -19,8 +18,6 @@ class StudentModel(PersonModel):
         back_populates="student",
         cascade="all, delete-orphan",
     )
-
-    email: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
 
     # Посещаемость студента на встречах
     attendances: Mapped[list["AttendanceModel"]] = relationship(

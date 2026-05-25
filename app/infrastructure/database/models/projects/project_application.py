@@ -3,7 +3,7 @@ from sqlalchemy import ForeignKey, String, Integer, Float
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy import Enum as SQLEnum
-from app.common.enums import ProjectApplicationStatus
+from app.common.enums import ProjectApplicationStatus, ProjectInterviewStatus
 from app.infrastructure.database.models.entity_base import BaseEntity
 from app.infrastructure.database.models.meetings.meeting import BaseMeetingModel
 
@@ -48,6 +48,23 @@ class ProjectInterviewModel(BaseMeetingModel):
         back_populates="interview",
     )
 
+    # Юрл на встречу (телемост и тп)
+    url: Mapped[str] = mapped_column(String(255), nullable=False)
+
+    # Оценка от кураторов по результатам собеседования
+    curators_rate: Mapped[int] = mapped_column(Integer, nullable=True, default=None)
+
+    # Статус как сущности интервью
+    interview_status: Mapped[ProjectInterviewStatus] = mapped_column(
+        SQLEnum(  # Используем SQLEnum вместо StrEnum
+            ProjectInterviewStatus,
+            native_enum=False,
+            values_callable=lambda x: [e.value for e in ProjectInterviewStatus],
+        ),
+        nullable=False,
+        default=ProjectInterviewStatus.PENDING,
+    )
+
 
 class ProjectApplicationModel(BaseEntity):
     """Модель заявки на исполнение проекта"""
@@ -87,7 +104,7 @@ class ProjectApplicationModel(BaseEntity):
             values_callable=lambda x: [e.value for e in ProjectApplicationStatus],
         ),
         nullable=False,
-        default=ProjectApplicationStatus.NEW,
+        default=ProjectApplicationStatus.UNSEEN,
     )
 
     # Связь с проектом

@@ -1,11 +1,10 @@
-﻿from typing import List, Optional
+from typing import Optional
 from uuid import UUID
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Response, status, Query
 from app.api.dependencies import get_current_curator
 from app.schemas.meeting import MeetingCreate, MeetingUpdate, Meeting
 from app.schemas.task import TaskCreate, TaskResponse
-from app.infrastructure.database.models.meetings.meeting_task import MeetingTaskModel
 from app.services.meeting_service import (
     MeetingService,
     meeting_service_getter,
@@ -23,7 +22,12 @@ router = APIRouter(
 )
 
 
-@router.post("/", response_model=Meeting, summary="Создать встречу",status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/",
+    response_model=Meeting,
+    summary="Создать встречу",
+    status_code=status.HTTP_201_CREATED,
+)
 async def create_meeting(
     data: MeetingCreate,
     service: MeetingService = Depends(meeting_service_getter),
@@ -83,7 +87,12 @@ async def delete_meeting(
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-@router.post("/{meeting_id}/tasks", response_model=TaskResponse, summary="Добавить задачу к встрече", status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/{meeting_id}/tasks",
+    response_model=TaskResponse,
+    summary="Добавить задачу к встрече",
+    status_code=status.HTTP_201_CREATED,
+)
 async def add_task_to_meeting(
     meeting_id: UUID,
     task_data: TaskCreate,
@@ -98,21 +107,23 @@ async def add_task_to_meeting(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Встреча с ID {meeting_id} не найдена",
         )
-    
+
     # Create task
     task = await task_service.create(task_data)
-    
+
     # Add task to meeting
     await task_service.add_to_meeting(task.id, meeting_id)
 
     return TaskResponse(
-        id=task.id,
-        description=task.description,
-        is_completed=task.is_completed
+        id=task.id, description=task.description, is_completed=task.is_completed
     )
 
 
-@router.delete("/{meeting_id}/tasks/{task_id}", summary="Убрать задачу со встречи", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{meeting_id}/tasks/{task_id}",
+    summary="Убрать задачу со встречи",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
 async def remove_task_from_meeting(
     meeting_id: UUID,
     task_id: UUID,

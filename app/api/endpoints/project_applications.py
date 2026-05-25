@@ -39,7 +39,7 @@ async def get_available_projects(
     ),
 ) -> list[ProjectRead]:
     sent_applications = await application_service.get_applications(
-        ProjectApplicationFilter(vk_sender_id=vk_sender_id),
+        ProjectApplicationFilter(vk_sender_id=vk_sender_id), eager_loads=["members"]
     )
     applied_projects_ids = [application.project_id for application in sent_applications]  # type: ignore[union-attr]
     curr_year, curr_semester = get_curr_year_and_semester()
@@ -71,13 +71,13 @@ async def post_project_application(
     summary="Получить все заявки на проекты",
 )
 async def get_project_applications(
-    filters: ProjectApplicationFilter = Depends(),
+    application_filters: ProjectApplicationFilter = Depends(),
     application_service: ProjectApplicationService = Depends(
         project_application_service_getter
     ),
 ) -> list[ProjectApplicationGET]:
     applications = await application_service.get_applications(
-        filters, True, ["project", "members", "interview"]
+        application_filters, True, ["project", "members", "interview"]
     )
     return applications  # type: ignore[return-value]
 

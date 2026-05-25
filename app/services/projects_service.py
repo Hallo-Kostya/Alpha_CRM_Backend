@@ -108,11 +108,9 @@ class ProjectService:
         excluded_ids: list[UUID],
         filters: dict[str, Any],
     ) -> list[ProjectRead]:
-        print(filters)
         result = await self.project_repo.get_projects_with_excluded_ids(
             excluded_ids, filters
         )
-        print(result)
         return [ProjectRead.model_validate(project) for project in result]
 
 
