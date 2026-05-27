@@ -16,7 +16,7 @@ class Student(BaseModel):
     id: UUID
     first_name: str
     last_name: str
-    email: str
+    email: Optional[str] = None
     patronymic: Optional[str] = None
     tg_link: Optional[str] = None
 
@@ -31,7 +31,7 @@ class StudentCreate(BaseModel):
     first_name: NameField = Field(..., examples=["Имя студента"])
     last_name: NameField = Field(..., examples=["Фамилия студента"])
     patronymic: Optional[NameField] = Field(None, examples=["Отчество студента"])
-    email: str
+    email: Optional[str] = None
     tg_link: Optional[str] = None
 
 
@@ -49,7 +49,7 @@ class StudentRead(BaseModel):
     id: UUID
     first_name: str
     last_name: str
-    email: str
+    email: Optional[str] = None
     patronymic: Optional[str] = None
     tg_link: Optional[str] = None
 
@@ -65,7 +65,7 @@ class StudentDetailed(BaseModel):
     id: UUID
     first_name: str
     last_name: str
-    email: str
+    email: Optional[str] = None
     patronymic: Optional[str] = None
     email: Optional[str] = None
     tg_link: Optional[str] = None

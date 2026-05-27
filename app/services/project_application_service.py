@@ -1,9 +1,8 @@
 from uuid import UUID
 from fastapi import Depends, HTTPException, status, Response
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio.session import AsyncSession
-from typing import Sequence
-from app.common.utils import get_curr_year_and_semester
+from typing import Callable, Sequence
+from app.common.utils import get_curr_year_and_semester, split_fullname
 from app.schemas.project_application import (
     ProjectApplicationGET,
     ProjectApplicationPATCH,
@@ -15,13 +14,12 @@ from app.infrastructure.database.models import (
     ProjectModel,
     TeamModel,
     ProjectApplicationModel,
+    TeamMemberModel,
+    ProjectTeamModel,
     StudentModel,
     ProjectApplicationMemberModel,
 )
-from app.services.team_member_service import (
-    TeamMemberService,
-    team_member_service_getter,
-)
+from app.sdk.vk_bot_backend_sdk import VkBotBackendSdk, get_sdk
 from app.infrastructure.database.repositories.project_repository import (
     ProjectRepository,
     project_repository_getter,
@@ -34,6 +32,14 @@ from app.infrastructure.database.repositories.project_team_repository import (
     ProjectTeamRepository,
     project_team_repository_getter,
 )
+from app.infrastructure.database.repositories.student_repository import (
+    StudentRepository,
+    student_repository_getter,
+)
+from app.infrastructure.database.repositories.team_member_repository import (
+    TeamMemberRepository,
+    team_member_repository_getter,
+)
 from app.infrastructure.database.repositories.project_applications import (
     ProjectApplicationRepository,
     ProjectApplicationMemberRepository,
@@ -43,7 +49,11 @@ from app.infrastructure.database.repositories.project_applications import (
     project_applications_repository_getter,
 )
 from app.api.filters import ProjectApplicationFilter
-from app.common.enums import ProjectStatus
+from app.common.enums import (
+    ProjectApplicationStatus,
+    ProjectInterviewStatus,
+    ProjectStatus,
+)
 
 
 class ProjectApplicationService:
@@ -57,7 +67,9 @@ class ProjectApplicationService:
         project_team_repo: ProjectTeamRepository,
         project_repo: ProjectRepository,
         team_repo: TeamRepository,
-        tm_service: TeamMemberService,
+        student_repo: StudentRepository,
+        tm_repo: TeamMemberRepository,
+        vk_bot_sdk: VkBotBackendSdk,
     ):
         self._project_application_repo = project_application_repo
         self._application_member_repo = application_member_repo
@@ -65,7 +77,14 @@ class ProjectApplicationService:
         self._project_team_repo = project_team_repo
         self._project_repo = project_repo
         self._team_repo = team_repo
-        self._tm_service = tm_service
+        self._tm_repo = tm_repo
+        self._student_repo = student_repo
+        self._vk_bot_sdk = vk_bot_sdk
+        self._status_change_handlers: dict[ProjectApplicationStatus, Callable] = {
+            ProjectApplicationStatus.INTERVIEW: self._handle_interview_status,
+            ProjectApplicationStatus.DECLINED: self._handle_declined_status,
+            ProjectApplicationStatus.ACCEPTED: self._handle_accepted_status,
+        }
 
     def _to_orm(self, scheme: ProjectApplicationPOST) -> ProjectApplicationModel:
         """Convert schema to ORM model."""
@@ -74,6 +93,13 @@ class ProjectApplicationService:
     def _to_schema(self, orm_model: ProjectApplicationModel) -> ProjectApplicationGET:
         """Convert ORM model to schema."""
         return ProjectApplicationGET.model_validate(orm_model, from_attributes=True)
+
+    def _to_limited_schema(
+        self, orm_model: ProjectApplicationModel
+    ) -> ProjectApplicationGETLimited:
+        return ProjectApplicationGETLimited.model_validate(
+            orm_model, from_attributes=True
+        )
 
     async def _get_project(self, project_id: UUID) -> ProjectModel:
         """Check project existence."""
@@ -149,12 +175,17 @@ class ProjectApplicationService:
         _, teams = await self._team_repo.get_list(filters)
         return next(iter(teams), None)
 
-    async def _get_student_by_email(
-        self, email: str, session: AsyncSession
-    ) -> StudentModel | None:
-        query = select(StudentModel).where(StudentModel.email == email)
-        result = await session.execute(query)
-        return result.scalar_one_or_none()
+    async def _get_student_by_fullname(self, fullname: str) -> StudentModel | None:
+        last_name, first_name, patronymic = split_fullname(fullname)
+        if not (first_name or last_name):
+            raise ValueError(f"Got wrong student fullname: {fullname}")
+        filters = {
+            "last_name": last_name,
+            "first_name": first_name,
+            "patronymic": patronymic,
+        }
+        _, result = await self._student_repo.get_list(filters)
+        return next(iter(result), None)
 
     def _map_project_app_members(
         self,
@@ -174,7 +205,7 @@ class ProjectApplicationService:
         self, data: ProjectApplicationPOST, session: AsyncSession
     ) -> ProjectApplicationGETLimited:
         """Create team's project application"""
-        async with session.begin():
+        try:
             await self._validate_data(data)
             project_app_members = self._map_project_app_members(data.team_members)
             data.mean_project_score = await self._get_team_prev_projects_mean_rate(
@@ -190,9 +221,11 @@ class ProjectApplicationService:
                 members=project_app_members,
             )
             session.add(application_dto)
-        return ProjectApplicationGETLimited.model_validate(
-            application_dto, from_attributes=True
-        )
+            await session.commit()
+            return self._to_limited_schema(application_dto)
+        except Exception:
+            await session.rollback()
+            raise
 
     async def update_project_application(
         self,
@@ -228,18 +261,16 @@ class ProjectApplicationService:
             exclude_unset=True, exclude={"team_members"}
         )
         new_obj = await self._project_application_repo.update(app_obj, data_to_update)
-        return ProjectApplicationGETLimited.model_validate(
-            new_obj, from_attributes=True
-        )
+        return self._to_limited_schema(new_obj)
 
     async def delete_application(self, application_id: UUID) -> Response:
-        project_team = await self._project_application_repo.get_by_id(application_id)
-        if not project_team:
+        project_app = await self._project_application_repo.get_by_id(application_id)
+        if not project_app:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Application with ID {application_id} is not found",
             )
-        await self._project_application_repo.delete(project_team)
+        await self._project_application_repo.delete(project_app)
         return Response(
             f"Successfuly deleted application with id: {application_id}",
             status_code=200,
@@ -256,12 +287,137 @@ class ProjectApplicationService:
         )
         if detailed:
             return [self._to_schema(application) for application in applications]
-        return [
-            ProjectApplicationGETLimited.model_validate(
-                application, from_attributes=True
+        return [self._to_limited_schema(application) for application in applications]
+
+    async def handle_status_change(
+        self,
+        application_id: UUID,
+        new_status: ProjectApplicationStatus,
+        session: AsyncSession,
+    ):
+        app_obj = await self._project_application_repo.get_by_id(
+            application_id, eager_loads=["project", "interview", "members"]
+        )
+        if not app_obj:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Application with ID {application_id} is not found",
             )
-            for application in applications
-        ]
+        handler_func = self._status_change_handlers.get(new_status)
+        if handler_func:
+            new_obj = await handler_func(app_obj, session)
+            return self._to_limited_schema(new_obj)
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Unknown project application status: {new_status}",
+        )
+
+    async def _handle_declined_status(
+        self,
+        application_obj: ProjectApplicationModel,
+        session: AsyncSession,
+    ) -> ProjectApplicationModel:
+        if application_obj.status == ProjectApplicationStatus.DECLINED:
+            return application_obj
+        try:
+            application_obj.status = ProjectApplicationStatus.DECLINED
+            _, linked_interview = await self._interview_repo.get_list(
+                {"project_application_id": application_obj.id}
+            )
+            if linked_interview:
+                linked_interview = linked_interview[0]
+                if linked_interview.status not in (
+                    ProjectInterviewStatus.RATED,
+                    ProjectInterviewStatus.CANCELED,
+                ):
+                    linked_interview.status = ProjectInterviewStatus.CANCELED
+                    session.add(linked_interview)
+            session.add(application_obj)
+            await session.commit()
+        except Exception:
+            await session.rollback()
+            raise
+        await self._vk_bot_sdk.post_declined_application(
+            application_obj.vk_sender_id,
+            application_obj.project.name,
+            application_obj.team_name,
+        )
+        return application_obj
+
+    async def _handle_interview_status(
+        self,
+        application_obj: ProjectApplicationModel,
+        session: AsyncSession,
+    ) -> None: ...
+
+    async def _handle_accepted_status(
+        self,
+        application_obj: ProjectApplicationModel,
+        session: AsyncSession,
+    ) -> ProjectApplicationModel:
+        if application_obj.status == ProjectApplicationStatus.ACCEPTED:
+            return application_obj
+        try:
+            application_obj.status = ProjectApplicationStatus.ACCEPTED
+            _, linked_interview = await self._interview_repo.get_list(
+                {"project_application_id": application_obj.id}
+            )
+            session.add(application_obj)
+            if linked_interview:
+                linked_interview = linked_interview[0]
+                if linked_interview.status == ProjectInterviewStatus.WAITING:
+                    linked_interview.status = ProjectInterviewStatus.CANCELED
+                elif linked_interview.status == ProjectInterviewStatus.RATING:
+                    linked_interview.status = ProjectInterviewStatus.RATED
+                session.add(linked_interview)
+            await self._create_team_project_from_application(application_obj, session)
+            await session.commit()
+            await self._team_repo.session.commit()
+        except Exception:
+            await session.rollback()
+            await self._team_repo.session.rollback()
+            raise
+        await self._vk_bot_sdk.post_accepted_application(
+            application_obj.vk_sender_id,
+            application_obj.project.name,
+            application_obj.team_name,
+        )
+        return application_obj
+
+    async def _create_team_project_from_application(
+        self, application_obj: ProjectApplicationModel, session: AsyncSession
+    ) -> None:
+        team_obj = TeamModel(
+            name=application_obj.team_name,
+        )
+        self._team_repo.session.add(team_obj)
+        await session.flush()
+        await session.refresh(team_obj)
+        team_members = []
+        for member in application_obj.members:
+            student_model = await self._get_student_by_fullname(member.fullname)
+            if not student_model:
+                last_name, first_name, patronymic = split_fullname(member.fullname)
+                new_student = StudentModel(
+                    last_name=last_name,
+                    first_name=first_name,
+                    patronymic=patronymic,
+                )
+                student_model = await self._student_repo.create(new_student)
+            member_obj = TeamMemberModel(
+                team_id=team_obj.id,
+                student_id=student_model.id,
+                role=member.role,
+                study_group=member.study_group,
+            )
+            team_members.append(member_obj)
+            session.add(member_obj)
+        team_obj.members = team_members
+        session.add(team_obj)
+        project_team_model = ProjectTeamModel(
+            project_id=application_obj.project_id, team_id=team_obj.id
+        )
+        session.add(project_team_model)
 
 
 def project_application_service_getter(
@@ -277,7 +433,9 @@ def project_application_service_getter(
     project_application_repo: ProjectApplicationRepository = Depends(
         project_applications_repository_getter
     ),
-    tm_service: TeamMemberService = Depends(team_member_service_getter),
+    student_repo: StudentRepository = Depends(student_repository_getter),
+    tm_repo: TeamMemberRepository = Depends(team_member_repository_getter),
+    vk_bot_sdk: VkBotBackendSdk = Depends(get_sdk),
 ) -> ProjectApplicationService:
     return ProjectApplicationService(
         project_application_repo,
@@ -286,5 +444,7 @@ def project_application_service_getter(
         project_team_repo,
         project_repo,
         team_repo,
-        tm_service,
+        student_repo,
+        tm_repo,
+        vk_bot_sdk,
     )

@@ -122,6 +122,11 @@ class AIClientConfig(BaseModel):
     base_url: str = "https://openrouter.ai/api/v1"
 
 
+class VkBotBackendConfig(BaseModel):
+    base_url: str = "http://host.docker.internal:8002/api/v1"
+    api_key: str = ""
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=BASE_DIR / ".env",
@@ -136,6 +141,7 @@ class Settings(BaseSettings):
     s3: S3Config = S3Config()
     frontend: FrontendConfig = FrontendConfig()
     ai: AIClientConfig = AIClientConfig()
+    vk_bot: VkBotBackendConfig = VkBotBackendConfig()
 
 
 settings = Settings()  # type: ignore

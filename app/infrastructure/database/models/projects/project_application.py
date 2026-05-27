@@ -49,7 +49,7 @@ class ProjectInterviewModel(BaseMeetingModel):
     )
 
     # Юрл на встречу (телемост и тп)
-    url: Mapped[str] = mapped_column(String(255), nullable=False)
+    url: Mapped[str] = mapped_column(String(255), nullable=True, default=None)
 
     # Оценка от кураторов по результатам собеседования
     curators_rate: Mapped[int] = mapped_column(Integer, nullable=True, default=None)
@@ -62,7 +62,7 @@ class ProjectInterviewModel(BaseMeetingModel):
             values_callable=lambda x: [e.value for e in ProjectInterviewStatus],
         ),
         nullable=False,
-        default=ProjectInterviewStatus.PENDING,
+        default=ProjectInterviewStatus.WAITING,
     )
 
 

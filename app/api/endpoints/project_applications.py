@@ -1,6 +1,6 @@
 from uuid import UUID
-
 from fastapi import APIRouter, Depends
+from app.api.dependencies import get_current_curator
 from app.services.project_application_service import (
     ProjectApplicationService,
     project_application_service_getter,
@@ -16,13 +16,14 @@ from app.schemas.project_application import (
 from app.infrastructure.database.database import db_helper
 from app.api.filters import ProjectApplicationFilter, ProjectFilter
 from sqlalchemy.ext.asyncio.session import AsyncSession
-from app.common.enums import ProjectStatus
+from app.common.enums import ProjectApplicationStatus, ProjectStatus
 from app.common.utils import get_curr_year_and_semester
 
 
 router = APIRouter(
     prefix="/project_applications",
     tags=["project_applications"],
+    dependencies=[Depends(get_current_curator)],
 )
 
 
@@ -112,3 +113,21 @@ async def delete_project_application(
 ) -> dict:
     await application_service.delete_application(application_id)
     return {"success": f"Successfully deleted application with id {application_id}"}
+
+
+@router.patch(
+    "/{application_id}/change_status",
+    summary="Изменить статус заявки",
+)
+async def change_status_project_application(
+    application_id: UUID,
+    new_status: ProjectApplicationStatus,
+    application_service: ProjectApplicationService = Depends(
+        project_application_service_getter
+    ),
+    session: AsyncSession = Depends(db_helper.session_getter),
+) -> ProjectApplicationGETLimited:
+    updated_schema = await application_service.handle_status_change(
+        application_id, new_status, session
+    )
+    return updated_schema

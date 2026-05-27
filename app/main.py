@@ -11,7 +11,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 from app.core.config import settings
 from app.core.middleware import PrometheusMiddleware
-
+from aiohttp import ClientSession
+from app.sdk.vk_bot_backend_sdk import VkBotBackendSdk
 
 from sqladmin import Admin
 from app.admin.setup import (
@@ -39,6 +40,11 @@ async def lifespan(app: FastAPI):
     )
 
     await init_s3()
+    http_session = ClientSession()
+
+    vk_bot_backend_sdk = VkBotBackendSdk(http_session)
+
+    app.state.vk_bot_backend_sdk = vk_bot_backend_sdk
 
     authentication_backend = AdminAuth(secret_key=settings.hash.access_secret)
     admin = Admin(
@@ -60,6 +66,7 @@ async def lifespan(app: FastAPI):
 
     yield
 
+    await http_session.close()
     await db_helper.dispose()
 
 

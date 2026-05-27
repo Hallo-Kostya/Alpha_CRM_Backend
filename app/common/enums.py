@@ -38,19 +38,22 @@ class ProjectTeamStatus(str, Enum):
 class ProjectApplicationStatus(str, Enum):
     """Status of team participation in project."""
 
-    SEEN = "SEEN"
-    UNSEEN = "UNSEEN"
-    ACCEPTED = "ACCEPTED"
-    DECLINED = "DECLINED"
+    INTERVIEW = "INTERVIEW"  # заявка на стадии интервью
+    WAITING_FOR_ACK = (
+        "WAITING_FOR_ACK"  # после выставления оценки за интервью, ждет итог. решения
+    )
+    UNSEEN = "UNSEEN"  # новая заявка
+    ACCEPTED = "ACCEPTED"  # заявка принята
+    DECLINED = "DECLINED"  # заявка отклонена
 
 
 class ProjectInterviewStatus(str, Enum):
     """Status of team participation in project."""
 
-    RATING = "RATING"  # Ждёт оценки
-    PENDING = "PENDING"  # На согласовании
-    ACCEPTED = "ACCEPTED"  # Согласовано
-    DECLINED = "DECLINED"  # Отказано
+    WAITING = "WAITING"  # Новое интервью (ДО интервью)
+    RATING = "RATING"  # Ждёт оценки (ПОСЛЕ интервью)
+    RATED = "RATED"  # Оценка выставлена (финальный статус интервью)
+    CANCELED = "CANCELED"  # Интервью отменено
 
 
 class MeetingStatus(StrAutoEnum):

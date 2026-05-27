@@ -34,7 +34,7 @@ class ProjectApplicationPATCH(BaseModel):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
     team_members: list[TeamMemberPATCH] | None = None
     team_name: str | None = None
-    status: ProjectApplicationStatus | None = None
+    description: str | None = None
 
 
 class ProjectApplicationGET(BaseModel):
