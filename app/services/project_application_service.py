@@ -568,8 +568,7 @@ class ProjectApplicationService:
                 interview_obj.project_application, {"status": application_update_status}
             )
         updated_obj = await self._interview_repo.update(interview_obj, data_to_update)
-        print(type(updated_obj))
-        return updated_obj
+        return ProjectInterviewGET.model_validate(updated_obj, from_attributes=True)
 
 
 def project_application_service_getter(

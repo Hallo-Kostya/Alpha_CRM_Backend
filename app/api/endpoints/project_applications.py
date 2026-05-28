@@ -86,7 +86,9 @@ async def get_project_applications(
     ),
 ) -> list[ProjectApplicationGET]:
     applications = await application_service.get_applications(
-        application_filters, True, ["project", "members", "interview"]
+        application_filters,
+        True,
+        ["project", "members", "interview", "interview.artifacts"],
     )
     return applications  # type: ignore[return-value]
 
