@@ -1,10 +1,10 @@
-from datetime import datetime, timedelta
-from zoneinfo import ZoneInfo
+from datetime import datetime, timedelta, timezone
 from uuid import UUID
 from itertools import chain
 from fastapi import Depends, HTTPException, status, Response
 from sqlalchemy.ext.asyncio.session import AsyncSession
 from typing import Callable, Iterable, Sequence
+from app.api.filters.project_application_filter import ProjectInterviewFilter
 from app.common.utils import (
     get_curr_year_and_semester,
     split_fullname,
@@ -19,6 +19,7 @@ from app.schemas.project_application import (
     ProjectApplicationPATCH,
     ProjectApplicationPOST,
     ProjectInterviewGET,
+    ProjectInterviewPATCH,
     TeamMemberPOST,
     ProjectApplicationGETLimited,
 )
@@ -297,7 +298,7 @@ class ProjectApplicationService:
 
     async def get_applications(
         self,
-        filters: ProjectApplicationFilter,
+        filters: ProjectApplicationFilter | ProjectInterviewFilter,
         detailed: bool = False,
         eager_loads: list[str] | None = None,
     ) -> list[ProjectApplicationGETLimited | ProjectApplicationGET]:
@@ -385,7 +386,7 @@ class ProjectApplicationService:
         possible_slots = []
         busy_slots = set()
         for meeting in all_meetings:
-            meeting_date = meeting.date.astimezone(ZoneInfo("Asia/Yekaterinburg"))
+            meeting_date = meeting.date
             if meeting_date.minute >= 30:
                 slot = meeting_date.replace(minute=0, second=0, microsecond=0)
                 busy_slots.add(slot)
@@ -395,8 +396,8 @@ class ProjectApplicationService:
                 busy_slots.add(slot)
         min_range_hour = settings.curator_workday_start_hour
         max_range_hour = settings.curator_workday_end_hour
-        current_day = min_workday.astimezone(ZoneInfo("Asia/Yekaterinburg"))
-        max_workday = max_workday.astimezone(ZoneInfo("Asia/Yekaterinburg"))
+        current_day = min_workday.astimezone(timezone.utc)
+        max_workday = max_workday.astimezone(timezone.utc)
         while current_day.date() <= max_workday.date():
             if current_day.weekday() == 5 or current_day.weekday() == 6:
                 current_day += timedelta(days=1)
@@ -533,6 +534,42 @@ class ProjectApplicationService:
                 },
             )
         return ProjectInterviewGET.model_validate(created_obj, from_attributes=True)
+
+    async def update_interview(
+        self, interview_id: UUID, new_data: ProjectInterviewPATCH
+    ) -> ProjectInterviewGET:
+        interview_obj = await self._interview_repo.get_by_id(
+            interview_id,
+            ["artifacts", "project_application", "project_application.project"],
+        )
+        if not interview_obj:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Interview with ID {interview_id} was not found",
+            )
+        application_update_status = None
+        if new_data.url:
+            new_data.interview_status = ProjectInterviewStatus.WAITING
+        if new_data.curators_rate:
+            new_data.interview_status = ProjectInterviewStatus.RATED
+            application_update_status = ProjectApplicationStatus.WAITING_FOR_ACK
+        data_to_update = new_data.model_dump(exclude_none=True)
+        if "url" in data_to_update or "date" in data_to_update:
+            date = data_to_update.get("date")
+            await self._vk_bot_sdk.post_interview_update(
+                interview_obj.project_application.vk_sender_id,
+                interview_obj.project_application.project.name,
+                interview_obj.project_application.team_name,
+                data_to_update.get("url"),
+                date.isoformat() if isinstance(date, datetime) else None,
+            )
+        if application_update_status:
+            await self._project_application_repo.update(
+                interview_obj.project_application, {"status": application_update_status}
+            )
+        updated_obj = await self._interview_repo.update(interview_obj, data_to_update)
+        print(type(updated_obj))
+        return updated_obj
 
 
 def project_application_service_getter(

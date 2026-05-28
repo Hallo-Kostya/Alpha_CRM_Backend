@@ -10,6 +10,7 @@ from app.common.enums import (
     ProjectInterviewStatus,
 )
 from app.schemas.project import ProjectRead
+from app.schemas.artifacts import ArtifactResponse
 
 
 class ProjectInterviewPOST(BaseModel):
@@ -22,6 +23,19 @@ class ProjectInterviewGET(BaseModel):
     date: datetime
     status: MeetingStatus
     interview_status: ProjectInterviewStatus
+    artifacts: list[ArtifactResponse] = Field(default_factory=list)
+    url: str | None = None
+    curators_rate: int | None = None
+    resume: str | None = None
+
+
+class ProjectInterviewPATCH(BaseModel):
+    name: str | None = None
+    date: datetime | None = None
+    status: MeetingStatus | None = None
+    interview_status: ProjectInterviewStatus | None = None
+    url: str | None = None
+    curators_rate: int | None = None
     resume: str | None = None
 
 

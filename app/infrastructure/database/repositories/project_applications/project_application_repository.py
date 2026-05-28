@@ -48,7 +48,12 @@ class ProjectApplicationRepository(BaseRepository[ProjectApplicationModel]):
             for key, value in filters.items():
                 column = FILTERS_MAP.get(key)
 
-                if column:
+                if column is None or value is None:
+                    continue
+
+                if isinstance(value, Sequence) and not isinstance(value, str):
+                    conditions.append(column.in_(value))
+                else:
                     conditions.append(column == value)
 
             if conditions:

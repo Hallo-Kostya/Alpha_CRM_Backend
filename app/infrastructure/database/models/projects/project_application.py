@@ -1,11 +1,18 @@
 from typing import TYPE_CHECKING
 from sqlalchemy import ForeignKey, String, Integer, Float
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship, foreign
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import and_
 from sqlalchemy import Enum as SQLEnum
-from app.common.enums import ProjectApplicationStatus, ProjectInterviewStatus
+from app.common.enums import (
+    ArtifactEntityType,
+    ProjectApplicationStatus,
+    ProjectInterviewStatus,
+)
 from app.infrastructure.database.models.entity_base import BaseEntity
 from app.infrastructure.database.models.meetings.meeting import BaseMeetingModel
+from app.infrastructure.database.models.artifacts.artifact_link import ArtifactLinkModel
+from app.infrastructure.database.models.artifacts.artifact import ArtifactModel
 
 if TYPE_CHECKING:
     from app.infrastructure.database.models.projects.project import ProjectModel
@@ -63,6 +70,18 @@ class ProjectInterviewModel(BaseMeetingModel):
         ),
         nullable=False,
         default=ProjectInterviewStatus.NEW,
+    )
+    # Артефакты
+    artifacts: Mapped[list["ArtifactModel"]] = relationship(
+        "ArtifactModel",
+        secondary="artifact_links",
+        primaryjoin=lambda: and_(
+            foreign(ArtifactLinkModel.entity_id) == ProjectInterviewModel.id,
+            ArtifactLinkModel.entity_type == ArtifactEntityType.INTERVIEW,
+        ),
+        secondaryjoin=lambda: ArtifactModel.id
+        == foreign(ArtifactLinkModel.artifact_id),
+        viewonly=True,
     )
 
 

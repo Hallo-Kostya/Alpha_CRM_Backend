@@ -1,6 +1,7 @@
 from uuid import UUID
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from app.api.dependencies import get_current_curator
+from app.api.filters.project_application_filter import ProjectInterviewFilter
 from app.services.project_application_service import (
     ProjectApplicationService,
     project_application_service_getter,
@@ -13,12 +14,17 @@ from app.schemas.project_application import (
     ProjectApplicationGETLimited,
     ProjectApplicationPOST,
     ProjectInterviewGET,
+    ProjectInterviewPATCH,
     ProjectInterviewPOST,
 )
 from app.infrastructure.database.database import db_helper
 from app.api.filters import ProjectApplicationFilter, ProjectFilter
 from sqlalchemy.ext.asyncio.session import AsyncSession
-from app.common.enums import ProjectApplicationStatus, ProjectStatus
+from app.common.enums import (
+    ProjectApplicationStatus,
+    ProjectInterviewStatus,
+    ProjectStatus,
+)
 from app.common.utils import get_curr_year_and_semester
 
 
@@ -150,3 +156,35 @@ async def create_interview(
         application_id, interview_data.interview_date
     )
     return updated_schema
+
+
+@router.get(
+    "/interviews/",
+    summary="Получить список интервью",
+)
+async def get_interviews(
+    interview_filters: ProjectInterviewFilter = Depends(),
+    interview_status: list[ProjectInterviewStatus] | None = Query(None),
+    application_service: ProjectApplicationService = Depends(
+        project_application_service_getter
+    ),
+) -> list[ProjectApplicationGET]:
+    interview_filters.interview_status = interview_status
+    applications = await application_service.get_applications(
+        interview_filters,
+        True,
+        ["project", "members", "interview", "interview.artifacts"],
+    )
+    return applications  # type: ignore[return-value]
+
+
+@router.patch("/interviews/{interview_id}/")
+async def update_interview(
+    interview_id: UUID,
+    data: ProjectInterviewPATCH,
+    application_service: ProjectApplicationService = Depends(
+        project_application_service_getter
+    ),
+) -> ProjectInterviewGET:
+    updated_interview = await application_service.update_interview(interview_id, data)
+    return updated_interview
