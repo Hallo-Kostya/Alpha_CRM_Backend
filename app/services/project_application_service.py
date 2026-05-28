@@ -510,7 +510,8 @@ class ProjectApplicationService:
         self, application_id: UUID, interview_date: datetime
     ) -> ProjectInterviewGET:
         app_obj = await self._project_application_repo.get_by_id(
-            application_id, eager_loads=["project", "interview", "members"]
+            application_id,
+            eager_loads=["project", "interview", "members", "interview.artifacts"],
         )
         if not app_obj:
             raise HTTPException(
