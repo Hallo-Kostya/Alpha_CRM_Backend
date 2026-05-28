@@ -12,6 +12,8 @@ from app.schemas.project_application import (
     ProjectApplicationPATCH,
     ProjectApplicationGETLimited,
     ProjectApplicationPOST,
+    ProjectInterviewGET,
+    ProjectInterviewPOST,
 )
 from app.infrastructure.database.database import db_helper
 from app.api.filters import ProjectApplicationFilter, ProjectFilter
@@ -116,7 +118,7 @@ async def delete_project_application(
 
 
 @router.patch(
-    "/{application_id}/change_status",
+    "/{application_id}/change_status/",
     summary="Изменить статус заявки",
 )
 async def change_status_project_application(
@@ -129,5 +131,22 @@ async def change_status_project_application(
 ) -> ProjectApplicationGETLimited:
     updated_schema = await application_service.handle_status_change(
         application_id, new_status, session
+    )
+    return updated_schema
+
+
+@router.post(
+    "/{application_id}/interview/",
+    summary="Создать интервью",
+)
+async def create_interview(
+    application_id: UUID,
+    interview_data: ProjectInterviewPOST,
+    application_service: ProjectApplicationService = Depends(
+        project_application_service_getter
+    ),
+) -> ProjectInterviewGET:
+    updated_schema = await application_service.create_interview(
+        application_id, interview_data.interview_date
     )
     return updated_schema

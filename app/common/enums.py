@@ -50,7 +50,8 @@ class ProjectApplicationStatus(str, Enum):
 class ProjectInterviewStatus(str, Enum):
     """Status of team participation in project."""
 
-    WAITING = "WAITING"  # Новое интервью (ДО интервью)
+    NEW = "NEW"  # новая сущность интервью
+    WAITING = "WAITING"  # Интервью согласовано (тимлид выбрал время, куратор прикрепил ссылку на звонок)
     RATING = "RATING"  # Ждёт оценки (ПОСЛЕ интервью)
     RATED = "RATED"  # Оценка выставлена (финальный статус интервью)
     CANCELED = "CANCELED"  # Интервью отменено

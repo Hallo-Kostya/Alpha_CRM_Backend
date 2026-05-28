@@ -62,7 +62,7 @@ class ProjectInterviewModel(BaseMeetingModel):
             values_callable=lambda x: [e.value for e in ProjectInterviewStatus],
         ),
         nullable=False,
-        default=ProjectInterviewStatus.WAITING,
+        default=ProjectInterviewStatus.NEW,
     )
 
 

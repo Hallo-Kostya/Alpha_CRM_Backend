@@ -1,8 +1,8 @@
 """project applications infrastructure
 
-Revision ID: e24a030e057c
+Revision ID: 3a990e3fa387
 Revises: 9a3489bce8a6
-Create Date: 2026-05-27 12:14:08.969032
+Create Date: 2026-05-27 16:48:48.277752
 
 """
 
@@ -13,7 +13,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = "e24a030e057c"
+revision: str = "3a990e3fa387"
 down_revision: Union[str, Sequence[str], None] = "9a3489bce8a6"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -128,6 +128,7 @@ def upgrade() -> None:
         sa.Column(
             "interview_status",
             sa.Enum(
+                "NEW",
                 "WAITING",
                 "RATING",
                 "RATED",

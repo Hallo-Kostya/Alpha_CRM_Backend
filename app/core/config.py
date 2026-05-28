@@ -134,6 +134,8 @@ class Settings(BaseSettings):
         env_nested_delimiter="__",
         env_prefix="",
     )
+    curator_workday_start_hour: int = 9
+    curator_workday_end_hour: int = 18
     run: RunConfig = RunConfig()
     api: ApiPrefix = ApiPrefix()
     db: DatabaseConfig = DatabaseConfig()

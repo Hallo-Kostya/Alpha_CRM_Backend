@@ -45,6 +45,7 @@ async def get_meetings_for_calendar(
 ):
     """Получить список встреч для отображения в календаре с фильтрами по команде и датам."""
     return await service.get_list(team_id, start_date, end_date)
+    # return await service.get_list_with_interviews(team_id, start_date, end_date)
 
 
 @router.get("/{meeting_id}", response_model=Meeting, summary="Получить встречу по ID")

@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from aiohttp import ClientSession
 from fastapi import Request
 from app.sdk.common.http_client import HttpClient
@@ -27,6 +29,23 @@ class VkBotBackendSdk:
     ) -> None:
         url = f"{self._base_url}/{vk_sender_id}/notify_accept/"
         data = {
+            "project_name": project_name,
+            "team_name": team_name,
+        }
+        await self._http_client.post(url, json=data, headers=self.__auth_headers)
+
+    async def post_interview_possible_dates(
+        self,
+        vk_sender_id: int,
+        possible_dates: list[str],
+        project_name: str,
+        team_name: str,
+        application_id: UUID,
+    ) -> None:
+        url = f"{self._base_url}/{vk_sender_id}/notify_interview/choose_date/"
+        data = {
+            "application_id": str(application_id),
+            "possible_dates": possible_dates,
             "project_name": project_name,
             "team_name": team_name,
         }

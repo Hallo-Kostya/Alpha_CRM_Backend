@@ -1,12 +1,24 @@
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 from uuid import UUID
+from itertools import chain
 from fastapi import Depends, HTTPException, status, Response
 from sqlalchemy.ext.asyncio.session import AsyncSession
-from typing import Callable, Sequence
-from app.common.utils import get_curr_year_and_semester, split_fullname
+from typing import Callable, Iterable, Sequence
+from app.common.utils import (
+    get_curr_year_and_semester,
+    split_fullname,
+    get_next_week_range,
+)
+from app.infrastructure.database.models.meetings.meeting import BaseMeetingModel
+from app.infrastructure.database.models.projects.project_application import (
+    ProjectInterviewModel,
+)
 from app.schemas.project_application import (
     ProjectApplicationGET,
     ProjectApplicationPATCH,
     ProjectApplicationPOST,
+    ProjectInterviewGET,
     TeamMemberPOST,
     ProjectApplicationGETLimited,
 )
@@ -40,6 +52,10 @@ from app.infrastructure.database.repositories.team_member_repository import (
     TeamMemberRepository,
     team_member_repository_getter,
 )
+from app.infrastructure.database.repositories.meeting_repository import (
+    MeetingRepository,
+    meeting_repository_getter,
+)
 from app.infrastructure.database.repositories.project_applications import (
     ProjectApplicationRepository,
     ProjectApplicationMemberRepository,
@@ -54,6 +70,7 @@ from app.common.enums import (
     ProjectInterviewStatus,
     ProjectStatus,
 )
+from app.core.config import settings
 
 
 class ProjectApplicationService:
@@ -69,6 +86,7 @@ class ProjectApplicationService:
         team_repo: TeamRepository,
         student_repo: StudentRepository,
         tm_repo: TeamMemberRepository,
+        meeting_repo: MeetingRepository,
         vk_bot_sdk: VkBotBackendSdk,
     ):
         self._project_application_repo = project_application_repo
@@ -79,6 +97,7 @@ class ProjectApplicationService:
         self._team_repo = team_repo
         self._tm_repo = tm_repo
         self._student_repo = student_repo
+        self._meeting_repo = meeting_repo
         self._vk_bot_sdk = vk_bot_sdk
         self._status_change_handlers: dict[ProjectApplicationStatus, Callable] = {
             ProjectApplicationStatus.INTERVIEW: self._handle_interview_status,
@@ -326,11 +345,11 @@ class ProjectApplicationService:
             )
             if linked_interview:
                 linked_interview = linked_interview[0]
-                if linked_interview.status not in (
+                if linked_interview.interview_status not in (
                     ProjectInterviewStatus.RATED,
                     ProjectInterviewStatus.CANCELED,
                 ):
-                    linked_interview.status = ProjectInterviewStatus.CANCELED
+                    linked_interview.interview_status = ProjectInterviewStatus.CANCELED
                     session.add(linked_interview)
             session.add(application_obj)
             await session.commit()
@@ -344,11 +363,78 @@ class ProjectApplicationService:
         )
         return application_obj
 
+    async def _get_all_calls(
+        self, start_date: datetime, end_date: datetime
+    ) -> Iterable[BaseMeetingModel]:
+        _, items = await self._meeting_repo.get_list(
+            range_filters={"date": (start_date, end_date)},
+            order_by="date",
+        )
+        _, items_interviews = await self._interview_repo.get_list(
+            range_filters={"date": (start_date, end_date)},
+            order_by="date",
+        )
+        return chain(items, items_interviews)
+
+    def _calculate_possible_slots(
+        self,
+        all_meetings: Iterable[BaseMeetingModel],
+        min_workday: datetime,
+        max_workday: datetime,
+    ) -> list[str]:
+        possible_slots = []
+        busy_slots = set()
+        for meeting in all_meetings:
+            meeting_date = meeting.date.astimezone(ZoneInfo("Asia/Yekaterinburg"))
+            if meeting_date.minute >= 30:
+                slot = meeting_date.replace(minute=0, second=0, microsecond=0)
+                busy_slots.add(slot)
+                busy_slots.add(slot + timedelta(hours=1))
+            else:
+                slot = meeting_date.replace(minute=0, second=0, microsecond=0)
+                busy_slots.add(slot)
+        min_range_hour = settings.curator_workday_start_hour
+        max_range_hour = settings.curator_workday_end_hour
+        current_day = min_workday.astimezone(ZoneInfo("Asia/Yekaterinburg"))
+        max_workday = max_workday.astimezone(ZoneInfo("Asia/Yekaterinburg"))
+        while current_day.date() <= max_workday.date():
+            if current_day.weekday() == 5 or current_day.weekday() == 6:
+                current_day += timedelta(days=1)
+                continue
+            for hour in range(min_range_hour, max_range_hour):
+                current_slot = current_day.replace(hour=hour)
+                if current_slot not in busy_slots:
+                    possible_slots.append(current_slot.isoformat())
+            current_day += timedelta(days=1)
+        return possible_slots
+
     async def _handle_interview_status(
         self,
         application_obj: ProjectApplicationModel,
         session: AsyncSession,
-    ) -> None: ...
+    ) -> ProjectApplicationModel:
+        if application_obj.status == ProjectApplicationStatus.INTERVIEW:
+            return application_obj
+        try:
+            start_date, end_date = get_next_week_range()
+            all_calls = await self._get_all_calls(start_date, end_date)
+            possible_dates = self._calculate_possible_slots(
+                all_calls, start_date, end_date
+            )
+            application_obj.status = ProjectApplicationStatus.INTERVIEW
+            session.add(application_obj)
+        except Exception:
+            await session.rollback()
+            raise
+        await session.commit()
+        await self._vk_bot_sdk.post_interview_possible_dates(
+            application_obj.vk_sender_id,
+            possible_dates,
+            application_obj.project.name,
+            application_obj.team_name,
+            application_obj.id,
+        )
+        return application_obj
 
     async def _handle_accepted_status(
         self,
@@ -365,10 +451,10 @@ class ProjectApplicationService:
             session.add(application_obj)
             if linked_interview:
                 linked_interview = linked_interview[0]
-                if linked_interview.status == ProjectInterviewStatus.WAITING:
-                    linked_interview.status = ProjectInterviewStatus.CANCELED
-                elif linked_interview.status == ProjectInterviewStatus.RATING:
-                    linked_interview.status = ProjectInterviewStatus.RATED
+                if linked_interview.interview_status == ProjectInterviewStatus.WAITING:
+                    linked_interview.interview_status = ProjectInterviewStatus.CANCELED
+                elif linked_interview.interview_status == ProjectInterviewStatus.RATING:
+                    linked_interview.interview_status = ProjectInterviewStatus.RATED
                 session.add(linked_interview)
             await self._create_team_project_from_application(application_obj, session)
             await session.commit()
@@ -419,6 +505,35 @@ class ProjectApplicationService:
         )
         session.add(project_team_model)
 
+    async def create_interview(
+        self, application_id: UUID, interview_date: datetime
+    ) -> ProjectInterviewGET:
+        app_obj = await self._project_application_repo.get_by_id(
+            application_id, eager_loads=["project", "interview", "members"]
+        )
+        if not app_obj:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Application with ID {application_id} is not found",
+            )
+        if not app_obj.interview:
+            new_obj = ProjectInterviewModel(
+                project_application_id=app_obj.id,
+                date=interview_date,
+                name=f"Собеседование команды: {app_obj.team_name} на проект: {app_obj.project.name}",
+            )
+            created_obj = await self._interview_repo.create(new_obj)
+        else:
+            created_obj = await self._interview_repo.update(
+                app_obj.interview,
+                {
+                    "date": interview_date,
+                    "name": f"Собеседование команды: {app_obj.team_name} на проект: {app_obj.project.name}",
+                    "interview_status": ProjectInterviewStatus.NEW,
+                },
+            )
+        return ProjectInterviewGET.model_validate(created_obj, from_attributes=True)
+
 
 def project_application_service_getter(
     project_team_repo: ProjectTeamRepository = Depends(project_team_repository_getter),
@@ -435,6 +550,7 @@ def project_application_service_getter(
     ),
     student_repo: StudentRepository = Depends(student_repository_getter),
     tm_repo: TeamMemberRepository = Depends(team_member_repository_getter),
+    meeting_repo: MeetingRepository = Depends(meeting_repository_getter),
     vk_bot_sdk: VkBotBackendSdk = Depends(get_sdk),
 ) -> ProjectApplicationService:
     return ProjectApplicationService(
@@ -446,5 +562,6 @@ def project_application_service_getter(
         team_repo,
         student_repo,
         tm_repo,
+        meeting_repo,
         vk_bot_sdk,
     )

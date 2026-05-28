@@ -4,22 +4,16 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field
 from datetime import datetime
 
-from app.common.enums import ProjectApplicationStatus, MeetingStatus
+from app.common.enums import (
+    ProjectApplicationStatus,
+    MeetingStatus,
+    ProjectInterviewStatus,
+)
 from app.schemas.project import ProjectRead
 
 
 class ProjectInterviewPOST(BaseModel):
-    name: str
-    date: datetime
-    resume: str | None = None
-    status: MeetingStatus | None = None
-
-
-class ProjectInterviewPATCH(BaseModel):
-    name: str | None = None
-    date: datetime | None = None
-    resume: str | None = None
-    status: MeetingStatus | None = None
+    interview_date: datetime
 
 
 class ProjectInterviewGET(BaseModel):
@@ -27,6 +21,7 @@ class ProjectInterviewGET(BaseModel):
     name: str
     date: datetime
     status: MeetingStatus
+    interview_status: ProjectInterviewStatus
     resume: str | None = None
 
 

@@ -24,6 +24,9 @@ from app.admin.setup import (
     ProjectAdmin,
     MeetingAdmin,
     TaskAdmin,
+    ProjectInterviewAdmin,
+    ProjectApplicationAdmin,
+    ProjectApplicationMemberAdmin,
 )
 
 from contextlib import asynccontextmanager
@@ -63,6 +66,9 @@ async def lifespan(app: FastAPI):
     admin.add_view(TaskAdmin)
     admin.add_view(ArtifactAdmin)
     admin.add_view(ArtifactLinkAdmin)
+    admin.add_view(ProjectApplicationMemberAdmin)
+    admin.add_view(ProjectApplicationAdmin)
+    admin.add_view(ProjectInterviewAdmin)
 
     yield
 
@@ -106,6 +112,9 @@ admin.add_view(TeamAdmin)
 admin.add_view(ProjectAdmin)
 admin.add_view(MeetingAdmin)
 admin.add_view(TaskAdmin)
+admin.add_view(ProjectApplicationMemberAdmin)
+admin.add_view(ProjectApplicationAdmin)
+admin.add_view(ProjectInterviewAdmin)
 
 Team.model_rebuild(force=True)
 Project.model_rebuild(force=True)

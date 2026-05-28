@@ -7,6 +7,9 @@ from app.infrastructure.database.models import (
     ProjectModel,
     MeetingModel,
     TaskModel,
+    ProjectApplicationModel,
+    ProjectApplicationMemberModel,
+    ProjectInterviewModel,
 )
 from app.infrastructure.database.models.artifacts.artifact import ArtifactModel
 from app.infrastructure.database.models.artifacts.artifact_link import ArtifactLinkModel
@@ -140,6 +143,71 @@ class ArtifactLinkAdmin(ModelView, model=ArtifactLinkModel):
 
     column_searchable_list = [
         ArtifactLinkModel.entity_type,
+    ]
+
+    can_create = False
+    can_edit = False
+
+    can_view_details = True
+
+
+class ProjectApplicationAdmin(ModelView, model=ProjectApplicationModel):
+    name = "Project Application"
+    name_plural = "Project Applications"
+
+    column_list = [
+        ProjectApplicationModel.id,
+        ProjectApplicationModel.team_name,
+        ProjectApplicationModel.project_id,
+        ProjectApplicationModel.status,
+    ]
+
+    column_searchable_list = [
+        ProjectApplicationModel.team_name,
+    ]
+
+    can_create = False
+    can_edit = False
+
+    can_view_details = True
+
+
+class ProjectInterviewAdmin(ModelView, model=ProjectInterviewModel):
+    name = "Project Interview"
+    name_plural = "Project Interviews"
+
+    column_list = [
+        ProjectInterviewModel.id,
+        ProjectInterviewModel.interview_status,
+        ProjectInterviewModel.date,
+        ProjectInterviewModel.project_application_id,
+    ]
+
+    column_searchable_list = [
+        ProjectInterviewModel.id,
+        ProjectInterviewModel.date,
+    ]
+
+    can_create = False
+    can_edit = False
+
+    can_view_details = True
+
+
+class ProjectApplicationMemberAdmin(ModelView, model=ProjectApplicationMemberModel):
+    name = "Project Application Member"
+    name_plural = "Project Application Members"
+
+    column_list = [
+        ProjectApplicationMemberModel.id,
+        ProjectApplicationMemberModel.fullname,
+        ProjectApplicationMemberModel.role,
+        ProjectApplicationMemberModel.study_group,
+    ]
+
+    column_searchable_list = [
+        ProjectInterviewModel.id,
+        ProjectApplicationMemberModel.fullname,
     ]
 
     can_create = False
