@@ -26,3 +26,15 @@ async def search_students(
 ):
     """Поиск только по студентам. Возвращает расширенные карточки с email и группой."""
     return await service.search_students(q, limit)
+
+@router.get(
+    "/curators/search",
+    summary="Поиск кураторов",
+)
+async def search_curators(
+    q: str = Query(..., description="Имя или фамилия куратора"),
+    limit: int = Query(20, ge=1, le=100, description="Максимум результатов"),
+     service: SearchService = Depends(search_service_getter),
+):
+    """Поиск по зарегистрированным кураторам. Возвращает только id, имя и фамилию."""
+    return await service.search_curators(q, limit)

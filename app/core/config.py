@@ -118,7 +118,7 @@ class DatabaseConfig(BaseModel):
 
 
 class AIClientConfig(BaseModel):
-    api_key: str = ""
+    api_key: str = "api-key-placeholder"
     base_url: str = "https://openrouter.ai/api/v1"
 
 

@@ -11,7 +11,7 @@ router = APIRouter(
     prefix="/ai",
     tags=["ai_service"],
     responses={404: {"description": "AI endpoint not found"}},
-    # dependencies=[Depends(get_current_curator)]
+    dependencies=[Depends(get_current_curator)]
 )
 
 @router.post("/auto-fill-data")

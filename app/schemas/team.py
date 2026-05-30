@@ -9,6 +9,16 @@ from app.common.fields import NameField
 from app.schemas.team_member import TeamMember, TeamMemberDetail
 
 
+class CuratorShort(BaseModel):
+    """Краткая информация о кураторе для отображения в команде."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    first_name: str
+    last_name: str
+
+
 class Team(BaseModel):
     """Team model with all fields."""
 
@@ -18,6 +28,7 @@ class Team(BaseModel):
     name: str
     members: list[TeamMember] = Field(default_factory=list)
     group_link: Optional[str] = None
+    curators: list[CuratorShort] = Field(default_factory=list)
 
 
 class TeamDetail(BaseModel):
@@ -28,11 +39,15 @@ class TeamDetail(BaseModel):
     name: str
     members: list[TeamMemberDetail] = Field(default_factory=list)
     group_link: Optional[str] = None
+    curators: list[CuratorShort] = Field(default_factory=list)
 
 
 class TeamCreate(BaseModel):
     name: NameField = Field(..., examples=["Название команды"])
     group_link: Optional[str] = None
+    curator_id: Optional[UUID] = Field(
+        None, description="ID куратора для привязки при создании (опционально)"
+    )
 
 
 class TeamUpdate(BaseModel):

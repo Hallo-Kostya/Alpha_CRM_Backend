@@ -1,9 +1,9 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Response, status, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from app.api.dependencies import get_current_curator
 from app.common.enums import ProjectTeamStatus
-from app.schemas.team import TeamCreate, TeamUpdate, TeamSummaryResponse
+from app.schemas.team import CuratorShort, TeamCreate, TeamUpdate, TeamSummaryResponse
 from app.schemas.team_member import TeamMemberCreate, TeamMemberUpdate
 from app.services.team_service import (
     TeamService,
@@ -36,7 +36,7 @@ async def create_team(
     data: TeamCreate,
     service: TeamService = Depends(team_service_getter),
 ):
-    """Создать новую команду с именем и опциональной ссылкой на беседу."""
+    """Создать новую команду. Опционально можно передать `curator_id` для привязки куратора сразу."""
     return await service.create(data)
 
 
@@ -49,7 +49,7 @@ async def summarize_teams(
     ),
     filters: TeamFilter = Depends(),
 ):
-    """Получить список команд с фильтром по проекту. Включает ID, имя, количество участников и список участников."""
+    """Получить список команд с фильтром по проекту."""
     return await service.get_teams_summary(
         project_team_status,
         project_id,
@@ -67,7 +67,7 @@ async def list_teams(
     service: TeamService = Depends(team_service_getter),
     filters: TeamFilter = Depends(),
 ) -> list[TeamDetail]:
-    """Получить список команд с фильтром по проекту. Включает ID, имя, количество участников и список участников."""
+    """Получить список команд с участниками и привязанными кураторами."""
     return await service.get_list(project_id, **filters.model_dump(exclude_none=True))
 
 
@@ -76,14 +76,39 @@ async def get_team(
     team_id: UUID,
     service: TeamService = Depends(team_service_getter),
 ):
-    """Получить детальную информацию о команде."""
-    team = await service.get_by_id(team_id, ["members"])
+    """Получить детальную информацию о команде, включая привязанных кураторов."""
+    team = await service.get_by_id(team_id, ["members", "curators"])
     if team is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Команда с ID {team_id} не найдена",
         )
     return team
+
+
+@router.patch("/{team_id}", response_model=Team, summary="Обновить команду")
+async def update_team(
+    team_id: UUID,
+    data: TeamUpdate,
+    service: TeamService = Depends(team_service_getter),
+):
+    """Обновить данные команды: имя, ссылка на беседу."""
+    return await service.update(team_id, data)
+
+
+@router.delete("/{team_id}", summary="Удалить команду")
+async def delete_team(
+    team_id: UUID,
+    service: TeamService = Depends(team_service_getter),
+):
+    """Удалить команду."""
+    deleted = await service.delete(team_id)
+    if not deleted:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Команда с ID {team_id} не найдена для удаления",
+        )
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post(
@@ -135,26 +160,30 @@ async def remove_student_from_team(
     return Response("Студент удален из команды", status.HTTP_200_OK)
 
 
-@router.patch("/{team_id}", response_model=Team, summary="Обновить команду")
-async def update_team(
+@router.post(
+    "/{team_id}/curators/{curator_id}",
+    response_model=Team,
+    summary="Добавить куратора к команде",
+    status_code=status.HTTP_200_OK,
+)
+async def add_curator_to_team(
     team_id: UUID,
-    data: TeamUpdate,
+    curator_id: UUID,
     service: TeamService = Depends(team_service_getter),
 ):
-    """Обновить данные команды: имя, ссылка на беседу."""
-    return await service.update(team_id, data)
+    """Привязать зарегистрированного куратора к команде."""
+    return await service.add_curator(team_id, curator_id)
 
 
-@router.delete("/{team_id}", summary="Удалить команду")
-async def delete_team(
+@router.delete(
+    "/{team_id}/curators/{curator_id}",
+    response_model=Team,
+    summary="Удалить куратора из команды",
+)
+async def remove_curator_from_team(
     team_id: UUID,
+    curator_id: UUID,
     service: TeamService = Depends(team_service_getter),
 ):
-    """Удалить команду."""
-    deleted = await service.delete(team_id)
-    if not deleted:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Команда с ID {team_id} не найдена для удаления",
-        )
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
+    """Отвязать куратора от команды."""
+    return await service.remove_curator(team_id, curator_id)

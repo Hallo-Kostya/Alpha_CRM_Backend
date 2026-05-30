@@ -8,10 +8,12 @@ from fastapi import Depends
 from app.infrastructure.database.models.persons.student import StudentModel
 from app.infrastructure.database.models.projects.project import ProjectModel
 from app.infrastructure.database.models.teams.team import TeamModel
+from app.infrastructure.database.repositories.curator_team_repository import CuratorTeamRepository
 from app.infrastructure.database.repositories.project_repository import ProjectRepository, project_repository_getter
 from app.infrastructure.database.repositories.team_repository import TeamRepository, team_repository_getter
 from app.infrastructure.database.repositories.student_repository import StudentRepository, student_repository_getter
 from app.infrastructure.database.database import db_helper
+from app.schemas.team import CuratorShort
 
 class SearchService:
     def __init__(
@@ -19,10 +21,12 @@ class SearchService:
         project_repo: ProjectRepository,
         team_repo: TeamRepository,
         student_repo: StudentRepository,
+        curator_team_repo: CuratorTeamRepository
     ):
         self.project_repo = project_repo
         self.team_repo = team_repo
         self.student_repo = student_repo
+        self._curator_team_repo = curator_team_repo
 
     async def search_entities(self, query: str, limit: int = 10) -> List[Dict[str, Any]]:
         """Умный поиск по проектам, командам и студентам."""
@@ -88,6 +92,10 @@ class SearchService:
 
         results = await self.student_repo.session.execute(student_query)
         return [row._asdict() for row in results]
+
+    async def search_curators(self, query: str, limit: int = 20) -> list[CuratorShort]:
+        curators = await self._curator_team_repo.search_curators(query, limit)
+        return [CuratorShort.model_validate(c, from_attributes=True) for c in curators]
 
 def search_service_getter(
     project_repo: ProjectRepository = Depends(project_repository_getter),
