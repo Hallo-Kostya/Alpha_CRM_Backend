@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta, timezone
 from uuid import UUID
 from itertools import chain
 from fastapi import Depends, HTTPException, status, Response
@@ -19,6 +19,7 @@ from app.schemas.project_application import (
     ProjectApplicationPATCH,
     ProjectApplicationPOST,
     ProjectInterviewGET,
+    ProjectInterviewGETLimited,
     ProjectInterviewPATCH,
     TeamMemberPOST,
     ProjectApplicationGETLimited,
@@ -508,7 +509,13 @@ class ProjectApplicationService:
 
     async def create_interview(
         self, application_id: UUID, interview_date: datetime
-    ) -> ProjectInterviewGET:
+    ) -> ProjectInterviewGETLimited:
+        interview_date = interview_date.astimezone(UTC)
+        if (interview_date - datetime.now(UTC)) < timedelta(hours=24):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="The Gap between the interview date and the time the date was selected must be at least 24 hours",
+            )
         app_obj = await self._project_application_repo.get_by_id(
             application_id,
             eager_loads=["project", "interview", "members", "interview.artifacts"],
@@ -534,7 +541,9 @@ class ProjectApplicationService:
                     "interview_status": ProjectInterviewStatus.NEW,
                 },
             )
-        return ProjectInterviewGET.model_validate(created_obj, from_attributes=True)
+        return ProjectInterviewGETLimited.model_validate(
+            created_obj, from_attributes=True
+        )
 
     async def update_interview(
         self, interview_id: UUID, new_data: ProjectInterviewPATCH

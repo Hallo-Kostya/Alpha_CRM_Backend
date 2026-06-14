@@ -14,6 +14,7 @@ from app.schemas.project_application import (
     ProjectApplicationGETLimited,
     ProjectApplicationPOST,
     ProjectInterviewGET,
+    ProjectInterviewGETLimited,
     ProjectInterviewPATCH,
     ProjectInterviewPOST,
 )
@@ -153,7 +154,7 @@ async def create_interview(
     application_service: ProjectApplicationService = Depends(
         project_application_service_getter
     ),
-) -> ProjectInterviewGET:
+) -> ProjectInterviewGETLimited:
     updated_schema = await application_service.create_interview(
         application_id, interview_data.interview_date
     )

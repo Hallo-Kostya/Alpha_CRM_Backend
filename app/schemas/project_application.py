@@ -29,6 +29,17 @@ class ProjectInterviewGET(BaseModel):
     resume: str | None = None
 
 
+class ProjectInterviewGETLimited(BaseModel):
+    id: UUID
+    name: str
+    date: datetime
+    status: MeetingStatus
+    interview_status: ProjectInterviewStatus
+    url: str | None = None
+    curators_rate: int | None = None
+    resume: str | None = None
+
+
 class ProjectInterviewPATCH(BaseModel):
     name: str | None = None
     date: datetime | None = None
