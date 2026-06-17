@@ -1,12 +1,16 @@
-from typing import Optional, Any
+from typing import Optional, Any, Sequence
 
-from sqlalchemy import Sequence, func, select
+from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
 
 from app.infrastructure.database.repositories.base_repository import (
     BaseRepository,
 )
-from app.infrastructure.database.models import ProjectApplicationModel, ProjectModel
+from app.infrastructure.database.models import (
+    ProjectApplicationModel,
+    ProjectModel,
+    ProjectInterviewModel,
+)
 from app.infrastructure.database.database import db_helper
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -21,6 +25,7 @@ FILTERS_MAP = {
     "project_name": ProjectModel.name,
     "year": ProjectModel.year,
     "semester": ProjectModel.semester,
+    "interview_status": ProjectInterviewModel.interview_status,
 }
 
 
@@ -55,7 +60,6 @@ class ProjectApplicationRepository(BaseRepository[ProjectApplicationModel]):
                     conditions.append(column.in_(value))
                 else:
                     conditions.append(column == value)
-
             if conditions:
                 query = query.where(*conditions)
 

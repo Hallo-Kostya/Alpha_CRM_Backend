@@ -173,6 +173,7 @@ async def get_interviews(
     ),
 ) -> list[ProjectApplicationGET]:
     interview_filters.interview_status = interview_status
+    print(interview_filters.interview_status)
     applications = await application_service.get_applications(
         interview_filters,
         True,
