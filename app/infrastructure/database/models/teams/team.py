@@ -21,7 +21,7 @@ class TeamModel(BaseEntity):
     __tablename__ = "teams"
 
     # Название команды
-    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    name: Mapped[str] = mapped_column(String(1000), nullable=False)
 
     # Ссылка на группу (например, чат команды)
     group_link: Mapped[str | None] = mapped_column(String(512), nullable=True)

@@ -6,10 +6,7 @@ from openai import OpenAI
 from app.schemas.project import ProjectCreate, Semester, ProjectStatus
 from app.core.config import settings
 
-client = OpenAI(
-    base_url=settings.ai.base_url,
-    api_key=settings.ai.api_key
-)
+client = OpenAI(base_url=settings.ai.base_url, api_key=settings.ai.api_key)
 
 # ─────────────────────────────────────────────
 #  Few-shot примеры — добавляй сюда удачные кейсы
@@ -389,7 +386,7 @@ class AIService:
 
         try:
             response = client.chat.completions.create(
-                model="deepseek/deepseek-v4-flash:free",
+                model="nex-agi/nex-n2-pro:free",
                 messages=[
                     {
                         "role": "system",

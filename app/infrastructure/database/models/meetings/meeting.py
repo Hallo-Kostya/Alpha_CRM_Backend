@@ -19,9 +19,9 @@ class BaseMeetingModel(BaseEntity):
     __abstract__ = True
 
     # Название встречи
-    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    name: Mapped[str] = mapped_column(String(1000), nullable=False)
     # Описание встречи
-    resume: Mapped[str | None] = mapped_column(String(2000), nullable=True)
+    resume: Mapped[str | None] = mapped_column(String(5000), nullable=True)
     # Дата начала встречи
     date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     # Статус встречи

@@ -5,15 +5,18 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.infrastructure.database.models.entity_base import BaseEntity
 
 if TYPE_CHECKING:
-    from app.infrastructure.database.models.meetings.meeting_task import MeetingTaskModel
+    from app.infrastructure.database.models.meetings.meeting_task import (
+        MeetingTaskModel,
+    )
 
 
 class TaskModel(BaseEntity):
     """Модель задачи"""
+
     __tablename__ = "tasks"
-    
+
     # Описание задачи
-    description: Mapped[str] = mapped_column(String(1000), nullable=False)
+    description: Mapped[str] = mapped_column(String(5000), nullable=False)
     # Статус задачи
     is_completed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     # Связь с задачами на встрече
@@ -22,4 +25,3 @@ class TaskModel(BaseEntity):
         back_populates="task",
         cascade="all, delete-orphan",
     )
-

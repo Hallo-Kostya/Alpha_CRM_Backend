@@ -98,10 +98,10 @@ class ProjectApplicationModel(BaseEntity):
     )
 
     # Описание заявки
-    description: Mapped[str] = mapped_column(String(2000), nullable=True)
+    description: Mapped[str] = mapped_column(String(5000), nullable=True)
 
     # Название команды
-    team_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    team_name: Mapped[str] = mapped_column(String(1000), nullable=False)
 
     # Участники команды
     members: Mapped[list["ProjectApplicationMemberModel"]] = relationship(

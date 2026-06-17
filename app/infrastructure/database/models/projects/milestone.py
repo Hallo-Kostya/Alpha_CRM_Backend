@@ -13,8 +13,9 @@ if TYPE_CHECKING:
 
 class MilestoneModel(BaseEntity):
     """Модель вехи проекта"""
+
     __tablename__ = "milestones"
-    
+
     # ID проекта
     project_id: Mapped[UUID] = mapped_column(
         UUID(as_uuid=True),
@@ -24,18 +25,21 @@ class MilestoneModel(BaseEntity):
     # Дата вехи
     date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     # Название вехи
-    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    title: Mapped[str] = mapped_column(String(1000), nullable=False)
     # Тип вехи
     type: Mapped[MilestoneType] = mapped_column(
-        SQLEnum(MilestoneType, native_enum=False, values_callable=lambda x: [e.value for e in MilestoneType]),
+        SQLEnum(
+            MilestoneType,
+            native_enum=False,
+            values_callable=lambda x: [e.value for e in MilestoneType],
+        ),
         nullable=False,
     )
     # Описание вехи
-    description: Mapped[str | None] = mapped_column(String(2000), nullable=True)
-    
+    description: Mapped[str | None] = mapped_column(String(5000), nullable=True)
+
     # Связь с проектом
     project: Mapped["ProjectModel"] = relationship(
         "ProjectModel",
         back_populates="milestones",
     )
-

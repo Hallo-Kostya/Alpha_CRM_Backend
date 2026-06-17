@@ -23,15 +23,15 @@ class ProjectModel(BaseEntity):
     __tablename__ = "projects"
 
     # Название проекта
-    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    name: Mapped[str] = mapped_column(String(1000), nullable=False)
     # Описание проекта
-    description: Mapped[str | None] = mapped_column(String(2000), nullable=True)
+    description: Mapped[str | None] = mapped_column(String(5000), nullable=True)
     # Цель проекта
-    goal: Mapped[str | None] = mapped_column(String(1000), nullable=True)
+    goal: Mapped[str | None] = mapped_column(String(5000), nullable=True)
     # Требования к проекту
-    requirements: Mapped[str | None] = mapped_column(String(2000), nullable=True)
+    requirements: Mapped[str | None] = mapped_column(String(5000), nullable=True)
     # Критерии оценки проекта
-    eval_criteria: Mapped[str | None] = mapped_column(String(1000), nullable=True)
+    eval_criteria: Mapped[str | None] = mapped_column(String(5000), nullable=True)
     # Год проведения проекта
     year: Mapped[int] = mapped_column(Integer, nullable=False)
     # Семестр
