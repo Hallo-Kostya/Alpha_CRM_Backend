@@ -42,8 +42,13 @@ class ProjectApplicationRepository(BaseRepository[ProjectApplicationModel]):
         offset: Optional[int] = None,
         eager_loads: list[str] | None = None,
     ) -> tuple[int, Sequence[ProjectApplicationModel]]:
-        query = select(self.model).join(
-            ProjectModel, ProjectModel.id == self.model.project_id
+        query = (
+            select(self.model)
+            .join(ProjectModel, ProjectModel.id == self.model.project_id)
+            .join(
+                ProjectInterviewModel,
+                ProjectInterviewModel.project_application_id == self.model.id,
+            )
         )
 
         # Filtering
