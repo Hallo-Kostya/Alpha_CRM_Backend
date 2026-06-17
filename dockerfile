@@ -14,7 +14,7 @@ COPY ./pyproject.toml ./poetry.lock /backend/
 
 WORKDIR /backend
 
-RUN /usr/local/bin/poetry install --no-root 
+RUN poetry install --no-root 
 
 COPY ./app ./app
 COPY ./entrypoint.sh ./entrypoint.sh

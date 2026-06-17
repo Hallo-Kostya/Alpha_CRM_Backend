@@ -1,0 +1,40 @@
+from typing import List
+from fastapi import APIRouter, Depends, Query
+from app.api.dependencies import get_current_curator
+from app.services.search_service import SearchService, search_service_getter
+
+router = APIRouter(
+    prefix="/search",
+    tags=["search"],
+    dependencies=[Depends(get_current_curator)],
+)
+
+@router.get("/", summary="Умный поиск по сущностям")
+async def search_entities(
+    q: str = Query(..., description="Строка поиска"),
+    limit: int = Query(20, description="Максимум результатов"),
+    service: SearchService = Depends(search_service_getter),
+):
+    """Ищет по проектам, командам и студентам. Возвращает карточки для фронта."""
+    return await service.search_entities(q, limit)
+
+@router.get("/students", summary="Поиск по студентам")
+async def search_students(
+    q: str = Query(..., description="Имя, фамилия или email студента"),
+    limit: int = Query(20, description="Максимум результатов"),
+    service: SearchService = Depends(search_service_getter),
+):
+    """Поиск только по студентам. Возвращает расширенные карточки с email и группой."""
+    return await service.search_students(q, limit)
+
+@router.get(
+    "/curators/search",
+    summary="Поиск кураторов",
+)
+async def search_curators(
+    q: str = Query(..., description="Имя или фамилия куратора"),
+    limit: int = Query(20, ge=1, le=100, description="Максимум результатов"),
+     service: SearchService = Depends(search_service_getter),
+):
+    """Поиск по зарегистрированным кураторам. Возвращает только id, имя и фамилию."""
+    return await service.search_curators(q, limit)

@@ -1,11 +1,12 @@
-from typing import Generic, Type, TypeVar, Sequence
+from typing import Any, Generic, Optional, Type, TypeVar, Sequence
 from uuid import UUID
-from sqlalchemy import select
+from sqlalchemy import String, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.domain.interfaces.repositories.repository_interface import (
+from sqlalchemy.orm import selectinload
+from app.common.repository_interface import (
     RepositoryInterface,
 )
-from app.infrastructure.database.entity_base import BaseEntity
+from app.infrastructure.database.models.entity_base import BaseEntity
 
 T = TypeVar("T", bound=BaseEntity)
 
@@ -25,10 +26,30 @@ class BaseRepository(RepositoryInterface[T], Generic[T]):
         await self.session.refresh(obj)
         return obj
 
-    async def get_by_id(self, obj_id: UUID) -> T | None:
-        result = await self.session.execute(
-            select(self.model).where(self.model.id == obj_id)
-        )
+    async def get_by_id(
+        self, obj_id: UUID, eager_loads: list[str] | None = None
+    ) -> T | None:
+        query = select(self.model).where(self.model.id == obj_id)
+        if eager_loads:
+            options = []
+
+            for load_path in eager_loads:
+                parts = load_path.split(".")
+
+                attr = getattr(self.model, parts[0])
+                loader = selectinload(attr)
+
+                current_model = attr.property.entity.class_
+
+                for part in parts[1:]:
+                    attr = getattr(current_model, part)
+                    loader = loader.selectinload(attr)
+                    current_model = attr.property.entity.class_
+
+                options.append(loader)
+
+            query = query.options(*options)
+        result = await self.session.execute(query)
         obj = result.scalar_one_or_none()
         return obj
 
@@ -39,11 +60,72 @@ class BaseRepository(RepositoryInterface[T], Generic[T]):
         await self.session.refresh(obj)
         return obj
 
-    async def get_list(self, **filter_attrs) -> Sequence[T] | list[T]:
-        query = select(self.model).filter_by(**filter_attrs)
-        result = await self.session.scalars(query)
-        return result.all()
-
     async def delete(self, obj: T) -> None:
         await self.session.delete(obj)
         await self.session.commit()
+
+    async def get_list(
+        self,
+        filters: Optional[dict[str, Any]] = None,
+        range_filters: Optional[dict[str, tuple[Any, Any]]] = None,
+        order_by: Optional[str] = None,
+        limit: Optional[int] = None,
+        offset: Optional[int] = None,
+        eager_loads: list[str] | None = None
+    ) -> tuple[int, Sequence[T]]:
+        query = select(self.model)
+        if eager_loads:
+            options = []
+
+            for load_path in eager_loads:
+                parts = load_path.split(".")
+
+                attr = getattr(self.model, parts[0])
+                loader = selectinload(attr)
+
+                current_model = attr.property.entity.class_
+
+                for part in parts[1:]:
+                    attr = getattr(current_model, part)
+                    loader = loader.selectinload(attr)
+                    current_model = attr.property.entity.class_
+
+                options.append(loader)
+
+            query = query.options(*options)
+        if filters:
+            for field, value in filters.items():
+                column = getattr(self.model, field, None)
+                if column is not None and value is not None:
+                    if isinstance(column.type, String):
+                        query = query.where(func.lower(column) == value.lower())
+                    else:
+                        query = query.where(column == value)
+
+        if range_filters:
+            for field, (from_val, to_val) in range_filters.items():
+                column = getattr(self.model, field, None)
+                if column is not None:
+                    if from_val is not None:
+                        query = query.where(column >= from_val)
+                    if to_val is not None:
+                        query = query.where(column <= to_val)
+
+        count_query = select(func.count()).select_from(query.subquery())
+        total = await self.session.scalar(count_query)
+
+        if order_by:
+            desc = order_by.startswith("-")
+            column = getattr(self.model, order_by.lstrip("-"), None)
+            if column is not None:
+                query = query.order_by(column.desc() if desc else column.asc())
+        else:
+            query = query.order_by(self.model.created_at.asc())
+
+        if offset:
+            query = query.offset(offset)
+        if limit:
+            query = query.limit(limit)
+
+        result = await self.session.execute(query)
+        return total, result.scalars().all()

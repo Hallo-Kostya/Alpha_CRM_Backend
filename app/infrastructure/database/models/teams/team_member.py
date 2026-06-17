@@ -3,7 +3,7 @@ from sqlalchemy import String, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID
 
-from app.infrastructure.database.entity_base import BaseEntity
+from app.infrastructure.database.models.entity_base import BaseEntity
 
 if TYPE_CHECKING:
     from app.infrastructure.database.models.persons import StudentModel
@@ -44,3 +44,5 @@ class TeamMemberModel(BaseEntity):
         "StudentModel",
         back_populates="team_links",
     )
+    def __str__(self) -> str:
+        return f"{self.id}: {self.student_id} - {self.role}, команда: {self.team_id}"

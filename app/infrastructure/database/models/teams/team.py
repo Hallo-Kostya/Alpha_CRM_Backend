@@ -1,50 +1,53 @@
 from typing import TYPE_CHECKING
-from sqlalchemy import String, ForeignKey
+from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy.dialects.postgresql import UUID
 
-from app.infrastructure.database.entity_base import BaseEntity
+from app.infrastructure.database.models.entity_base import BaseEntity
 
 if TYPE_CHECKING:
     from app.infrastructure.database.models.meetings.meeting import MeetingModel
     from app.infrastructure.database.models.persons.curator import CuratorModel
     from app.infrastructure.database.models.projects.project import ProjectModel
-    from app.infrastructure.database.models.projects.project_team import ProjectTeamModel
+    from app.infrastructure.database.models.projects.project_team import (
+        ProjectTeamModel,
+    )
     from app.infrastructure.database.models.teams.curator_team import CuratorTeamModel
     from app.infrastructure.database.models.teams.team_member import TeamMemberModel
 
 
 class TeamModel(BaseEntity):
     """Модель команды"""
+
     __tablename__ = "teams"
-    
+
     # Название команды
     name: Mapped[str] = mapped_column(String(255), nullable=False)
-    
+
     # Ссылка на группу (например, чат команды)
     group_link: Mapped[str | None] = mapped_column(String(512), nullable=True)
-    
+
     # Участники команды (связующая таблица team_members)
     members: Mapped[list["TeamMemberModel"]] = relationship(
         "TeamMemberModel",
         back_populates="team",
         cascade="all, delete-orphan",
+        lazy="selectin",
     )
-    
+
     # Собрания, связанные с командой
     meetings: Mapped[list["MeetingModel"]] = relationship(
         "MeetingModel",
         back_populates="team",
         cascade="all, delete-orphan",
     )
-    
+
     # Связи с проектами через таблицу project_teams (M2M)
     project_teams: Mapped[list["ProjectTeamModel"]] = relationship(
         "ProjectTeamModel",
         back_populates="team",
         cascade="all, delete-orphan",
     )
-    
+
     # Проекты команды (через вторичную таблицу project_teams, только просмотр)
     projects: Mapped[list["ProjectModel"]] = relationship(
         "ProjectModel",
@@ -52,14 +55,14 @@ class TeamModel(BaseEntity):
         back_populates="teams",
         viewonly=True,
     )
-    
+
     # Связи с кураторами через промежуточную таблицу curator_teams (M2M, модель связей)
     curator_team_links: Mapped[list["CuratorTeamModel"]] = relationship(
         "CuratorTeamModel",
         back_populates="team",
         cascade="all, delete-orphan",
     )
-    
+
     # Кураторы команды по M2M, только просмотр (через curator_teams)
     curators: Mapped[list["CuratorModel"]] = relationship(
         "CuratorModel",
@@ -68,3 +71,5 @@ class TeamModel(BaseEntity):
         viewonly=True,
     )
 
+    def __str__(self) -> str:
+        return f"{self.id}: Команда {self.name}"

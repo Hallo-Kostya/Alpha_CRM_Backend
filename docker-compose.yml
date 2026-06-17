@@ -4,7 +4,10 @@ services:
       context: .
       dockerfile: Dockerfile
     depends_on:
-      - pg_db
+      pg_db:
+        condition: service_healthy
+      minio:
+        condition: service_started
     ports:
       - "8001:8000"
     networks:
@@ -14,7 +17,9 @@ services:
     restart: always
     volumes:
       - ./app:/backend/app
-    
+    environment:
+      - ENVIRONMENT=development
+
   pg_db:
     image: postgres:17
     volumes:
@@ -27,24 +32,71 @@ services:
       POSTGRES_PASSWORD: ${DB__PASSWORD}
       POSTGRES_DB: ${DB__NAME}
     ports:
-    - 5433:5432
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB__USER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
-  pgadmin4:
-    image: elestio/pgadmin:REL-9_8
-    restart: always
+
+  minio:
+    image: minio/minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
     environment:
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
-      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASS}
-      PGADMIN_LISTEN_PORT: 8080
+      MINIO_ROOT_USER: ${S3__ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${S3__SECRET_KEY}
+    volumes:
+      - minio_data:/data
     networks:
       - app-network
+    command: server /data --console-address ":9001"
+
+
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
     ports:
-    - "8082:8080"
+      - "9090:9090"
+    networks:
+      - app-network
+
+  loki:
+    image: grafana/loki:latest
+    ports:
+      - "3100:3100"
+    networks:
+      - app-network
+
+  promtail:
+    image: grafana/promtail:latest
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./promtail-config.yaml:/etc/promtail/config.yaml
+    command: -config.file=/etc/promtail/config.yaml
+    networks:
+      - app-network
+
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3030:3000"
+    networks:
+      - app-network
     depends_on:
-      - pg_db
+      - prometheus
+      - loki
+    volumes:
+      - grafana_data:/var/lib/grafana
 
 volumes:
+  minio_data:
   main_pg_data:
+  grafana_data:
 
 networks:
   app-network:

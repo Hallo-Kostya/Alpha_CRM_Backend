@@ -15,9 +15,14 @@ class ApiV1Prefix(BaseModel):
     prefix: str = "/v1"
 
 
+class ApiV2Prefix(BaseModel):
+    prefix: str = "/v2"
+
+
 class ApiPrefix(BaseModel):
     prefix: str = "/internal/api"
     v1: ApiV1Prefix = ApiV1Prefix()
+    v2: ApiV2Prefix = ApiV2Prefix()
 
 
 class HashConfig(BaseModel):
@@ -26,6 +31,58 @@ class HashConfig(BaseModel):
     algorithm: str = ""
     access_expire_minutes: int = 30
     refresh_expire_days: int = 30
+
+
+class CuratorBucketConfig(BaseModel):
+    name: str = "curators"
+
+    @property
+    def policy(self) -> dict:
+        return {
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Sid": "AddPerm",
+                    "Effect": "Allow",
+                    "Principal": "*",
+                    "Action": ["s3:GetObject"],
+                    "Resource": f"arn:aws:s3:::{self.name}/*",
+                }
+            ],
+        }
+
+
+class ArtifactsBucketConfig(BaseModel):
+    name: str = "artifacts"
+
+    @property
+    def policy(self) -> dict:
+        return {
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Sid": "AddPerm",
+                    "Effect": "Allow",
+                    "Principal": "*",
+                    "Action": ["s3:GetObject"],
+                    "Resource": f"arn:aws:s3:::{self.name}/*",
+                }
+            ],
+        }
+
+
+class FrontendConfig(BaseModel):
+    host: str = "http://localhost:3000"
+
+
+class S3Config(BaseModel):
+    private_host: str = ""
+    public_host: str = "http://localhost:9000"
+    access_key: str = ""
+    secret_key: str = ""
+    region: str = ""
+    curator_bucket: CuratorBucketConfig = CuratorBucketConfig()
+    artifacts_bucket: ArtifactsBucketConfig = ArtifactsBucketConfig()
 
 
 class DatabaseConfig(BaseModel):
@@ -60,6 +117,16 @@ class DatabaseConfig(BaseModel):
         )
 
 
+class AIClientConfig(BaseModel):
+    api_key: str = "api-key-placeholder"
+    base_url: str = "https://openrouter.ai/api/v1"
+
+
+class VkBotBackendConfig(BaseModel):
+    base_url: str = "http://host.docker.internal:8002/api/v1"
+    api_key: str = ""
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=BASE_DIR / ".env",
@@ -67,10 +134,16 @@ class Settings(BaseSettings):
         env_nested_delimiter="__",
         env_prefix="",
     )
+    curator_workday_start_hour: int = 9
+    curator_workday_end_hour: int = 18
     run: RunConfig = RunConfig()
     api: ApiPrefix = ApiPrefix()
     db: DatabaseConfig = DatabaseConfig()
     hash: HashConfig = HashConfig()
+    s3: S3Config = S3Config()
+    frontend: FrontendConfig = FrontendConfig()
+    ai: AIClientConfig = AIClientConfig()
+    vk_bot: VkBotBackendConfig = VkBotBackendConfig()
 
 
 settings = Settings()  # type: ignore

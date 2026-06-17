@@ -6,8 +6,8 @@ from fastapi import Depends
 
 from app.infrastructure.database.repositories.base_repository import BaseRepository
 from app.infrastructure.database.models.projects.project_team import ProjectTeamModel
-from app.domain.enums.project_team_status import ProjectTeamStatus
-from app.core.database import db_helper
+from app.common.enums import ProjectTeamStatus
+from app.infrastructure.database.database import db_helper
 
 
 class ProjectTeamRepository(BaseRepository[ProjectTeamModel]):

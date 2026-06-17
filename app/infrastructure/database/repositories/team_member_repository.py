@@ -6,7 +6,7 @@ from fastapi import Depends
 
 from app.infrastructure.database.repositories.base_repository import BaseRepository
 from app.infrastructure.database.models.teams.team_member import TeamMemberModel
-from app.core.database import db_helper
+from app.infrastructure.database.database import db_helper
 
 
 class TeamMemberRepository(BaseRepository[TeamMemberModel]):
@@ -23,12 +23,6 @@ class TeamMemberRepository(BaseRepository[TeamMemberModel]):
         )
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
-
-    async def get_by_team_id(self, team_id: UUID) -> Sequence[TeamMemberModel]:
-        """Получить все связи для команды"""
-        query = select(self.model).where(self.model.team_id == team_id)
-        result = await self.session.scalars(query)
-        return result.all()
 
     async def get_by_student_id(self, student_id: UUID) -> Sequence[TeamMemberModel]:
         """Получить все связи для студента"""

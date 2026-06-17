@@ -1,7 +1,7 @@
 from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.infrastructure.database.entity_base import BaseEntity
+from app.infrastructure.database.models.entity_base import BaseEntity
 
 
 class PersonModel(BaseEntity):
@@ -19,3 +19,5 @@ class PersonModel(BaseEntity):
     # Ссылка на Telegram
     tg_link: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
+    def __str__(self) -> str:
+        return f"{self.id}: {self.last_name} {self.first_name} {self.patronymic or ""}"

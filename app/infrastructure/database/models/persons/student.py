@@ -9,6 +9,7 @@ if TYPE_CHECKING:
 
 class StudentModel(PersonModel):
     """Модель студента"""
+
     __tablename__ = "students"
 
     # Связь с командой
@@ -25,4 +26,3 @@ class StudentModel(PersonModel):
         back_populates="student",
         cascade="all, delete-orphan",
     )
-

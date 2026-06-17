@@ -3,7 +3,7 @@ from sqlalchemy import DateTime, ForeignKey, Boolean
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.dialects.postgresql import UUID
 
-from app.infrastructure.database.entity_base import BaseEntity
+from app.infrastructure.database.models.entity_base import BaseEntity
 
 
 class BaseTokenModel(BaseEntity):

@@ -1,12 +1,13 @@
 from datetime import datetime
 from typing import TYPE_CHECKING
-from sqlalchemy import DateTime, ForeignKey, UniqueConstraint, String, func
+from sqlalchemy import DateTime, ForeignKey, UniqueConstraint, String, func, Float
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy import Enum as SQLEnum
 
-from app.infrastructure.database.entity_base import BaseEntity
-from app.domain.enums.project_team_status import ProjectTeamStatus
+from app.common.enums import ProjectTeamStatus
+from app.infrastructure.database.models.entity_base import BaseEntity
+
 
 if TYPE_CHECKING:
     from app.infrastructure.database.models.projects.project import ProjectModel
@@ -45,6 +46,8 @@ class ProjectTeamModel(BaseEntity):
         nullable=False,
         default=ProjectTeamStatus.ACTIVE
     )
+    # Итоговый балл защиты проекта
+    final_score: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
     
     __table_args__ = (
         UniqueConstraint("project_id", "team_id", name="uq_project_teams_project_team"),

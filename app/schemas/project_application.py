@@ -1,0 +1,117 @@
+from __future__ import annotations
+from uuid import UUID
+
+from pydantic import BaseModel, ConfigDict, Field
+from datetime import datetime
+
+from app.common.enums import (
+    ProjectApplicationStatus,
+    MeetingStatus,
+    ProjectInterviewStatus,
+)
+from app.schemas.project import ProjectRead
+from app.schemas.artifacts import ArtifactResponse
+
+
+class ProjectInterviewPOST(BaseModel):
+    interview_date: datetime
+
+
+class ProjectInterviewGET(BaseModel):
+    id: UUID
+    name: str
+    date: datetime
+    status: MeetingStatus
+    interview_status: ProjectInterviewStatus
+    artifacts: list[ArtifactResponse] = Field(default_factory=list)
+    url: str | None = None
+    curators_rate: int | None = None
+    resume: str | None = None
+
+
+class ProjectInterviewGETLimited(BaseModel):
+    id: UUID
+    name: str
+    date: datetime
+    status: MeetingStatus
+    interview_status: ProjectInterviewStatus
+    url: str | None = None
+    curators_rate: int | None = None
+    resume: str | None = None
+
+
+class ProjectInterviewPATCH(BaseModel):
+    name: str | None = None
+    date: datetime | None = None
+    status: MeetingStatus | None = None
+    interview_status: ProjectInterviewStatus | None = None
+    url: str | None = None
+    curators_rate: int | None = None
+    resume: str | None = None
+
+
+class ProjectApplicationPATCH(BaseModel):
+    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
+    team_members: list[TeamMemberPATCH] | None = None
+    team_name: str | None = None
+    description: str | None = None
+
+
+class ProjectApplicationGET(BaseModel):
+    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
+
+    id: UUID
+    mean_project_score: float
+    project: ProjectRead
+    team_name: str
+    status: ProjectApplicationStatus
+    description: str | None = None
+    members: list[TeamMemberGET] = Field(default_factory=list)
+    interview: ProjectInterviewGET | None = None
+    vk_sender_id: int | None = None
+
+
+class ProjectApplicationGETLimited(BaseModel):
+    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
+
+    id: UUID
+    mean_project_score: float
+    project_id: UUID
+    team_name: str
+    status: ProjectApplicationStatus
+    members: list[TeamMemberGET] = Field(default_factory=list)
+    description: str | None = None
+    interview_id: UUID | None = None
+    vk_sender_id: int | None = None
+
+
+class TeamMemberPOST(BaseModel):
+    fullname: str
+    role: str
+    study_group: str
+
+
+class TeamMemberGET(BaseModel):
+    id: UUID
+    fullname: str
+    role: str
+    study_group: str
+
+
+class TeamMemberPATCH(BaseModel):
+    id: UUID | None = None
+    fullname: str | None = None
+    role: str | None = None
+    study_group: str | None = None
+
+
+class ProjectApplicationPOST(BaseModel):
+    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
+
+    project_id: UUID
+    vk_sender_id: int
+    team_name: str
+    team_members: list[TeamMemberPOST]
+    description: str | None = None
+    mean_project_score: float | None = None
+    status: ProjectApplicationStatus | None = None

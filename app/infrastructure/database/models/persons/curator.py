@@ -18,7 +18,9 @@ class CuratorModel(PersonModel):
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
 
     email: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
-    
+
+    avatar_s3_path: Mapped[str] = mapped_column(String(255), nullable=True)
+
     # Команды, для которых является куратором (M2M)
     teams: Mapped[list["TeamModel"]] = relationship(
         "TeamModel",

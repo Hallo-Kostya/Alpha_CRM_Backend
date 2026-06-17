@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING
-from sqlalchemy import ForeignKey, PrimaryKeyConstraint, UniqueConstraint, CheckConstraint
+import uuid
+from sqlalchemy import ForeignKey, PrimaryKeyConstraint, String, UniqueConstraint, CheckConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID
 
@@ -11,48 +12,44 @@ if TYPE_CHECKING:
     from app.infrastructure.database.models.projects.project import ProjectModel
 
 
-class ArtifactLinkModel(Base): 
-    """Модель связи артефакта с проектом или встречей"""
-    __tablename__ = "artifact_links" 
-    
-    # FK на артефакт
-    artifact_id: Mapped[UUID] = mapped_column(
+class ArtifactLinkModel(Base):
+    __tablename__ = "artifact_links"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
+
+    artifact_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("artifacts.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
-        primary_key=True,
     )
-    # FK на проект (nullable)
-    project_id: Mapped[UUID | None] = mapped_column(
-        UUID(as_uuid=True),
-        ForeignKey("projects.id", ondelete="CASCADE"),
+
+    entity_type: Mapped[str] = mapped_column(
+        String,
         nullable=False,
         index=True,
-        primary_key=True,
     )
-    # FK на встречу (nullable)
-    meeting_id: Mapped[UUID | None] = mapped_column(
+
+    entity_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("meetings.id", ondelete="CASCADE"),
-        nullable=True,
+        nullable=False,
         index=True,
     )
-    
+
     __table_args__ = (
-        # Один из FK должен быть заполнен
-        CheckConstraint(
-            "(project_id IS NOT NULL AND meeting_id IS NULL) OR "
-            "(project_id IS NULL AND meeting_id IS NOT NULL)",
-            name="ck_artifact_links_one_fk"
+        UniqueConstraint(
+            "artifact_id",
+            "entity_type",
+            "entity_id",
+            name="uq_artifact_link_unique",
         ),
-        # Составной PK для связи с проектом
-        UniqueConstraint("artifact_id", "project_id", name="uq_artifact_links_artifact_project"),
-        # Составной PK для связи со встречей
-        UniqueConstraint("artifact_id", "meeting_id", name="uq_artifact_links_artifact_meeting"),
     )
-    
-    # Связи
-    artifact: Mapped["ArtifactModel"] = relationship("ArtifactModel",back_populates="artifact_links",)
-    project: Mapped["ProjectModel | None"] = relationship("ProjectModel",foreign_keys=[project_id],back_populates="artifact_links",)
-    meeting: Mapped["MeetingModel | None"] = relationship("MeetingModel",foreign_keys=[meeting_id],back_populates="artifact_links",)
+
+    artifact: Mapped["ArtifactModel"] = relationship(
+        "ArtifactModel",
+        back_populates="artifact_links",
+    )

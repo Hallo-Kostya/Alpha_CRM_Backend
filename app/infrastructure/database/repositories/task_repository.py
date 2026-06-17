@@ -2,11 +2,12 @@ from typing import Sequence
 from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 from fastapi import Depends
 
 from app.infrastructure.database.repositories.base_repository import BaseRepository
 from app.infrastructure.database.models.meetings.task import TaskModel
-from app.core.database import db_helper
+from app.infrastructure.database.database import db_helper
 
 
 class TaskRepository(BaseRepository[TaskModel]):
@@ -14,36 +15,15 @@ class TaskRepository(BaseRepository[TaskModel]):
         super().__init__(TaskModel, session)
 
     async def get_by_meeting_id(self, meeting_id: UUID) -> Sequence[TaskModel]:
-        """Получить все задачи встречи"""
-        from app.infrastructure.database.models.meetings.meeting_task import MeetingTaskModel
-        
+        """Get all tasks for a specific meeting."""
         query = (
             select(TaskModel)
-            .join(MeetingTaskModel, TaskModel.id == MeetingTaskModel.task_id)
-            .where(MeetingTaskModel.meeting_id == meeting_id)
+            .join(TaskModel.meeting_tasks)
+            .where(TaskModel.meeting_tasks.any(meeting_id=meeting_id))
+            .options(selectinload(TaskModel.meeting_tasks))
         )
-        
-        result = await self.session.scalars(query)
-        return result.all()
-
-    async def get_incomplete_tasks_by_team(self, team_id: UUID) -> Sequence[TaskModel]:
-        """Получить незавершенные задачи команды"""
-        from app.infrastructure.database.models.meetings.meeting import MeetingModel
-        from app.infrastructure.database.models.meetings.meeting_task import MeetingTaskModel
-        
-        query = (
-            select(TaskModel)
-            .join(MeetingTaskModel, TaskModel.id == MeetingTaskModel.task_id)
-            .join(MeetingModel, MeetingTaskModel.meeting_id == MeetingModel.id)
-            .where(
-                MeetingModel.team_id == team_id,
-                TaskModel.is_completed == False
-            )
-            .distinct()
-        )
-        
-        result = await self.session.scalars(query)
-        return result.all()
+        result = await self.session.execute(query)
+        return result.scalars().all()
 
 
 def task_repository_getter(
